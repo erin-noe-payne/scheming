@@ -1,11 +1,11 @@
 {
-  "name":"skema",
-  "version":"0.0.0",
-  "main":"index.js",
-  "repository":"https://github.com/autoric/skema",
+  "name": "skema",
+  "version": "0.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/autoric/skema",
   "scripts": {
     "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
-    "prepublish":"coffee -o dist -c lib/*"
+    "prepublish": "coffee -o dist -c lib/*"
   },
   "dependencies": {
     "lodash": "~2.4.1",
@@ -13,6 +13,9 @@
   },
   "devDependencies": {
     "chai": "~1.9.1",
-    "mocha": "~1.20.1"
+    "mocha": "~1.20.1",
+    "sinon": "~1.10.3",
+    "chai": "~1.9.2",
+    "sinon-chai": "~2.6.0"
   }
 }
