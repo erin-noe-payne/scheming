@@ -67,7 +67,7 @@ NESTED_TYPES =
     childParser : _.toArray
   Schema :
     ctor       : Object
-    string     : 'object'
+    string     : 'schema'
     identifier : null
     childType  : null
     parser     : null
@@ -155,20 +155,18 @@ Skema.normalizeProperty = (config, fieldName) ->
     throw new Error "Error resolving #{fieldName}. Schema getter must be a function."
   if setter? && !_.isFunction setter
     throw new Error "Error resolving #{fieldName}. Schema setter must be a function."
-  if validate?
-    if !_.isArray(validate)
-      validate = [validate]
-    for fn in validate
-      if !_.isFunction fn
-        throw new Error "Error resolving #{fieldName}. Schema validate must be a function or array of functions."
+
+  validate ?= []
+  if !_.isArray(validate)
+    validate = [validate]
+  for fn in validate
+    if !_.isFunction fn
+      throw new Error "Error resolving #{fieldName}. Schema validate must be a function or array of functions."
 
   definition.type = Skema.resolveType type
 
   if !definition.type?
     throw new Error "Error resolving #{fieldName}. Unrecognized type #{type}"
-
-  if !validate?
-    validate = []
 
   definition.default = config.default
   definition.getter = getter
@@ -254,18 +252,59 @@ Skema.create = (args...) ->
       for key, value of model
         @[key] = value
 
-      @validate = ->
+      @validate = () ->
+        errors = {}
+        # prevents infinite loops in circular references
+        if @_validating then return null
+        @_validating = true
+
+        pushError = (key, err) ->
+          if _.isArray err
+            return pushError(key, e) for e in err
+          if !_.isString err
+            err = 'Validation error occurred.'
+          errors[key] ?= []
+          errors[key].push err
+
         # apply validation rules
         for key, value of normalizedSchema
+
           {validators, required} = value
 
           val = @[key]
 
           if required && !val?
-            throw new Error "Field #{key} is required."
+            pushError key, "Field is required."
           if val?
+            {type} = normalizedSchema[key]
+
             for validator in validators
-              validator(val)
+              err = true
+              try
+                err = validator(val)
+              catch e
+                if e then err = e.message
+              if err != true then pushError key, err
+
+            if type.string == 'schema'
+              childErrors = val.validate()
+              for k, v of childErrors
+                pushError "#{key}.#{k}", v
+            if type.string == 'array' && type.childType.string == 'schema'
+              for member, i in val
+                childErrors = member.validate()
+                for k, v of childErrors
+                  pushError "#{key}[#{i}].#{k}", v
+
+        @_validating = false
+
+        if _.size(errors) == 0
+          return null
+        else
+          return errors
+
+
+
 
   Schema.defineProperties schemaConfig
 
