@@ -9,6 +9,10 @@ chai.use sinonChai
 {expect} = chai
 
 describe 'Skema', ->
+
+  afterEach ->
+    Skema.reset()
+
   describe 'TYPES', ->
     describe 'identifiers', -> #TODO
       identifierIo =
@@ -249,6 +253,7 @@ describe 'Skema', ->
         it 'should pass an object type to Skema.create', ->
           createSpy = sinon.stub Skema, 'create'
           mockctor = ->
+
           createSpy.returns mockctor
 
           obj = {}
@@ -261,13 +266,81 @@ describe 'Skema', ->
 
           createSpy.restore()
 
-
         it 'should use a Schema instance as its childType', ->
           ctr = Skema.create()
 
           resolved = Skema.resolveType ctr
 
           expect(resolved.childType).to.equal ctr
+
+        it 'should treat Schema: string as a lazy-load schema', ->
+          resolved = Skema.resolveType 'Schema:Car'
+
+          expect(resolved.childType).not.to.exist
+
+        it 'should resolve a lazy-load schema the first time identifier is invoked', ->
+          sinon.stub Skema, 'get'
+          Car = Skema.create()
+          Skema.get.returns Car
+
+          resolved = Skema.resolveType 'Schema:Car'
+
+          resolved.identifier({})
+
+          expect(Skema.get).to.have.been.called
+          expect(Skema.get).to.have.been.calledWith 'Car'
+
+          expect(resolved.childType).to.equal Car
+
+          Skema.get.restore()
+
+        it 'should resolve a lazy-load schema the first time parser is invoked', ->
+          sinon.stub Skema, 'get'
+          Car = Skema.create()
+          Skema.get.returns Car
+
+          resolved = Skema.resolveType 'Schema:Car'
+
+          resolved.parser({})
+
+          expect(Skema.get).to.have.been.called
+          expect(Skema.get).to.have.been.calledWith 'Car'
+
+          expect(resolved.childType).to.equal Car
+
+          Skema.get.restore()
+
+        it 'should throw an error if the specified Schema does not exist at time of lazy resolution', ->
+          sinon.stub Skema, 'get'
+          Skema.get.returns null
+
+          resolved = Skema.resolveType 'Schema:Car'
+
+          expect(resolved.parser).to.throw 'Error resolving Schema:Car'
+
+          Skema.get.restore()
+
+        it 'should correctly return true from identifier function on first invocation', ->
+          resolved = Skema.resolveType 'Schema:Car'
+
+          Car = Skema.create 'Car'
+          car = new Car()
+
+          expect(resolved.identifier(car)).to.be.true
+
+        it 'should correctly return false from identifier function on first invocation', ->
+          resolved = Skema.resolveType 'Schema:Car'
+
+          Car = Skema.create 'Car'
+
+          expect(resolved.identifier({})).to.be.false
+
+        it 'should correctly apply parser on first invocation', ->
+          resolved = Skema.resolveType 'Schema:Car'
+
+          Car = Skema.create 'Car'
+
+          expect(resolved.parser({})).to.be.instanceOf Car
 
       describe 'extensibility', ->
 
@@ -402,7 +475,7 @@ describe 'Skema', ->
       expect(Schema).to.be.a.function
 
     it 'should invoke normalizeProperty on each key / value pair in the schema config', ->
-      normalizeProperty = sinon.stub Skema, 'normalizeProperty'
+      normalizeProperty = sinon.spy Skema, 'normalizeProperty'
 
       schema =
         name     : 'string'
@@ -419,7 +492,45 @@ describe 'Skema', ->
       normalizeProperty.restore()
 
   describe 'Schema', ->
-    describe 'properties', ->
+    describe 'defineProperty', ->
+      it 'should invoke Skema.normalizeProperty', ->
+        sinon.spy Skema, 'normalizeProperty'
+
+        Schema = Skema.create()
+        config = { type : 'string', getter : -> true }
+        Schema.defineProperty 'name', config
+
+        expect(Skema.normalizeProperty).to.have.been.called
+        expect(Skema.normalizeProperty).to.have.been.calledWith config, 'name'
+
+        Skema.normalizeProperty.restore()
+
+      it 'should extend the Schema with the new property', ->
+        Schema = Skema.create()
+        Schema.defineProperty 'age',
+          type : 'integer'
+          setter : (val) -> return val+1
+          getter : (val) -> return val * 2
+
+        a = new Schema()
+        a.age = 7
+        expect(a.age).to.equal 16
+
+    describe 'defineProperties', ->
+      it 'should invoke defineProperty for each key value pair', ->
+        Schema = Skema.create()
+        sinon.stub Schema, 'defineProperty'
+
+        config = { type : 'string', getter : -> true }
+        Schema.defineProperties {a : 'integer', b : config}
+
+        expect(Schema.defineProperty).to.have.been.calledTwice
+        expect(Schema.defineProperty).to.have.been.calledWith 'a', 'integer'
+        expect(Schema.defineProperty).to.have.been.calledWith 'b', config
+
+        Schema.defineProperty.restore()
+
+    describe 'property', ->
       describe 'assignment', ->
         describe 'of primitive types', ->
           setter = null
@@ -508,24 +619,77 @@ describe 'Skema', ->
             expect(setter).to.have.been.calledWith 5
 
         describe 'of nested Schemas', ->
-          it 'works', ->
-            Person = Skema.create
-              name :
-                type : String
-                setter : (val) -> val.toUpperCase()
+          Person = null
+
+          beforeEach ->
+            Person = Skema.create()
+            Person = sinon.spy Person
+
+            Person.defineProperties
+              name : String
               age : Number
-              friends : [Person]
+              mother : {type: Person, default : null}
 
-            Group = Skema.create
-              owner : Person
-              members : [Person]
+          it 'invokes constructor on assignment of a plain object', ->
+            Lisa = new Person
+              name : 'Sarah'
+              age : 8
 
-            Sarah = new Person
-              name : 'sarah'
-              age : 35
+            expect(Person).to.have.been.calledOnce
+            Person.reset()
 
+            Lisa.mother = {name : 'Marge', age : 34}
 
+            expect(Person).to.have.been.calledOnce
+            expect(Person).to.have.been.calledWith {name : 'Marge', age : 34}
+            Person.reset()
 
+            Lisa.mother.mother =
+              name : 'Jacqueline'
+              age : 80
+              mother :
+                name : 'Alvarine'
+                age  : 102
+
+            expect(Person).to.have.been.calledTwice
+            expect(Person).to.have.been.calledWith {name : 'Jacqueline', age : 80, mother: {name : 'Alvarine', age : 102}}
+            expect(Person).to.have.been.calledWith {name : 'Alvarine', age : 102}
+
+          it 'does not invoke constructor if assigned object is already instance of correct Schema', ->
+            Lisa = new Person
+              name : 'Sarah'
+              age : 8
+
+            expect(Person).to.have.been.calledOnce
+
+            Marge = new Person
+              name : 'Marge'
+              age : 34
+
+            Person.reset()
+
+            Lisa.mother = Marge
+            expect(Person).not.to.have.been.called
+
+          it 'does invoke constructor if assigned object is instance of a different Schema', ->
+            Car = Skema.create
+              make : String
+              model : String
+
+            Lisa = new Person
+                name : 'Sarah'
+                age : 8
+
+            civic = new Car
+              make : 'honda'
+              model : 'civic'
+
+            Person.reset()
+
+            Lisa.mother = civic
+
+            expect(Person).to.have.been.called
+            expect(Person).to.have.been.calledWith civic
 
       describe 'retrieval', ->
         describe 'of primitive types', ->
@@ -567,6 +731,17 @@ describe 'Skema', ->
 
             expect(a.age).to.equal 10
 
+          it 'should return the assigned value, accounting for the getter', ->
+            Schema = Skema.create
+              age :
+                type : 'integer'
+                setter : (val) -> val * 2
+                getter : (val) -> val - 2
+
+            a = new Schema {age : 5.5}
+
+            expect(a.age).to.equal 8
+
         describe 'of Arrays', ->
           it 'should parse child elements of arrays', ->
             Schema = Skema.create
@@ -589,3 +764,38 @@ describe 'Skema', ->
             a.ages.unshift 1
             a.ages.splice 1, 0, 3.0
             expect(a.ages).to.eql [1, 3, 2, NaN]
+
+    describe 'circular definitions', ->
+
+      it 'should allow two Schemas to reference one another', ->
+        Person = Skema.create 'Person',
+          name : String
+          cars : ['Schema:Car']
+
+        Car = Skema.create 'Car',
+          model : String
+          owner : 'Schema:Person'
+
+        bob = new Person
+          name : 'Bob'
+
+        bob.cars = [
+          {model : 'Civic', owner : bob}
+          {model : '4runner', owner : bob}
+        ]
+
+        expect(bob).to.be.instanceOf Person
+        expect(bob.cars[0]).to.be.instanceOf Car
+
+    describe 'validation', ->
+
+      describe 'required', ->
+        it 'should do stuff', ->
+          Person = Skema.create
+            name : {type : String, required : true}
+            age : {type : Number, required : true}
+
+          Lisa = new Person name:'Lisa'
+
+          Lisa.validate()
+

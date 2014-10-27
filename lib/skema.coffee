@@ -2,9 +2,15 @@ root = @
 
 isNode = typeof exports != 'undefined' && typeof module != 'undefined' && module.exports
 
-
 if isNode
   _ = require 'lodash'
+
+uuid = ->
+  now = Date.now()
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
+    r = (now + Math.random() * 16) % 16 | 0
+    now = Math.floor now / 16
+    ((if c is "x" then r else (r & 0x7 | 0x8))).toString 16
 
 RESERVED_PROPERTIES =
   validate : 'validate'
@@ -48,25 +54,23 @@ TYPES =
     string     : '*'
     identifier : ->
       true
-    parser     : (val) ->
-      val
+    parser     : _.identity
 
 # parsers for nested types are dynamic and must be built at resolution time
 NESTED_TYPES =
   Array  :
-    ctor       : Array
-    string     : 'array'
-    identifier : _.isArray
-    childType  : null
-    parser     : _.toArray
+    ctor        : Array
+    string      : 'array'
+    identifier  : _.isArray
+    childType   : null
+    parser      : _.toArray
     childParser : _.toArray
   Schema :
     ctor       : Object
     string     : 'object'
-    identifier : _.isPlainObject
+    identifier : null
     childType  : null
     parser     : null
-
 
 getPrimitiveTypeOf = (type) ->
   for k, TYPE of TYPES
@@ -99,19 +103,35 @@ Skema.resolveType = (typeDef) ->
 
         return val
 
-    if _.isPlainObject typeDef
-      type = _.cloneDeep NESTED_TYPES.Schema
-      childType = Skema.create typeDef
+    resolveSchemaType = (type, childType) ->
       type.childType = childType
+      type.identifier = (val) ->
+        return val instanceof childType
       type.parser = (val) ->
         return new childType(val)
 
-    if _.isFunction(typeDef) && typeDef.__isSkema
+    if _.isPlainObject typeDef
+      type = _.cloneDeep NESTED_TYPES.Schema
+      childType = Skema.create typeDef
+      resolveSchemaType type, childType
+
+    if _.isFunction(typeDef) && typeDef.__skemaId
       type = _.cloneDeep NESTED_TYPES.Schema
       childType = typeDef
-      type.childType = childType
-      type.parser = (val) ->
-        return new childType(val)
+      resolveSchemaType type, childType
+
+    if _.isString(typeDef) && typeDef[...7] == 'Schema:'
+      type = _.cloneDeep NESTED_TYPES.Schema
+      childType = typeDef[7..]
+      for fn in ['identifier', 'parser']
+        do (fn) ->
+          type[fn] = (val) ->
+            childType = Skema.get childType
+            if !childType
+              throw new Error "Error resolving #{typeDef} on lazy initialization"
+            resolveSchemaType type, childType
+
+            return type[fn] val
 
   return type || null
 
@@ -162,36 +182,60 @@ Skema.normalizeProperty = (config, fieldName) ->
 opts:
   strict - if false, allows attachment of arbitrary properties to object
 ###
-  ## TODO: How to deal with arrays and array mutations for watching
-  ## TODO: allowArbitrary : Object.seal - prevent adding / removing of properties
-  ## TODO: support strict assignment, so rather than parse, throw an error?
+## TODO: How to deal with arrays and array mutations for watching
+## TODO: allowArbitrary : Object.seal - prevent adding / removing of properties
+## TODO: support strict assignment, so rather than parse, throw an error?
 ###
   Doc notes -
    - parsers are applied before setters; setters can assume they are receiving correct type
 
 ###
-Skema.create = (schemaConfig, _opts) ->
-  normalizedSchema = {}
-  for fieldName, config of schemaConfig
-    normalizedSchema[fieldName] = Skema.normalizeProperty config, fieldName
+# name, schemaConfig, opts
+registry = {}
 
-  opts = {}
+register = (key, value) ->
+  if registry[key]
+    throw new Error "Naming conflict encountered. Schema #{key} already exists"
+  registry[key] = value
+
+Skema.create = (args...) ->
+  if !_.isString(args[0])
+    args.unshift uuid()
+
+  [name, schemaConfig, opts] = args
+
+  normalizedSchema = {}
 
   class Schema
-    @__isSkema  : true
+    @__skemaId : name
+
+    @defineProperties : (config) ->
+      for k, v of config
+        @defineProperty k, v
+
+    @defineProperty : (fieldName, config) ->
+      normalizedSchema[fieldName] = Skema.normalizeProperty(config, fieldName)
+
     constructor : (model) ->
       data = {}
+
+      Object.defineProperty @, '__skemaId',
+        enumerable   : false
+        configurable : false
+        writable     : false
+        value        : Schema.__skemaId
 
       for fieldName, typeDefinition of normalizedSchema
         do (fieldName, typeDefinition) =>
           {type, getter, setter} = typeDefinition
-          data[fieldName] = typeDefinition.default
 
           Object.defineProperty @, fieldName,
             configurable : true
             enumerable   : true
             get          : ->
               val = data[fieldName]
+              if val is undefined
+                return val
               if type.string == NESTED_TYPES.Array.string
                 val = type.childParser val
               if getter
@@ -203,6 +247,9 @@ Skema.create = (schemaConfig, _opts) ->
               if setter
                 val = setter val
               data[fieldName] = val
+
+          if typeDefinition.default is not undefined
+            @[fieldName] = typeDefinition.default
 
       for key, value of model
         @[key] = value
@@ -220,11 +267,17 @@ Skema.create = (schemaConfig, _opts) ->
             for validator in validators
               validator(val)
 
-      @on = ->
+  Schema.defineProperties schemaConfig
 
-      @emit = ->
+  register name, Schema
 
   return Schema
+
+Skema.get = (name) ->
+  return registry[name]
+
+Skema.reset = ->
+  registry = {}
 
 if isNode
   module.exports = Skema
