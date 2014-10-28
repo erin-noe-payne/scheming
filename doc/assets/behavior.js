@@ -27,14 +27,93 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "foldPrefix": "^",
               "name": "CoffeeScript"
             },
-            "sourcePath": "/Users/erin.noe-payne/local/skema/src/Scheming.coffee",
+            "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Scheming.coffee",
             "projectPath": "src/Scheming.coffee",
             "targetPath": "src/Scheming",
             "pageTitle": "src/Scheming",
+            "firstHeader": {
+              "type": "heading",
+              "data": {
+                "level": 1,
+                "title": "Scheming",
+                "slug": "scheming",
+                "isFileHeader": true
+              },
+              "depth": 1,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 2,
+                    "title": "TYPES",
+                    "slug": "types"
+                  },
+                  "depth": 2
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 2,
+                    "title": "resolveType",
+                    "slug": "resolvetype"
+                  },
+                  "depth": 2
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 2,
+                    "title": "normalizeProperty",
+                    "slug": "normalizeproperty"
+                  },
+                  "depth": 2
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 2,
+                    "title": "create",
+                    "slug": "create"
+                  },
+                  "depth": 2
+                }
+              ]
+            },
             "title": "Scheming"
           },
           "depth": 2,
-          "outline": []
+          "outline": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "TYPES",
+                "slug": "types"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "resolveType",
+                "slug": "resolvetype"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "normalizeProperty",
+                "slug": "normalizeproperty"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "create",
+                "slug": "create"
+              },
+              "depth": 2
+            }
+          ]
         }
       ]
     }

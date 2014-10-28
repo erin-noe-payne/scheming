@@ -1,5 +1,5 @@
 (function() {
-  var NESTED_TYPES, RESERVED_PROPERTIES, Scheming, TYPES, getPrimitiveTypeOf, isNode, register, registry, root, uuid, _,
+  var NESTED_TYPES, RESERVED_PROPERTIES, Scheming, TYPES, addToRegistry, getPrimitiveTypeOf, isNode, registry, root, uuid, _,
     __slice = [].slice;
 
   root = this;
@@ -8,6 +8,7 @@
 
   if (isNode) {
     _ = require('lodash');
+    root = exports;
   }
 
   uuid = function() {
@@ -24,6 +25,13 @@
   RESERVED_PROPERTIES = {
     validate: 'validate'
   };
+
+
+  /*
+      *# Types
+    Scheming exports the default types that it uses for parsing schemas. You can extend with custom types, or
+    override the identifier / parser functions of the default types.
+   */
 
   TYPES = {
     String: {
@@ -242,11 +250,19 @@
 
   registry = {};
 
-  register = function(key, value) {
+  addToRegistry = function(key, value) {
     if (registry[key]) {
       throw new Error("Naming conflict encountered. Schema " + key + " already exists");
     }
     return registry[key] = value;
+  };
+
+  Scheming.get = function(name) {
+    return registry[name];
+  };
+
+  Scheming.reset = function() {
+    return registry = {};
   };
 
   Scheming.create = function() {
@@ -406,23 +422,11 @@
 
     })();
     Schema.defineProperties(schemaConfig);
-    register(name, Schema);
+    addToRegistry(name, Schema);
     return Schema;
   };
 
-  Scheming.get = function(name) {
-    return registry[name];
-  };
-
-  Scheming.reset = function() {
-    return registry = {};
-  };
-
-  if (isNode) {
-    module.exports = Scheming;
-  } else {
-    root.Scheming = Scheming;
-  }
+  exports.Scheming = Scheming;
 
 }).call(this);
 
