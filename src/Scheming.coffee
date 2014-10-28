@@ -7,7 +7,6 @@ isNode = typeof exports != 'undefined' && typeof module != 'undefined' && module
 
 if isNode
   _ = require 'lodash'
-  root = exports
 
 # Uuid generator for anonymous Schema ids
 uuid = ->
@@ -429,4 +428,7 @@ Scheming.create = (args...) ->
 
   return Schema
 
-exports.Scheming = Scheming
+if isNode
+  module.exports = Scheming
+else
+  root.Scheming = Scheming

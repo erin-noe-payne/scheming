@@ -1,11 +1,3 @@
-Scheming = require './Scheming'
-sinon = require 'sinon'
-chai = require 'chai'
-sinonChai = require 'sinon-chai'
-_ = require 'lodash'
-
-chai.use sinonChai
-
 {expect} = chai
 
 describe 'Validation', ->
