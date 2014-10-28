@@ -2,7 +2,7 @@
   "name": "scheming",
   "version": "0.0.1",
   "main": "index.js",
-  "repository": "https://github.com/autoric/skema",
+  "repository": "https://github.com/autoric/scheming",
   "scripts": {
     "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
     "prepublish": "gulp build"
