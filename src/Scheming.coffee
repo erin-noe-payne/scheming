@@ -82,9 +82,9 @@ getPrimitiveTypeOf = (type) ->
 
   return null
 
-Skema = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES}
+Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES}
 
-Skema.resolveType = (typeDef) ->
+Scheming.resolveType = (typeDef) ->
   type = getPrimitiveTypeOf typeDef
 
   if !type?
@@ -93,7 +93,7 @@ Skema.resolveType = (typeDef) ->
       childType = TYPES.Mixed
 
       if typeDef.length
-        childType = Skema.resolveType(typeDef[0])
+        childType = Scheming.resolveType(typeDef[0])
 
       type.childType = childType
       type.childParser = (val) ->
@@ -112,7 +112,7 @@ Skema.resolveType = (typeDef) ->
 
     if _.isPlainObject typeDef
       type = _.cloneDeep NESTED_TYPES.Schema
-      childType = Skema.create typeDef
+      childType = Scheming.create typeDef
       resolveSchemaType type, childType
 
     if _.isFunction(typeDef) && typeDef.__skemaId
@@ -126,7 +126,7 @@ Skema.resolveType = (typeDef) ->
       for fn in ['identifier', 'parser']
         do (fn) ->
           type[fn] = (val) ->
-            childType = Skema.get childType
+            childType = Scheming.get childType
             if !childType
               throw new Error "Error resolving #{typeDef} on lazy initialization"
             resolveSchemaType type, childType
@@ -135,7 +135,7 @@ Skema.resolveType = (typeDef) ->
 
   return type || null
 
-Skema.normalizeProperty = (config, fieldName) ->
+Scheming.normalizeProperty = (config, fieldName) ->
   definition =
     type       : null
     default    : null
@@ -163,7 +163,7 @@ Skema.normalizeProperty = (config, fieldName) ->
     if !_.isFunction fn
       throw new Error "Error resolving #{fieldName}. Schema validate must be a function or array of functions."
 
-  definition.type = Skema.resolveType type
+  definition.type = Scheming.resolveType type
 
   if !definition.type?
     throw new Error "Error resolving #{fieldName}. Unrecognized type #{type}"
@@ -196,7 +196,7 @@ register = (key, value) ->
     throw new Error "Naming conflict encountered. Schema #{key} already exists"
   registry[key] = value
 
-Skema.create = (args...) ->
+Scheming.create = (args...) ->
   if !_.isString(args[0])
     args.unshift uuid()
 
@@ -212,7 +212,7 @@ Skema.create = (args...) ->
         @defineProperty k, v
 
     @defineProperty : (fieldName, config) ->
-      normalizedSchema[fieldName] = Skema.normalizeProperty(config, fieldName)
+      normalizedSchema[fieldName] = Scheming.normalizeProperty(config, fieldName)
 
     constructor : (model) ->
       data = {}
@@ -303,22 +303,19 @@ Skema.create = (args...) ->
         else
           return errors
 
-
-
-
   Schema.defineProperties schemaConfig
 
   register name, Schema
 
   return Schema
 
-Skema.get = (name) ->
+Scheming.get = (name) ->
   return registry[name]
 
-Skema.reset = ->
+Scheming.reset = ->
   registry = {}
 
 if isNode
-  module.exports = Skema
+  module.exports = Scheming
 else
-  root.Skema = Skema
+  root.Scheming = Scheming

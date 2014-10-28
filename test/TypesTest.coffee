@@ -1,4 +1,4 @@
-Skema = require '../lib/skema'
+Scheming = require './Scheming'
 sinon = require 'sinon'
 chai = require 'chai'
 sinonChai = require 'sinon-chai'
@@ -89,7 +89,7 @@ describe 'TYPES', ->
             {input, output} = io
             do (type, input, output) ->
               it "should correctly identify #{input}", ->
-                {identifier} = Skema.TYPES[type]
+                {identifier} = Scheming.TYPES[type]
 
                 expect(identifier(input)).to.eql output
 
@@ -168,7 +168,7 @@ describe 'TYPES', ->
             {input, output} = io
             do (type, input, output) ->
               it "should parse #{input}", ->
-                {parser} = Skema.TYPES[type]
+                {parser} = Scheming.TYPES[type]
 
                 expect(parser(input)).to.eql output
 
@@ -189,74 +189,74 @@ describe 'TYPES', ->
           {input, output} = io
           do (input, output) ->
             it "should parse #{input}", ->
-              {parser} = Skema.NESTED_TYPES.Array
+              {parser} = Scheming.NESTED_TYPES.Array
 
               expect(parser(input)).to.eql output
 
 describe 'resolveType', ->
   afterEach ->
-    Skema.reset()
+    Scheming.reset()
 
   describe 'resolution', ->
     describe 'with primitive types', ->
-      for k, type of Skema.TYPES
+      for k, type of Scheming.TYPES
         do (k, type) ->
           it "should resolve #{type.string} TYPES reference", ->
-            expect(Skema.resolveType type).to.equal type
+            expect(Scheming.resolveType type).to.equal type
 
           if type.ctor
             it "should resolve #{type.string} ctor", ->
-              expect(Skema.resolveType type.ctor).to.equal type
+              expect(Scheming.resolveType type.ctor).to.equal type
 
           it "should resolve #{type.string} string", ->
-            expect(Skema.resolveType type.string).to.equal type
+            expect(Scheming.resolveType type.string).to.equal type
 
       it 'should return null for an undefined TYPE reference', ->
-        expect(Skema.resolveType Skema.TYPES.Custom).to.be.null
+        expect(Scheming.resolveType Scheming.TYPES.Custom).to.be.null
 
       it 'should return null for unrecognized type string', ->
-        expect(Skema.resolveType 'notReal').to.be.null
+        expect(Scheming.resolveType 'notReal').to.be.null
 
       it 'should return null for unrecognized type constructor', ->
         ctor = ->
 
-        expect(Skema.resolveType ctor).to.be.null
+        expect(Scheming.resolveType ctor).to.be.null
 
       it 'should return null for undefined value', ->
-        expect(Skema.resolveType undefined).to.be.null
+        expect(Scheming.resolveType undefined).to.be.null
 
     describe 'with arrays', ->
-      for k, type of Skema.TYPES
+      for k, type of Scheming.TYPES
         do (k, type) ->
           it "should resolve #{type.string} TYPES reference", ->
             array = [type]
-            resolved = Skema.resolveType array
+            resolved = Scheming.resolveType array
             expect(resolved.string).to.equal 'array'
             expect(resolved.childType).to.equal type
 
           if type.ctor
             it "should resolve #{type.string} ctor", ->
               array = [type.ctor]
-              resolved = Skema.resolveType array
+              resolved = Scheming.resolveType array
               expect(resolved.string).to.equal 'array'
               expect(resolved.childType).to.equal type
 
           it "should resolve #{type.string} string", ->
             array = [type.string]
-            resolved = Skema.resolveType array
+            resolved = Scheming.resolveType array
             expect(resolved.string).to.equal 'array'
             expect(resolved.childType).to.equal type
 
     describe 'with Schemas', ->
-      it 'should pass an object type to Skema.create', ->
-        createSpy = sinon.stub Skema, 'create'
+      it 'should pass an object type to Scheming.create', ->
+        createSpy = sinon.stub Scheming, 'create'
         mockctor = ->
 
         createSpy.returns mockctor
 
         obj = {}
 
-        resolved = Skema.resolveType(obj)
+        resolved = Scheming.resolveType(obj)
         expect(createSpy).to.have.been.called
         expect(createSpy).to.have.been.calledWith obj
 
@@ -265,78 +265,78 @@ describe 'resolveType', ->
         createSpy.restore()
 
       it 'should use a Schema instance as its childType', ->
-        ctr = Skema.create()
+        ctr = Scheming.create()
 
-        resolved = Skema.resolveType ctr
+        resolved = Scheming.resolveType ctr
 
         expect(resolved.childType).to.equal ctr
 
       it 'should treat Schema: string as a lazy-load schema', ->
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
         expect(resolved.childType).not.to.exist
 
       it 'should resolve a lazy-load schema the first time identifier is invoked', ->
-        sinon.stub Skema, 'get'
-        Car = Skema.create()
-        Skema.get.returns Car
+        sinon.stub Scheming, 'get'
+        Car = Scheming.create()
+        Scheming.get.returns Car
 
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
         resolved.identifier({})
 
-        expect(Skema.get).to.have.been.called
-        expect(Skema.get).to.have.been.calledWith 'Car'
+        expect(Scheming.get).to.have.been.called
+        expect(Scheming.get).to.have.been.calledWith 'Car'
 
         expect(resolved.childType).to.equal Car
 
-        Skema.get.restore()
+        Scheming.get.restore()
 
       it 'should resolve a lazy-load schema the first time parser is invoked', ->
-        sinon.stub Skema, 'get'
-        Car = Skema.create()
-        Skema.get.returns Car
+        sinon.stub Scheming, 'get'
+        Car = Scheming.create()
+        Scheming.get.returns Car
 
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
         resolved.parser({})
 
-        expect(Skema.get).to.have.been.called
-        expect(Skema.get).to.have.been.calledWith 'Car'
+        expect(Scheming.get).to.have.been.called
+        expect(Scheming.get).to.have.been.calledWith 'Car'
 
         expect(resolved.childType).to.equal Car
 
-        Skema.get.restore()
+        Scheming.get.restore()
 
       it 'should throw an error if the specified Schema does not exist at time of lazy resolution', ->
-        sinon.stub Skema, 'get'
-        Skema.get.returns null
+        sinon.stub Scheming, 'get'
+        Scheming.get.returns null
 
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
         expect(resolved.parser).to.throw 'Error resolving Schema:Car'
 
-        Skema.get.restore()
+        Scheming.get.restore()
 
       it 'should correctly return true from identifier function on first invocation', ->
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
-        Car = Skema.create 'Car'
+        Car = Scheming.create 'Car'
         car = new Car()
 
         expect(resolved.identifier(car)).to.be.true
 
       it 'should correctly return false from identifier function on first invocation', ->
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
-        Car = Skema.create 'Car'
+        Car = Scheming.create 'Car'
 
         expect(resolved.identifier({})).to.be.false
 
       it 'should correctly apply parser on first invocation', ->
-        resolved = Skema.resolveType 'Schema:Car'
+        resolved = Scheming.resolveType 'Schema:Car'
 
-        Car = Skema.create 'Car'
+        Car = Scheming.create 'Car'
 
         expect(resolved.parser({})).to.be.instanceOf Car
 
@@ -348,120 +348,120 @@ describe 'resolveType', ->
         beforeEach ->
           customClass = class Custom
 
-          Skema.TYPES.Custom =
+          Scheming.TYPES.Custom =
             ctor : customClass
             string : 'custom'
             identifier : ->
             parser : ->
 
-          sinon.stub Skema.TYPES.Custom, 'identifier'
-          sinon.stub Skema.TYPES.Custom, 'parser'
+          sinon.stub Scheming.TYPES.Custom, 'identifier'
+          sinon.stub Scheming.TYPES.Custom, 'parser'
 
 
         afterEach ->
-          delete Skema.TYPES.Custom
+          delete Scheming.TYPES.Custom
 
         it 'should allow a custom type by reference', ->
-          expect(Skema.resolveType Skema.TYPES.Custom).to.equal Skema.TYPES.Custom
+          expect(Scheming.resolveType Scheming.TYPES.Custom).to.equal Scheming.TYPES.Custom
 
         it 'should allow a custom type by constructor', ->
-          expect(Skema.resolveType customClass).to.equal Skema.TYPES.Custom
+          expect(Scheming.resolveType customClass).to.equal Scheming.TYPES.Custom
 
         it 'should allow a custom type by string', ->
-          expect(Skema.resolveType 'custom').to.equal Skema.TYPES.Custom
+          expect(Scheming.resolveType 'custom').to.equal Scheming.TYPES.Custom
 
       describe 'overriding', ->
 
         it 'should support overriding of TYPE identifiers', ->
-          {identifier} = Skema.TYPES.String
+          {identifier} = Scheming.TYPES.String
           newIdentifier = -> true
-          Skema.TYPES.String.identifier = newIdentifier
+          Scheming.TYPES.String.identifier = newIdentifier
 
-          resolvedType = Skema.resolveType 'string'
+          resolvedType = Scheming.resolveType 'string'
 
           expect(resolvedType.identifier).to.equal newIdentifier
 
-          Skema.TYPES.String.identifier = identifier
+          Scheming.TYPES.String.identifier = identifier
 
         it 'should support overriding of TYPE parsers', ->
-          {parser} = Skema.TYPES.String
+          {parser} = Scheming.TYPES.String
           newParser = -> true
-          Skema.TYPES.String.parser = newParser
+          Scheming.TYPES.String.parser = newParser
 
-          resolvedType = Skema.resolveType 'string'
+          resolvedType = Scheming.resolveType 'string'
 
           expect(resolvedType.parser).to.equal newParser
 
-          Skema.TYPES.String.parser = parser
+          Scheming.TYPES.String.parser = parser
 
 describe 'normalizeProperty', ->
   resolveType = null
   mockType = {}
 
   beforeEach ->
-    resolveType = sinon.stub Skema, 'resolveType'
+    resolveType = sinon.stub Scheming, 'resolveType'
     resolveType.returns mockType
 
   afterEach ->
     resolveType.restore()
 
   it 'should, if it receives an object with a type key, pass the type key to resolveType', ->
-    Skema.normalizeProperty {type : 'integer'}, 'age'
+    Scheming.normalizeProperty {type : 'integer'}, 'age'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith 'integer'
 
   it 'should, if it receives an object without a type key, pass the entire object to resolveType', ->
     object = {name : 'String', age : 'Number'}
-    Skema.normalizeProperty object, 'owner'
+    Scheming.normalizeProperty object, 'owner'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith object
 
   it 'should pass TYPE references to resolveType', ->
-    Skema.normalizeProperty Skema.TYPES.String, 'name'
+    Scheming.normalizeProperty Scheming.TYPES.String, 'name'
 
     expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith Skema.TYPES.String
+    expect(resolveType).to.have.been.calledWith Scheming.TYPES.String
 
   it 'should pass type strings to resolveType', ->
-    Skema.normalizeProperty 'number', 'name'
+    Scheming.normalizeProperty 'number', 'name'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith 'number'
 
   it 'should pass type constructors to resolveType', ->
-    Skema.normalizeProperty Date, 'name'
+    Scheming.normalizeProperty Date, 'name'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith Date
 
   it 'should throw an error if the type cannot be resolved', ->
     invokeWithNoType = ->
-      Skema.normalizeProperty(undefined, 'name')
+      Scheming.normalizeProperty(undefined, 'name')
 
     expect(invokeWithNoType).to.throw 'Schema type must be defined'
 
   it 'should throw an error getter is defined and not a function', ->
     invokeWithStringGetter = ->
-      Skema.normalizeProperty({type : 'string', getter : 'asdf'}, 'name')
+      Scheming.normalizeProperty({type : 'string', getter : 'asdf'}, 'name')
 
     expect(invokeWithStringGetter).to.throw 'Schema getter must be a function'
 
   it 'should throw an error setter is defined and not a function', ->
     invokeWithStringSetter = ->
-      Skema.normalizeProperty({type : 'string', setter : 'asdf'}, 'name')
+      Scheming.normalizeProperty({type : 'string', setter : 'asdf'}, 'name')
 
     expect(invokeWithStringSetter).to.throw 'Schema setter must be a function'
 
   it 'should throw an error if a single validator is not a function', ->
     invokeWithStringValidate = ->
-      Skema.normalizeProperty({type : 'string', validate : 'asdf'}, 'name')
+      Scheming.normalizeProperty({type : 'string', validate : 'asdf'}, 'name')
 
     expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'
 
   it 'should throw an error if any validator is not a function', ->
     invokeWithStringValidate = ->
-      Skema.normalizeProperty({type : 'string', validate : [(->), 'asdf', (->)]}, 'name')
+      Scheming.normalizeProperty({type : 'string', validate : [(->), 'asdf', (->)]}, 'name')
 
     expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'

@@ -1,4 +1,4 @@
-Skema = require '../lib/skema'
+Scheming = require './Scheming'
 sinon = require 'sinon'
 chai = require 'chai'
 sinonChai = require 'sinon-chai'
@@ -10,17 +10,17 @@ chai.use sinonChai
 
 describe 'Validation', ->
   afterEach ->
-    Skema.reset()
+    Scheming.reset()
 
   it 'should return null if there are no fields', ->
-    Person = Skema.create()
+    Person = Scheming.create()
 
     lisa = new Person()
 
     expect(lisa.validate()).to.be.null
 
   it 'should return null if there are no validation rules', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : String
       age : Number
 
@@ -29,7 +29,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return null if a field is required and defined', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required : true}
       age : Number
 
@@ -38,7 +38,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return null if a field has one validation rules that it passes', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, validate :  -> true}
       age : Number
 
@@ -53,7 +53,7 @@ describe 'Validation', ->
       (v) -> v[v.length-1] == 'e'
     ]
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, validate :  -> true}
       age : Number
 
@@ -62,7 +62,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return null if a field that is not required is undefined but would otherwise fail validation', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, validate :  -> 'ERROR'}
       age : Number
 
@@ -71,7 +71,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return null if a nested schema passes validation', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       car :
         make : {type : String, required : true}
@@ -86,7 +86,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return null if an array of nested schema passes validation', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       cars : [
         make : {type : String, required : true}
@@ -103,7 +103,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.null
 
   it 'should return an object if there are validation errors', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true}
 
     lisa = new Person()
@@ -111,7 +111,7 @@ describe 'Validation', ->
     expect(lisa.validate()).to.be.an 'object'
 
   it 'should return an array of error messages on each key for which there is a validation error', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true}
 
     lisa = new Person()
@@ -121,7 +121,7 @@ describe 'Validation', ->
     expect(errors.name).to.be.an 'array'
 
   it 'should not give an error key for fields that passed validation, even when some validation errors occurred', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true}
       age : {type : Number, required : true}
 
@@ -136,7 +136,7 @@ describe 'Validation', ->
   it 'should not run a field through other validation rules if it failed the `required` validation', ->
     validator = sinon.spy -> return true
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true, validate : validator}
 
     lisa = new Person()
@@ -146,7 +146,7 @@ describe 'Validation', ->
     expect(validator).to.not.have.been.called
 
   it 'should return all error messages produced from validators that failed, in the order provided', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true, validate : [
         -> 'One'
         -> 'Two'
@@ -161,7 +161,7 @@ describe 'Validation', ->
     expect(errors.name).to.eql ['One', 'Two', 'Three']
 
   it 'should catch errors thrown by a validator and treat them as returned error messages', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true, validate : [
         -> 'One'
         -> throw new Error('Two')
@@ -176,7 +176,7 @@ describe 'Validation', ->
     expect(errors.name).to.eql ['One', 'Two', 'Three']
 
   it 'should return a generic failure message if the validation rule returns a falsey value', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type : String, required : true, validate : [
         -> false
         -> null
@@ -193,7 +193,7 @@ describe 'Validation', ->
   it 'should not invoke validation on nested schemas if they are undefined', ->
     validator = sinon.spy -> 'Validation error'
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       car :
         make : {type : String, required : true}
@@ -210,7 +210,7 @@ describe 'Validation', ->
   it 'should invoke validation on nested schemas if they are defined', ->
     validator = sinon.spy -> 'Validation error'
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       car :
         make : {type : String, required : true}
@@ -228,7 +228,7 @@ describe 'Validation', ->
     expect(validator).to.have.been.calledWith 'civic'
 
   it 'should use nested path keys on error messaging', ->
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       car :
         make : {type : String, required : true}
@@ -244,7 +244,7 @@ describe 'Validation', ->
     expect(errors['car.model']).to.exist
 
   it 'should not fall into an infinite loop on validation of circular references', ->
-    Person = Skema.create 'Person',
+    Person = Scheming.create 'Person',
       name : {type: String, required: true, validate :  -> true}
       car :
         make : {type : String, required : true}
@@ -268,7 +268,7 @@ describe 'Validation', ->
   it 'should invoke validation on arrays of nested schemas', ->
     validator = sinon.spy -> true
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       cars : [
         make : {type : String, required : true}
@@ -292,7 +292,7 @@ describe 'Validation', ->
   it 'should use nested path keys and indexes on array error messaging', ->
     validator = -> 'Error'
 
-    Person = Skema.create
+    Person = Scheming.create
       name : {type: String, required: true, validate :  -> true}
       cars : [
         make : {type : String, required : true}

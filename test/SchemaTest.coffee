@@ -1,4 +1,4 @@
-Skema = require '../lib/skema'
+Scheming = require './Scheming'
 sinon = require 'sinon'
 chai = require 'chai'
 sinonChai = require 'sinon-chai'
@@ -8,18 +8,18 @@ chai.use sinonChai
 
 {expect} = chai
 
-describe 'Skema', ->
+describe 'Scheming', ->
   afterEach ->
-    Skema.reset()
+    Scheming.reset()
 
   describe 'create', ->
     it 'should return a constructor function', ->
-      Schema = Skema.create()
+      Schema = Scheming.create()
 
       expect(Schema).to.be.a.function
 
     it 'should invoke normalizeProperty on each key / value pair in the schema config', ->
-      normalizeProperty = sinon.spy Skema, 'normalizeProperty'
+      normalizeProperty = sinon.spy Scheming, 'normalizeProperty'
 
       schema =
         name     : 'string'
@@ -28,7 +28,7 @@ describe 'Skema', ->
           required : true
         birthday : Date
 
-      Skema.create schema
+      Scheming.create schema
 
       for k, v of schema
         expect(normalizeProperty).to.have.been.calledWith v, k
@@ -37,20 +37,20 @@ describe 'Skema', ->
 
   describe 'Schema', ->
     describe 'defineProperty', ->
-      it 'should invoke Skema.normalizeProperty', ->
-        sinon.spy Skema, 'normalizeProperty'
+      it 'should invoke Scheming.normalizeProperty', ->
+        sinon.spy Scheming, 'normalizeProperty'
 
-        Schema = Skema.create()
+        Schema = Scheming.create()
         config = { type : 'string', getter : -> true }
         Schema.defineProperty 'name', config
 
-        expect(Skema.normalizeProperty).to.have.been.called
-        expect(Skema.normalizeProperty).to.have.been.calledWith config, 'name'
+        expect(Scheming.normalizeProperty).to.have.been.called
+        expect(Scheming.normalizeProperty).to.have.been.calledWith config, 'name'
 
-        Skema.normalizeProperty.restore()
+        Scheming.normalizeProperty.restore()
 
       it 'should extend the Schema with the new property', ->
-        Schema = Skema.create()
+        Schema = Scheming.create()
         Schema.defineProperty 'age',
           type : 'integer'
           setter : (val) -> return val+1
@@ -62,7 +62,7 @@ describe 'Skema', ->
 
     describe 'defineProperties', ->
       it 'should invoke defineProperty for each key value pair', ->
-        Schema = Skema.create()
+        Schema = Scheming.create()
         sinon.stub Schema, 'defineProperty'
 
         config = { type : 'string', getter : -> true }
@@ -81,16 +81,16 @@ describe 'Skema', ->
 
           beforeEach ->
             setter = sinon.stub().returns 5
-            sinon.stub Skema.TYPES.Integer, 'identifier'
-            sinon.stub Skema.TYPES.Integer, 'parser'
-            Skema.TYPES.Integer.parser.returns 5
+            sinon.stub Scheming.TYPES.Integer, 'identifier'
+            sinon.stub Scheming.TYPES.Integer, 'parser'
+            Scheming.TYPES.Integer.parser.returns 5
 
           afterEach ->
-            Skema.TYPES.Integer.identifier.restore()
-            Skema.TYPES.Integer.parser.restore()
+            Scheming.TYPES.Integer.identifier.restore()
+            Scheming.TYPES.Integer.parser.restore()
 
           it 'should invoke setter if provided', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : setter
@@ -102,35 +102,35 @@ describe 'Skema', ->
             expect(setter).to.have.been.calledWith 5
 
           it 'should not invoke type parser if identifier returns true', ->
-            Skema.TYPES.Integer.identifier.returns true
+            Scheming.TYPES.Integer.identifier.returns true
 
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
 
             a = new Schema()
             a.age = 5
 
-            expect(Skema.TYPES.Integer.parser).to.not.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.not.have.been.called
 
           it 'should invoke type parser if identifier returns false', ->
-            Skema.TYPES.Integer.identifier.returns false
+            Scheming.TYPES.Integer.identifier.returns false
 
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
 
             a = new Schema()
             a.age = 5.5
 
-            expect(Skema.TYPES.Integer.parser).to.have.been.called
-            expect(Skema.TYPES.Integer.parser).to.have.been.calledWith 5.5
+            expect(Scheming.TYPES.Integer.parser).to.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
 
           it 'should pass results from parser into setter', ->
-            Skema.TYPES.Integer.identifier.returns false
-            Skema.TYPES.Integer.parser.returns 5
+            Scheming.TYPES.Integer.identifier.returns false
+            Scheming.TYPES.Integer.parser.returns 5
 
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : setter
@@ -138,26 +138,26 @@ describe 'Skema', ->
             a = new Schema()
             a.age = 5.5
 
-            expect(Skema.TYPES.Integer.parser).to.have.been.called
-            expect(Skema.TYPES.Integer.parser).to.have.been.calledWith 5.5
-            expect(Skema.TYPES.Integer.parser).to.have.returned 5
+            expect(Scheming.TYPES.Integer.parser).to.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
+            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
 
             expect(setter).to.have.been.called
             expect(setter).to.have.been.calledWith 5
 
           it 'should treat assignment at time of construction the same as assignment', ->
-            Skema.TYPES.Integer.identifier.returns false
+            Scheming.TYPES.Integer.identifier.returns false
 
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : setter
 
             a = new Schema({age : 5.5})
 
-            expect(Skema.TYPES.Integer.parser).to.have.been.called
-            expect(Skema.TYPES.Integer.parser).to.have.been.calledWith 5.5
-            expect(Skema.TYPES.Integer.parser).to.have.returned 5
+            expect(Scheming.TYPES.Integer.parser).to.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
+            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
 
             expect(setter).to.have.been.called
             expect(setter).to.have.been.calledWith 5
@@ -166,7 +166,7 @@ describe 'Skema', ->
           Person = null
 
           beforeEach ->
-            Person = Skema.create()
+            Person = Scheming.create()
             Person = sinon.spy Person
 
             Person.defineProperties
@@ -216,7 +216,7 @@ describe 'Skema', ->
             expect(Person).not.to.have.been.called
 
           it 'does invoke constructor if assigned object is instance of a different Schema', ->
-            Car = Skema.create
+            Car = Scheming.create
               make : String
               model : String
 
@@ -238,7 +238,7 @@ describe 'Skema', ->
       describe 'retrieval', ->
         describe 'of primitive types', ->
           it 'should return the assigned value', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
 
@@ -247,7 +247,7 @@ describe 'Skema', ->
             expect(a.age).to.equal 5
 
           it 'should return the assigned value, accounting for parser', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
 
@@ -256,7 +256,7 @@ describe 'Skema', ->
             expect(a.age).to.equal 5
 
           it 'should return the assigned value, accounting for setter', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : (val) -> val * 2
@@ -266,7 +266,7 @@ describe 'Skema', ->
             expect(a.age).to.equal 10
 
           it 'should return the assigned value, accounting for parser, then setter', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : (val) -> val * 2
@@ -276,7 +276,7 @@ describe 'Skema', ->
             expect(a.age).to.equal 10
 
           it 'should return the assigned value, accounting for the getter', ->
-            Schema = Skema.create
+            Schema = Scheming.create
               age :
                 type : 'integer'
                 setter : (val) -> val * 2
@@ -288,8 +288,8 @@ describe 'Skema', ->
 
         describe 'of Arrays', ->
           it 'should parse child elements of arrays', ->
-            Schema = Skema.create
-              ages : [Skema.TYPES.Integer]
+            Schema = Scheming.create
+              ages : [Scheming.TYPES.Integer]
 
             a = new Schema()
 
@@ -298,8 +298,8 @@ describe 'Skema', ->
             expect(a.ages).to.eql [1, 3, 2, NaN]
 
           it 'should not be thrown off by mutations', ->
-            Schema = Skema.create
-              ages : [Skema.TYPES.Integer]
+            Schema = Scheming.create
+              ages : [Scheming.TYPES.Integer]
 
             a = new Schema()
 
@@ -312,11 +312,11 @@ describe 'Skema', ->
     describe 'circular definitions', ->
 
       it 'should allow two Schemas to reference one another', ->
-        Person = Skema.create 'Person',
+        Person = Scheming.create 'Person',
           name : String
           cars : ['Schema:Car']
 
-        Car = Skema.create 'Car',
+        Car = Scheming.create 'Car',
           model : String
           owner : 'Schema:Person'
 

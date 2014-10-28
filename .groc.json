@@ -1,0 +1,4 @@
+{
+  "glob" : "src/**/*.coffee",
+  "out": "doc"
+}
