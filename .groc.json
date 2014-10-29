@@ -1,4 +1,4 @@
 {
-  "glob" : "src/**/*.coffee",
+  "glob" : ["src/**/*.coffee", "README.md"],
   "out": "doc"
 }

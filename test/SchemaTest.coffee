@@ -322,3 +322,67 @@ describe 'Scheming', ->
 
         expect(bob).to.be.instanceOf Person
         expect(bob.cars[0]).to.be.instanceOf Car
+
+    describe 'opts', ->
+      describe 'seal', ->
+        it 'should allow the model to accept arbitrary keys if it is false', ->
+          Person = Scheming.create
+            name : String
+            age : Number
+
+          lisa = new Person
+            name : 'lisa'
+            age : 8
+            random : 'asdf'
+
+          lisa.stuff = 'ahh!'
+
+          expect(lisa.random).to.eql 'asdf'
+          expect(lisa.stuff).to.eql 'ahh!'
+
+        it 'should reject arbitrary keys if it is true', ->
+          Person = Scheming.create
+            name : String
+            age : Number
+          , seal : true
+
+          lisa = new Person
+            name : 'lisa'
+            age : 8
+            random : 'asdf'
+
+          lisa.stuff = 'ahh!'
+
+          expect(lisa.random).to.not.exist
+          expect(lisa.stuff).to.not.exist
+
+      describe 'strict', ->
+        it 'should throw an error rather than parsing values if identifier fails', ->
+          Person = Scheming.create
+            name : String
+            age : Number
+          , strict : true
+
+          lisa = new Person()
+
+          expect( ->
+            new Person
+              name : 9
+          ).to.throw 'Error assigning'
+
+          expect( ->
+            lisa.age = '8'
+          ).to.throw 'Error assigning'
+
+        it 'should not throw an error if identifier passes', ->
+          Person = Scheming.create
+            name : String
+            age : Number
+          , strict : true
+
+          lisa = new Person name : 'lisa'
+
+          lisa.age = 8
+
+          expect(lisa.name).to.equal 'lisa'
+          expect(lisa.age).to.equal 8

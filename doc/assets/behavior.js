@@ -6,80 +6,59 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
 
   tableOfContents = [
     {
-      "type": "folder",
+      "type": "file",
       "data": {
-        "path": "src",
-        "title": "src"
+        "language": {
+          "nameMatchers": [".md", ".markdown", ".mkd", ".mkdn", ".mdown"],
+          "commentsOnly": true,
+          "name": "Markdown"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/README.md",
+        "projectPath": "README.md",
+        "targetPath": "index",
+        "pageTitle": "index",
+        "firstHeader": {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "Scheming!",
+            "slug": "scheming",
+            "isFileHeader": true
+          },
+          "depth": 1
+        },
+        "title": "Scheming!"
       },
       "depth": 1,
-      "children": [
-        {
-          "type": "file",
+      "outline": []
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Scheming.coffee",
+        "projectPath": "src/Scheming.coffee",
+        "targetPath": "Scheming",
+        "pageTitle": "Scheming",
+        "firstHeader": {
+          "type": "heading",
           "data": {
-            "language": {
-              "nameMatchers": [".coffee", "Cakefile"],
-              "pygmentsLexer": "coffee-script",
-              "highlightJS": "coffeescript",
-              "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
-              "strictMultiLineEnd": false,
-              "singleLineComment": ["#"],
-              "ignorePrefix": "}",
-              "foldPrefix": "^",
-              "name": "CoffeeScript"
-            },
-            "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Scheming.coffee",
-            "projectPath": "src/Scheming.coffee",
-            "targetPath": "src/Scheming",
-            "pageTitle": "src/Scheming",
-            "firstHeader": {
-              "type": "heading",
-              "data": {
-                "level": 1,
-                "title": "Scheming",
-                "slug": "scheming",
-                "isFileHeader": true
-              },
-              "depth": 1,
-              "children": [
-                {
-                  "type": "heading",
-                  "data": {
-                    "level": 2,
-                    "title": "TYPES",
-                    "slug": "types"
-                  },
-                  "depth": 2
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 2,
-                    "title": "resolveType",
-                    "slug": "resolvetype"
-                  },
-                  "depth": 2
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 2,
-                    "title": "normalizeProperty",
-                    "slug": "normalizeproperty"
-                  },
-                  "depth": 2
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 2,
-                    "title": "create",
-                    "slug": "create"
-                  },
-                  "depth": 2
-                }
-              ]
-            },
-            "title": "Scheming"
+            "level": 1,
+            "title": "Scheming",
+            "slug": "scheming",
+            "isFileHeader": true
           },
-          "depth": 2,
-          "outline": [
+          "depth": 1,
+          "children": [
             {
               "type": "heading",
               "data": {
@@ -114,6 +93,43 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "depth": 2
             }
           ]
+        },
+        "title": "Scheming"
+      },
+      "depth": 1,
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 2,
+            "title": "TYPES",
+            "slug": "types"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
+            "title": "resolveType",
+            "slug": "resolvetype"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
+            "title": "normalizeProperty",
+            "slug": "normalizeproperty"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
+            "title": "create",
+            "slug": "create"
+          },
+          "depth": 2
         }
       ]
     }

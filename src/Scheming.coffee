@@ -16,6 +16,10 @@ uuid = ->
     now = Math.floor now / 16
     ((if c is "x" then r else (r & 0x7 | 0x8))).toString 16
 
+DEFAULT_OPTIONS =
+  seal : false
+  strict : false
+
 RESERVED_PROPERTIES =
   validate : 'validate'
 
@@ -99,7 +103,7 @@ getPrimitiveTypeOf = (type) ->
 
   return null
 
-Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES}
+Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES, DEFAULT_OPTIONS}
 
 ###
   ## resolveType
@@ -314,7 +318,7 @@ Scheming.create = (args...) ->
 
   [name, schemaConfig, opts] = args
 
-  opts ?= {}
+  opts = _.defaults (opts || {}), DEFAULT_OPTIONS
   {seal, strict} = opts
 
   normalizedSchema = {}
@@ -365,11 +369,11 @@ Scheming.create = (args...) ->
           if typeDefinition.default is not undefined
             @[fieldName] = typeDefinition.default
 
-      for key, value of model
-        @[key] = value
-
       if seal
         Object.seal @
+
+      for key, value of model
+        @[key] = value
 
       @validate = () ->
         errors = {}
