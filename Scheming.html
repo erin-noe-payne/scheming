@@ -1,15 +1,18 @@
-<!DOCTYPE html><html lang="en"><head><title>src/Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="src/Scheming"><meta name="groc-project-path" content="src/Scheming.coffee"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/src/Scheming.coffee">src/Scheming.coffee</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming</h1></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Support node.js or browser environments</p></div></div><div class="code"><div class="wrapper">root = @
+<!DOCTYPE html><html lang="en"><head><title>Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="Scheming"><meta name="groc-project-path" content="src/Scheming.coffee"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/src/Scheming.coffee">src/Scheming.coffee</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming</h1></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Support node.js or browser environments</p></div></div><div class="code"><div class="wrapper">root = @
 
 isNode = <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">exports</span> != <span class="hljs-string">'undefined'</span> &amp;&amp; <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">module</span> != <span class="hljs-string">'undefined'</span> &amp;&amp; <span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span>
 
 <span class="hljs-keyword">if</span> isNode
-  _ = <span class="hljs-built_in">require</span> <span class="hljs-string">'lodash'</span>
-  root = <span class="hljs-built_in">exports</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Uuid generator for anonymous Schema ids</p></div></div><div class="code"><div class="wrapper"><span class="hljs-function"><span class="hljs-title">uuid</span> = -&gt;</span>
+  _ = <span class="hljs-built_in">require</span> <span class="hljs-string">'lodash'</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Uuid generator for anonymous Schema ids</p></div></div><div class="code"><div class="wrapper"><span class="hljs-function"><span class="hljs-title">uuid</span> = -&gt;</span>
   now = Date.now()
   <span class="hljs-string">'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'</span>.replace <span class="hljs-regexp">/[xy]/g</span>, <span class="hljs-function"><span class="hljs-params">(c)</span> -&gt;</span>
     r = (now + Math.random() * <span class="hljs-number">16</span>) % <span class="hljs-number">16</span> | <span class="hljs-number">0</span>
     now = Math.floor now / <span class="hljs-number">16</span>
     ((<span class="hljs-keyword">if</span> c <span class="hljs-keyword">is</span> <span class="hljs-string">"x"</span> <span class="hljs-keyword">then</span> r <span class="hljs-keyword">else</span> (r &amp; <span class="hljs-number">0x7</span> | <span class="hljs-number">0x8</span>))).toString <span class="hljs-number">16</span>
+
+DEFAULT_OPTIONS =
+  seal : <span class="hljs-literal">false</span>
+  strict : <span class="hljs-literal">false</span>
 
 RESERVED_PROPERTIES =
   validate : <span class="hljs-string">'validate'</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h2 id="types">TYPES</h2>
@@ -83,7 +86,7 @@ RESERVED_PROPERTIES =
 
   <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
 
-Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h2 id="resolvetype">resolveType</h2>
+Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES, DEFAULT_OPTIONS}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h2 id="resolvetype">resolveType</h2>
 <p>  Resolves a type declaration to a type. This function is used internally when normalizing a schema,
   and goes through the following steps:</p></div></div><div class="code"><div class="wrapper">Scheming.<span class="hljs-function"><span class="hljs-title">resolveType</span> = <span class="hljs-params">(typeDef)</span> -&gt;</span>
   <span class="hljs-comment">#- Attempt to resolve the type declaration to a primitive type</span>
@@ -277,7 +280,7 @@ error if an assigned value does not match the property type.</li>
 
   [name, schemaConfig, opts] = args
 
-  opts ?= {}
+  opts = _.defaults (opts || {}), DEFAULT_OPTIONS
   {seal, strict} = opts
 
   normalizedSchema = {}
@@ -328,11 +331,11 @@ error if an assigned value does not match the property type.</li>
           <span class="hljs-keyword">if</span> typeDefinition.<span class="hljs-reserved">default</span> <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">undefined</span>
             @[fieldName] = typeDefinition.<span class="hljs-reserved">default</span>
 
-      <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">of</span> model
-        @[key] = value
-
       <span class="hljs-keyword">if</span> seal
         Object.seal @
+
+      <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">of</span> model
+        @[key] = value
 
       <span class="hljs-property">@validate</span> = <span class="hljs-function"><span class="hljs-params">()</span> -&gt;</span>
         errors = {}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>prevents infinite loops in circular references</p></div></div><div class="code"><div class="wrapper">        <span class="hljs-keyword">if</span> <span class="hljs-property">@_validating</span> <span class="hljs-keyword">then</span> <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
@@ -386,4 +389,7 @@ error if an assigned value does not match the property type.</li>
 
   <span class="hljs-keyword">return</span> Schema
 
-<span class="hljs-built_in">exports</span>.Scheming = Scheming</div></div></div></div></body></html>
+<span class="hljs-keyword">if</span> isNode
+  <span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span> = Scheming
+<span class="hljs-keyword">else</span>
+  root.Scheming = Scheming</div></div></div></div></body></html>
