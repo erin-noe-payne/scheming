@@ -365,12 +365,6 @@ Scheming.create = (args...) ->
           if typeDefinition.default is not undefined
             @[fieldName] = typeDefinition.default?() || typeDefinition.default
 
-      if seal
-        Object.seal @
-
-      for key, value of model
-        @[key] = value
-
       @validate = () ->
         errors = {}
         # prevents infinite loops in circular references
@@ -421,6 +415,12 @@ Scheming.create = (args...) ->
           return null
         else
           return errors
+
+      if seal
+        Object.seal @
+
+      for key, value of model
+        @[key] = value
 
   Schema.defineProperties schemaConfig
 

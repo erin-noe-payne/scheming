@@ -48,7 +48,9 @@ console.log jane.validate
 
 # API Docs
 
-## Scheming.TYPES
+## Scheming
+
+### Scheming.TYPES
 
 Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see [the TYPE definitions in source](http://autoric.github.io/scheming/Scheming.html#types)
 
@@ -68,7 +70,7 @@ Scheming.create name : String
 
 ```
 
-### Custom types
+#### Custom types
 
 You can extend the Scheming TYPES object to add support for custom types. For example:
 ```
@@ -84,7 +86,7 @@ Scheming.TYPES.Symbol =
 Scheming.create name : Symbol
 ```
 
-### Custom parsing and identifiers
+#### Custom parsing and identifiers
 
 In addition to declaring new types, you can modify the currently existing types. For example, say you don't like dealing with javascript Date objects, and would rather use with moment.js.
 ```
@@ -101,13 +103,43 @@ bill.birthday.format "YYYY MM DD"
 
 ```
 
-## Scheming.DEFAULT_OPTIONS
+### Scheming.DEFAULT_OPTIONS
 
-The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options.
+The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options. See the options on [Scheming.create](#schemingcreate) for details.
 
-## Scheming.create
+### Scheming.get(name)
+
+Retrieves a schema that has been built using [Scheming.create](#schemingcreate).
+
+### Scheming.create
 `Scheming.create([name], schema, [opts])`
 
-Creates a new [Schema](#Schema) constructor.
+Creates a new [Schema](#schema) constructor.
 
-## Schema
+- name **string** *optional* If provided, registers the scheme with the given name. This must be defined if you wish to retrieve the schema later using the [Scheming.get] (schemingget) method. It is also necessary for lazy initialization of nested Schema types.
+- schema **object** A configuration which defines your new schema. Each key represents a supported field, each value a property configuration. See [Schema.defineProperty]() for full specification.
+- opts **object** *optional* Allows for some additional configuration of your Schema. All options default to false, but the default values can be modified via [Scheming.defaultOptions](#schemingdefaultoptions).
+  - opts.seal **boolean** If true, instances of the schema object are sealed. That is, you will not be able to attach arbitrary values to the objects not explicitly defined in the schema.
+  ```
+  Person = Scheming.create {name : String}, {seal : true}
+
+  bill = new Person {name : 'bill', age : 19}
+  bill.home = 'Colorado'
+  bill.name # 'bill'
+  bill.age  # undefined
+  bill.home # undefined
+  ```
+  - opts.strict **boolean** If true, when values are assigned to an instance of the schema object, they will not be type coerced. Instead, assignment will throw an error if the assigned value does not match the expected type. This allows for strict typing checking at runtime.
+  ```
+  Person = Scheming.create {age : Number}, {strict : true}
+
+  bill = new Person()
+  bill.age = 9   # success
+  bill.age = '9' # Error : Error assigning '9' to age. Value is not of type number.
+
+  ```
+
+# Schema
+
+A constructor function returned by [Scheming.create](schemingcreate). Constructs objects based on the property definitions outlined in the schema.
+
