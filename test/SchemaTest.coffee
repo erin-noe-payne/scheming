@@ -301,6 +301,50 @@ describe 'Scheming', ->
             a.ages.splice 1, 0, 3.0
             expect(a.ages).to.eql [1, 3, 2, NaN]
 
+    describe 'complex array definitions', ->
+      it 'should support arrays with defaults, setters, getters', ->
+        Contrived = Scheming.create
+          arr :
+            type : [String]
+            default : [2, 3]
+            setter : (val) ->
+              return val.concat [4]
+            getter : (val) ->
+              return ([1]).concat val
+
+        instance = new Contrived()
+
+        expect(instance.arr).to.eql ['1', '2', '3', '4']
+
+        expect(instance.validate()).to.be.null
+
+      it 'should support validators', ->
+        Contrived = Scheming.create
+          arr :
+            type : [String]
+            default : [2, 3]
+            setter : (val) ->
+              return val.concat [4]
+            getter : (val) ->
+              return ([1]).concat val
+            required : true
+            validate : (val) ->
+              return if val.length >= 5 then true else 'Not long enough'
+
+        instance = new Contrived arr : undefined
+
+        errors = instance.validate()
+        expect(errors.arr).to.exist
+        expect(errors.arr).to.have.length 1
+        expect(errors.arr[0]).to.match /is required/
+
+        instance = new Contrived()
+
+        errors = instance.validate()
+        expect(errors.arr).to.exist
+        expect(errors.arr).to.have.length 1
+        expect(errors.arr[0]).to.match /Not long enough/
+
     describe 'circular definitions', ->
 
       it 'should allow two Schemas to reference one another', ->

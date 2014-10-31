@@ -267,7 +267,7 @@ describe 'Validation', ->
         model : {type : String, required : true, validate : validator}
       ]
 
-    lisa = new Person name : lisa
+    lisa = new Person name : 'lisa'
     lisa.cars = [
       {make : 'honda', model : 'civic'}
       {make : 'toyota', model : 'corolla'}

@@ -349,12 +349,14 @@ Scheming.create = (args...) ->
               val = data[fieldName]
               if val is undefined
                 return val
-              if type.string == NESTED_TYPES.Array.string
-                val = type.childParser val
               if getter
                 val = getter val
+              if type.string == NESTED_TYPES.Array.string
+                val = type.childParser val
               return val
             set          : (val) ->
+              if val is undefined
+                return data[fieldName] = val
               if !type.identifier(val)
                 if strict then throw new Error "Error assigning #{val} to #{fieldName}. Value is not of type #{type.string}"
                 val = type.parser val
@@ -362,7 +364,7 @@ Scheming.create = (args...) ->
                 val = setter val
               data[fieldName] = val
 
-          if typeDefinition.default is not undefined
+          if typeDefinition.default != undefined
             @[fieldName] = typeDefinition.default?() || typeDefinition.default
 
       @validate = () ->
