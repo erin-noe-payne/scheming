@@ -44,8 +44,8 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "Scheming.TYPES",
-                "slug": "schemingtypes"
+                "title": "Scheming",
+                "slug": "scheming"
               },
               "depth": 2,
               "children": [
@@ -53,16 +53,86 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "Custom types",
-                    "slug": "custom-types"
+                    "title": "Scheming.TYPES",
+                    "slug": "schemingtypes"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Custom types",
+                        "slug": "custom-types"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Custom parsing and identifiers",
+                        "slug": "custom-parsing-and-identifiers"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.NESTED_TYPES",
+                    "slug": "schemingnested-types"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Arrays",
+                        "slug": "arrays"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Explicit Schemas",
+                        "slug": "explicit-schemas"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Implicit Schemas",
+                        "slug": "implicit-schemas"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.DEFAULT_OPTIONS",
+                    "slug": "schemingdefault-options"
                   },
                   "depth": 3
                 }, {
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "Custom parsing and identifiers",
-                    "slug": "custom-parsing-and-identifiers"
+                    "title": "Scheming.get(name)",
+                    "slug": "scheminggetname"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.create([name], schema, [opts])",
+                    "slug": "schemingcreatename-schema-opts"
                   },
                   "depth": 3
                 }
@@ -71,26 +141,110 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "Scheming.DEFAULT_OPTIONS",
-                "slug": "schemingdefault-options"
-              },
-              "depth": 2
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Scheming.create",
-                "slug": "schemingcreate"
-              },
-              "depth": 2
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
                 "title": "Schema",
                 "slug": "schema"
               },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.defineProperty(property, configuration)",
+                    "slug": "schemadefinepropertyproperty-configuration"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Simple type configuration",
+                        "slug": "simple-type-configuration"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Complex configuration",
+                    "slug": "complex-configuration"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.defineProperties(properties)",
+                    "slug": "schemadefinepropertiesproperties"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.extend()",
+                    "slug": "schemaextend"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Instance",
+                "slug": "instance"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Instance.validate()",
+                    "slug": "instancevalidate"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Validation success",
+                        "slug": "validation-success"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Validation failure messages",
+                        "slug": "validation-failure-messages"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Required and Validators",
+                        "slug": "required-and-validators"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Instance.watch()",
+                    "slug": "instancewatch"
+                  },
+                  "depth": 3
+                }
+              ]
             }
           ]
         }

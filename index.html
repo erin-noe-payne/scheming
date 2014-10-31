@@ -4,32 +4,32 @@
 <pre><code>Scheming = require(&#39;Scheming&#39;)
 
 User = Scheming.create &#39;User&#39;,
-    name :
-        type : String
-        required : true
-    email :
-        type : String,
-        required : true
-        validate : (val) -&gt;
-            if val.match(&#39;@&#39;)
-                return true
-            else
-                return &#39;An email address must have an @ symbol!&#39;
-    birthday : Date
-    password :
-        type : String
-        setter : (val) -&gt;
-            return md5(val)
+  name :
+    type : String
+    required : true
+  email :
+    type : String,
+    required : true
+    validate : (val) -&gt;
+      if val.match(&#39;@&#39;)
+        return true
+      else
+        return &#39;An email address must have an @ symbol!&#39;
+  birthday : Date
+  password :
+    type : String
+    setter : (val) -&gt;
+      return md5(val)
 
 Group = Scheming.create &#39;Group&#39;,
-    name : String
-    dateCreated : {type : Date, default : -&gt; Date.now()}
-    users : [User]
+  name : String
+  dateCreated : {type : Date, default : -&gt; Date.now()}
+  users : [User]
 
 jane = new User
-    email : &#39;jane.gmail.com&#39;
-    birthday : &#39;9/14/86&#39;
-    password : &#39;p@$$w0rd!&#39;
+  email : &#39;jane.gmail.com&#39;
+  birthday : &#39;9/14/86&#39;
+  password : &#39;p@$$w0rd!&#39;
 
 console.log jane.validate()
 # {name : &#39;Field is required.&#39;, email: &#39;An email address must have an @ symbol!&#39;}
@@ -40,9 +40,10 @@ jane.email = &#39;jane@gmail.com&#39;
 console.log jane.validate
 # null</code></pre>
 <h1 id="api-docs">API Docs</h1>
-<h2 id="schemingtypes">Scheming.TYPES</h2>
-<p>Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see <a href="http://autoric.github.io/scheming/Scheming.html#types">the TYPE definitions in source</a></p>
-<p>Scheming ships with the following types.</p>
+<h2 id="scheming">Scheming</h2>
+<h3 id="schemingtypes">Scheming.TYPES</h3>
+<p>Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see <a href="http://autoric.github.io/scheming/Scheming.html#types">the TYPE definitions in source</a>. Note the Mixed type, which is effectively untyped, and will allow for any value to be assigned.</p>
+<p>Below are the default types and the ways that you can reference them when defining a schema:</p>
 <ul>
 <li>String <code>Scheming.TYPES.String</code> <code>&#39;string&#39;</code> <code>String</code></li>
 <li>Number <code>Scheming.TYPES.Number</code> <code>&#39;number&#39;</code> <code>Number</code></li>
@@ -52,22 +53,22 @@ console.log jane.validate
 <li>Mixed <code>Scheming.TYPES.Mixed</code> <code>&#39;*&#39;</code></li>
 </ul>
 <p>For example, the following are equivalent:</p>
-<pre><code>Scheming.create name : Scheming.TYPES.String
-Scheming.create name : &#39;string&#39;
-Scheming.create name : String</code></pre>
-<h3 id="custom-types">Custom types</h3>
+<pre><code>Scheming.create {name : Scheming.TYPES.String}
+Scheming.create {name : &#39;string&#39;}
+Scheming.create {name : String}</code></pre>
+<h4 id="custom-types">Custom types</h4>
 <p>You can extend the Scheming TYPES object to add support for custom types. For example:</p>
 <pre><code>Scheming.TYPES.Symbol =
-    constructor : Symbol
-    string : &#39;symbol&#39;
-    identifier : (val) -&gt;
-        typeof val == &quot;symbol&quot;
-    parser : (val) -&gt;
-        Symbol(val)
+  constructor : Symbol
+  string : &#39;symbol&#39;
+  identifier : (val) -&gt;
+    typeof val == &quot;symbol&quot;
+  parser : (val) -&gt;
+    Symbol(val)
 
 # I can now declare Schemas with my new type
-Scheming.create name : Symbol</code></pre>
-<h3 id="custom-parsing-and-identifiers">Custom parsing and identifiers</h3>
+Scheming.create {name : Symbol}</code></pre>
+<h4 id="custom-parsing-and-identifiers">Custom parsing and identifiers</h4>
 <p>In addition to declaring new types, you can modify the currently existing types. For example, say you don&#39;t like dealing with javascript Date objects, and would rather use with moment.js.</p>
 <pre><code>Scheming.TYPES.Date.identifier = moment.isMoment
 Scheming.TYPES.Date.parser = moment
@@ -79,9 +80,242 @@ bill = new Person {birthday : &#39;9/14/86&#39;}
 bill.birthday.format &quot;YYYY MM DD&quot;
 # &quot;1986 09 14&quot;
 # Bill&#39;s birthday is a momentjs object, and has the format method!</code></pre>
-<h2 id="schemingdefault-options">Scheming.DEFAULT_OPTIONS</h2>
-<p>The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options.</p>
-<h2 id="schemingcreate">Scheming.create</h2>
-<p><code>Scheming.create([name], schema, [opts])</code></p>
-<p>Creates a new <a href="#Schema">Schema</a> constructor.</p>
-<h2 id="schema">Schema</h2></div></div></div></div></body></html>
+<h3 id="schemingnested-types">Scheming.NESTED_TYPES</h3>
+<p>In addition to the &#39;primitive&#39; types defined in Scheming.TYPES, Schemas also support arrays values and nested schemas. Anywhere you can provide a type declaration, you can use the following nested types. This section assumes some knowledge of property configuration syntax. Take a look at the <a href="#schemadefineproperty">Schema.defineProperty</a> docs.</p>
+<h4 id="arrays">Arrays</h4>
+<p>For any schema you can declare a property whose type is an array of values.</p>
+<p>Simple arrays:</p>
+<pre><code>BlogPost = Scheming.create
+  comments : [String] # an array of strings
+  miscellaneous : [&#39;*&#39;] # an untyped array
+
+post = new BlogPost()
+post.comments = [&#39;Hello&#39;, &#39;World&#39;]
+post.miscellaneous = [&#39;Stuff&#39;, 2, null, {}]x</code></pre>
+<p>Arrays with validation, defaults, etc. Here is a blog post which requires 2 or more comments to be valid. Note that the configuration is being applied to the array itself, not to the members of the array.</p>
+<pre><code>BlogPost = Scheming.create
+  comments : 
+    type : [String]
+    default : []
+    required : true
+    validate : (comments) -&gt;
+      return comments.length &gt;= 2</code></pre>
+<h4 id="explicit-schemas">Explicit Schemas</h4>
+<p>Any Schema can have a property whose type is another nested schema. This can be used to create any depth of nesting, or to create circular type definitions. In all cases, a Schema constructor is a valid type definition. When a value is a assigned to a property whose type is Schema, if it is not already an instance of that Schema, it value will be run through the Schema constructor as part of parsing.</p>
+<p>Simple nested schemas:</p>
+<pre><code>Car = Schema.create
+  make : String
+  model : String
+
+Person = Schema.create
+  name : String
+  car : Car
+
+mark = new Person {name : &#39;mark&#39;}
+
+# Explicit construction and assignment
+# At the time of assignment, civic is already an instance of Car
+# so the Car constructor will not be invoked a second time
+civic = new Car {make : &#39;honda&#39;, model : &#39;civic&#39;}
+mark.car = civic 
+
+# Implicit construction
+# At the time of assignment, the value is a plain object. Therefore 
+# the object is passed to the Car  constructor (or in strict mode, 
+# an error is thrown)
+mark.car = {make : &#39;toyota&#39;, model : &#39;corolla&#39;}
+mark.car instanceof Car # true</code></pre>
+<p>This is fine for one-way type references. However, it is easy to conceive of data models with circular type references. What do we do in this case? The simple solution is to create both schemas first, then define their properties afterwards, so that the Schema references are valid.</p>
+<p>Simple circular type references:</p>
+<pre><code>Person = Schema.create()
+Car = Schema.create()
+
+Person.defineProperties
+  name : String
+  car : Car
+
+Car.defineProperties
+  make : String
+  model : String
+  owner : Person</code></pre>
+<p>This model still presents a problem. What if my schemas are declared in different files? What if I don&#39;t want to juggle references, or be careful about the order in which schemas are declared? This is where lazy initialization comes in. When you create a Schema, you have the option to name it. See the docs on <a href="#schemingcreate">Scheming.create</a> and <a href="#schemingget">Scheming.get</a> to understand how to name and retrieve named schemas.</p>
+<p>If you have registered a named schema, you can create a type reference to that schema using the syntax <code>&#39;Schema:Name&#39;</code>. Scheming will accept this as a valid type reference without evaluating immediately or throwing errors. The Schema reference will not be retrieved until the first time the identifier or parser is invoked. So as long as you have declared all of your schemas before you start creating instances, you don&#39;t have to worry about  it. Note that lazy initialization will throw an error if the Schema reference does not exist at the time of initialization.</p>
+<p>Lazy initialization:</p>
+<pre><code># I am registering the Schema with the name &#39;Person&#39;
+Person = Schema.create &#39;Person&#39;, 
+  name : String
+  car : &#39;Schema:Car&#39;
+
+# This would throw an error, because &#39;Schema:Car&#39; does not resolve to a registered Schema
+bill = new Person
+  name : &#39;Bill&#39;
+  car : {make : &#39;honda&#39;, model : &#39;civic&#39;}
+
+# Now I am creating and registering the &#39;Car&#39; Schema
+Car = Schema.create &#39;Car&#39;, 
+  make : String
+  model : String
+  # This reference is using the registered name of the Schema &#39;Person&#39;
+  owner : &#39;Schema:Person&#39;
+
+# Success!
+bill = new Person
+  name : &#39;Bill&#39;
+  car : {make : &#39;honda&#39;, model : &#39;civic&#39;}</code></pre>
+<h4 id="implicit-schemas">Implicit Schemas</h4>
+<p>What we have seen so far is the ability to explicitly create Schemas and reference them as types. While this is extremely powerful, sometimes you just want to declare nested objects on your Schema. When you do this, new anonymous Schemas are implicitly created and assigned as the type.</p>
+<p> In the example below, we create a blog post that has some flat properties, and creates two implicit schemas. The first is the author property, the second is the comments property. Each of these cause an anonymous schema to be created, and any assignment to that value will run the assigned object through the corresponding Schema constructor</p>
+<pre><code>Blog = Scheming.create
+  title : String
+  content : String
+  posted : Date
+  author : 
+    name : String
+    age : Number
+  comments : [{
+    text : String
+    posted : Date
+  }]</code></pre>
+<p>Note one subtlety: the syntax for <a href="#complex-configuration">Complex Configuration</a> and implicit schemas is basically the same. In both cases you are using property names and nested objects. Scheming determines whether to treat a nested object as property configuration or a nested schema based on the presence of the <code>type</code> key. This effectively makes <code>type</code> a reserved word for implicit Schemas.</p>
+<pre><code># Oops! In the example below, author is not a nested schema. 
+# It is a property with a primitive type of string.
+Blog = Scheming.create
+  author : 
+    name : String
+    age : Number
+    type : String</code></pre>
+<h3 id="schemingdefault-options">Scheming.DEFAULT_OPTIONS</h3>
+<p>The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options. See the options on <a href="#schemingcreate">Scheming.create</a> for details.</p>
+<h3 id="scheminggetname">Scheming.get(name)</h3>
+<p>Retrieves a schema that has been built using <a href="#schemingcreate">Scheming.create</a>.</p>
+<ul>
+<li>returns <strong><a href="#schema">Schema</a></strong></li>
+</ul>
+<h3 id="schemingcreatename-schema-opts">Scheming.create([name], schema, [opts])</h3>
+<p>Creates a new <a href="#schema">Schema</a> constructor.</p>
+<ul>
+<li>name <strong>string</strong> <em>optional</em> If provided, registers the scheme with the given name. This must be defined if you wish to retrieve the schema later using the [Scheming.get] (#schemingget) method. It is also necessary for lazy initialization of nested Schema types.</li>
+<li>schema <strong>object</strong> A configuration which defines your new schema. Each key represents a supported field, each value a property configuration. See <a href="#schemingdefineproperty">Schema.defineProperty</a> for full specification.</li>
+<li><p>opts <strong>object</strong> <em>optional</em> Allows for some additional configuration of your Schema. All options default to false, but the default values can be modified via <a href="#schemingdefaultoptions">Scheming.defaultOptions</a>.</p>
+<ul>
+<li>opts.seal <strong>boolean</strong> If true, instances of the schema object are sealed. That is, you will not be able to attach arbitrary values to the objects not explicitly defined in the schema.
+```
+Person = Scheming.create {name : String}, {seal : true}</li>
+</ul>
+<p>bill = new Person {name : &#39;bill&#39;, age : 19}
+bill.home = &#39;Colorado&#39;
+bill.name # &#39;bill&#39;
+bill.age  # undefined
+bill.home # undefined</p>
+<pre><code>- opts.strict **boolean** If true, when values are assigned to an instance of the schema object, they will not be type coerced. Instead, assignment will throw an error if the assigned value does not match the expected type. This allows for strict typing checking at runtime.</code></pre>
+<p>Person = Scheming.create {age : Number}, {strict : true}</p>
+<p>bill = new Person()
+bill.age = 9   # success
+bill.age = &#39;9&#39; # Error : Error assigning &#39;9&#39; to age. Value is not of type number.
+```</p>
+</li>
+<li>returns <strong><a href="#schema">Schema</a></strong></li>
+</ul>
+<h2 id="schema">Schema</h2>
+<p>The constructor function returned by <a href="#schemingcreate">Scheming.create</a>. Constructs objects based on the property definitions outlined in the schema. When you invoke the constructor, you can pass a model with initial values to be applied to the instance.</p>
+<ul>
+<li>returns <strong><a href="#instance">Instance</a></strong></li>
+</ul>
+<pre><code>Person = Scheming.create
+  name : String
+  age : Number
+
+lisa = new Person
+  name : &#39;lisa&#39;
+  age : 8</code></pre>
+<h3 id="schemadefinepropertyproperty-configuration">Schema.defineProperty(property, configuration)</h3>
+<p>Defines properties on your Schema. This is where you specify properties and their expected type, define default values, getters, setters, and validators.</p>
+<ul>
+<li>property <strong>string</strong> The property name.</li>
+<li>configuration <strong>object</strong> or <strong>TYPE</strong> The property configuration. This object determines how the property is configured, and can get a bit complicated.</li>
+</ul>
+<h4 id="simple-type-configuration">Simple type configuration</h4>
+<p>If you do not need any of the other features, you can simply provide a type. You can reference the primitive types in any of the ways outlined in <a href="#schematypes">Schema.TYPES</a></p>
+<pre><code>Schema.create &#39;Person&#39;
+    name : String
+    age : Number
+    birthday : Date</code></pre>
+<h3 id="complex-configuration">Complex configuration</h3>
+<p>For more complex field configuration, pass a configuration object. The configuration object supports the following keys, outlined below:</p>
+<pre><code>Schema.create
+  age :
+    type : Number
+    default : 2
+    getter : (val) -&gt; val * 2
+    setter : (val) -&gt; val * 2
+    validate : (val) -&gt; val % 2 == 0
+    required : true</code></pre>
+<ul>
+<li>type <strong>TYPE</strong> A valid type reference as outlined in <a href="#schematypes">Schema.TYPES</a></li>
+<li>default <strong>value</strong> or <strong>function</strong> Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.</li>
+<li>getter <strong>function</strong> A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval.</li>
+<li>setter <strong>function</strong> A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type.</li>
+<li>validate <strong>function</strong> or <strong>Array of functions</strong> Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not <code>true</code> or a string, validation will fail with a generic error message. See <a href="#instancevalidate">Instance.validate</a> for details on how validation works.</li>
+<li>required <strong>boolean</strong> A special validator that indicates whether the field is required.</li>
+</ul>
+<h3 id="schemadefinepropertiesproperties">Schema.defineProperties(properties)</h3>
+<p>A convenience method for defining Schema properties in bulk.</p>
+<ul>
+<li>properties <strong>object</strong> An object whose key value pairs are passed to <a href="#sschemadefineproperty">Schema.defineProperty</a></li>
+</ul>
+<h3 id="schemaextend">Schema.extend()</h3>
+<p> TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...</p>
+<h2 id="instance">Instance</h2>
+<p>The object instance returned by newing up a <a href="#schema">Schema</a> constructor. </p>
+<h3 id="instancevalidate">Instance.validate()</h3>
+<p>Validates the schema instance and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.</p>
+<ul>
+<li>returns errors <strong>object</strong> An object with any validation errors, where each key is the path that failed validation, and each value is an array of error messages. If validation passes, will return <code>null</code>.</li>
+</ul>
+<h4 id="validation-success">Validation success</h4>
+<p>If validation succeeds (including if no validators are defined), <code>validate()</code> returns null</p>
+<pre><code>Person = Scheming.create {name : String}
+
+bill = new Person {name : &#39;bill}
+
+errors = bill.validate() # null</code></pre>
+<h4 id="validation-failure-messages">Validation failure messages</h4>
+<p>A validator function should return true if it passes. Any other return value will be treated as validation failure. If a validator returns a string, that string will be treated as the failure message. If a validator throws an error at any point, the <code>error.message</code> property will be treated as the failure message. Otherwise, the validation will fail with a generic error message.</p>
+<p>If multiple validators are defined, all will be run against the value. The errors object will return error messages for all validators that failed.</p>
+<pre><code>Person = Scheming.create 
+  name : 
+    type : String
+    validate : [
+      -&gt; return &quot;Error number one&quot;
+      -&gt; throw new Error &quot;Error number two&quot;
+      -&gt; return true
+      -&gt; return false
+    ]
+
+bill = new Person()
+
+errors = bill.validate() 
+# returns null, because bill object does not have a name defined, and name is not required
+
+bill.name = &#39;bill&#39;
+errors = bill.validate()
+# {name : [&quot;Error number one&quot;, &quot;Error number two&quot;, &quot;Validation error occurred.&quot;]}</code></pre>
+<h4 id="required-and-validators">Required and Validators</h4>
+<p>The <code>required</code> configuration is a special validator that checks if the value is defined. If required validation fails, other validators will not be run. This means that validators are guaranteed to receive a value, and do not need to do null checking.</p>
+<pre><code>Person = Scheming.create 
+  name : 
+    type : String
+    required : true
+    validate : [
+      -&gt; return &quot;Error number one&quot;
+      -&gt; throw new Error &quot;Error number two&quot;
+      -&gt; return true
+      -&gt; return false
+    ]
+
+bill = new Person()
+
+errors = bill.validate() 
+# {name : [&quot;Field is required.&quot;]}</code></pre>
+<h3 id="instancewatch">Instance.watch()</h3>
+<p>TODO! The goal is to make instances reactive, so that you can register for changes on an instance or individual properties of an instance.</p></div></div></div></div></body></html>
