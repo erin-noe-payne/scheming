@@ -1,4 +1,5 @@
 {
   "glob" : ["src/**/*.coffee", "README.md"],
+  "index-page-title" : "Scheming",
   "out": "doc"
 }

@@ -33,16 +33,6 @@ describe 'TYPES', ->
         {input : null, output : false}
         {input : undefined, output : false}
       ]
-      Float   : [
-        {input : 'asdf', output : false}
-        {input : '1', output : false}
-        {input : 1, output : true}
-        {input : 1.5, output : true}
-        {input : new Date('9/14/86'), output : false}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
       Date    : [
         {input : 'asdf', output : false}
         {input : '1', output : false}
@@ -109,15 +99,6 @@ describe 'TYPES', ->
         {input : 'asdf', output : NaN}
         {input : 1, output : 1}
         {input : 1.5, output : 1}
-        {input : new Date('9/14/86'), output : NaN}
-        {input : false, output : NaN}
-        {input : null, output : NaN}
-        {input : undefined, output : NaN}
-      ]
-      Float   : [
-        {input : 'asdf', output : NaN}
-        {input : 1, output : 1}
-        {input : 1.5, output : 1.5}
         {input : new Date('9/14/86'), output : NaN}
         {input : false, output : NaN}
         {input : null, output : NaN}

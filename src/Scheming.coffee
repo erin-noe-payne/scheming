@@ -1,4 +1,4 @@
-# # Scheming
+# # Annotated Source
 
 # Support node.js or browser environments
 root = @
@@ -49,10 +49,6 @@ TYPES =
     identifier : (val) ->
       _.isNumber(val) && val % 1 == 0
     parser     : parseInt
-  Float   :
-    string     : 'float'
-    identifier : _.isNumber
-    parser     : parseFloat
   Date    :
     ctor       : Date
     string     : 'date'
@@ -367,7 +363,7 @@ Scheming.create = (args...) ->
               data[fieldName] = val
 
           if typeDefinition.default is not undefined
-            @[fieldName] = typeDefinition.default
+            @[fieldName] = typeDefinition.default?() || typeDefinition.default
 
       if seal
         Object.seal @

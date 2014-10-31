@@ -164,7 +164,7 @@ describe 'Scheming', ->
             Person.defineProperties
               name : String
               age : Number
-              mother : {type: Person, default : null}
+              mother : Person
 
           it 'invokes constructor on assignment of a plain object', ->
             Lisa = new Person
