@@ -247,6 +247,8 @@ The default options used when Scheming.create is invoked. If you prefer for all 
 
 Retrieves a schema that has been built using [Scheming.create](#schemingcreate).
 
+- returns **[Schema](#schema)**
+
 ### Scheming.create([name], schema, [opts])
 
 Creates a new [Schema](#schema) constructor.
@@ -272,10 +274,13 @@ Creates a new [Schema](#schema) constructor.
   bill.age = 9   # success
   bill.age = '9' # Error : Error assigning '9' to age. Value is not of type number.
   ```
+- returns **[Schema](#schema)**
 
 ## Schema
 
-A constructor function returned by [Scheming.create](#schemingcreate). Constructs objects based on the property definitions outlined in the schema. When you invoke the constructor, you can pass a model with initial values to be applied to the instance.
+The constructor function returned by [Scheming.create](#schemingcreate). Constructs objects based on the property definitions outlined in the schema. When you invoke the constructor, you can pass a model with initial values to be applied to the instance.
+
+- returns **[Instance](#instance)**
 
 ```
 Person = Scheming.create
@@ -324,7 +329,7 @@ Schema.create
 - default **value** or **function** Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.
 - getter **function** A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval.
 - setter **function** A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type.
-- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true or null if validation passes. They should return a string  or throw an error indicating the error if validation occurs. If a validator returns false, validation will fail with a generic error message. See [Schema.prototype.validate](schemaprototypevalidate) for details on how validation works.
+- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not `true` or a string, validation will fail with a generic error message. See [Instance.validate](#instancevalidate) for details on how validation works.
 - required **boolean** A special validator that indicates whether the field is required.
 
 ### Schema.defineProperties(properties)
@@ -338,6 +343,78 @@ A convenience method for defining Schema properties in bulk.
 
 ## Instance
 
+The object instance returned by newing up a [Schema](#schema) constructor. 
+
 ### Instance.validate()
 
- TODO: Write validation docs
+Validates the schema instance and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.
+
+- returns errors **object** An object with any validation errors, where each key is the path that failed validation, and each value is an array of error messages. If validation passes, will return `null`.
+
+#### Validation success
+
+If validation succeeds (including if no validators are defined), `validate()` returns null
+
+```
+Person = Scheming.create {name : String}
+      
+bill = new Person {name : 'bill}
+
+errors = bill.validate() # null
+```
+
+#### Validation failure messages
+
+A validator function should return true if it passes. Any other return value will be treated as validation failure. If a validator returns a string, that string will be treated as the failure message. If a validator throws an error at any point, the `error.message` property will be treated as the failure message. Otherwise, the validation will fail with a generic error message.
+
+If multiple validators are defined, all will be run against the value. The errors object will return error messages for all validators that failed.
+
+```
+Person = Scheming.create 
+  name : 
+    type : String
+    validate : [
+      -> return "Error number one"
+      -> throw new Error "Error number two"
+      -> return true
+      -> return false
+    ]
+    
+bill = new Person()
+
+errors = bill.validate() 
+# returns null, because bill object does not have a name defined, and name is not required
+
+bill.name = 'bill'
+errors = bill.validate()
+# {name : ["Error number one", "Error number two", "Validation error occurred."]}
+```
+
+#### Required and Validators
+
+The `required` configuration is a special validator that checks if the value is defined. If required validation fails, other validators will not be run. This means that validators are guaranteed to receive a value, and do not need to do null checking.
+
+```
+Person = Scheming.create 
+  name : 
+    type : String
+    required : true
+    validate : [
+      -> return "Error number one"
+      -> throw new Error "Error number two"
+      -> return true
+      -> return false
+    ]
+    
+bill = new Person()
+
+errors = bill.validate() 
+# {name : ["Field is required."]}
+
+```
+
+### Instance.watch()
+
+TODO! The goal is to make instances reactive, so that you can register for changes on an instance or individual properties of an instance.
+
+ 
