@@ -1,3 +1,87 @@
-<!DOCTYPE html><html lang="en"><head><title>index</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="index"><meta name="groc-project-path" content="README.md"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/README.md">README.md</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming!</h1>
-<p>Create javascript schemas. Doo cool stuff.</p>
-<p>See the <a href="http://autoric.github.io/scheming/src/Scheming.html">annotated source</a> for documentation.</p></div></div></div></div></body></html>
+<!DOCTYPE html><html lang="en"><head><title>Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="index"><meta name="groc-project-path" content="README.md"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/README.md">README.md</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming!</h1>
+<p>Define powerful object schemas in javascript. Includes default values, getters, setters, validators, type checking or coercion. Builds reactive objects which you can watch for changes. Written to be extensible and customizable. Works on the browser or the server.</p>
+<p>So what does it look like?</p>
+<pre><code>Scheming = require(&#39;Scheming&#39;)
+
+User = Scheming.create &#39;User&#39;,
+    name :
+        type : String
+        required : true
+    email :
+        type : String,
+        required : true
+        validate : (val) -&gt;
+            if val.match(&#39;@&#39;)
+                return true
+            else
+                return &#39;An email address must have an @ symbol!&#39;
+    birthday : Date
+    password :
+        type : String
+        setter : (val) -&gt;
+            return md5(val)
+
+Group = Scheming.create &#39;Group&#39;,
+    name : String
+    dateCreated : {type : Date, default : -&gt; Date.now()}
+    users : [User]
+
+jane = new User
+    email : &#39;jane.gmail.com&#39;
+    birthday : &#39;9/14/86&#39;
+    password : &#39;p@$$w0rd!&#39;
+
+console.log jane.validate()
+# {name : &#39;Field is required.&#39;, email: &#39;An email address must have an @ symbol!&#39;}
+
+jane.name = &#39;jane&#39;
+jane.email = &#39;jane@gmail.com&#39;
+
+console.log jane.validate
+# null</code></pre>
+<h1 id="api-docs">API Docs</h1>
+<h2 id="schemingtypes">Scheming.TYPES</h2>
+<p>Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see <a href="http://autoric.github.io/scheming/Scheming.html#types">the TYPE definitions in source</a></p>
+<p>Scheming ships with the following types.</p>
+<ul>
+<li>String <code>Scheming.TYPES.String</code> <code>&#39;string&#39;</code> <code>String</code></li>
+<li>Number <code>Scheming.TYPES.Number</code> <code>&#39;number&#39;</code> <code>Number</code></li>
+<li>Integer <code>Scheming.TYPES.Integer</code> <code>&#39;integer&#39;</code></li>
+<li>Date <code>Scheming.TYPES.Date</code> <code>&#39;date&#39;</code> <code>Date</code></li>
+<li>Boolean <code>Scheming.TYPES.Boolean</code> <code>&#39;boolean&#39;</code> <code>Boolean</code></li>
+<li>Mixed <code>Scheming.TYPES.Mixed</code> <code>&#39;*&#39;</code></li>
+</ul>
+<p>For example, the following are equivalent:</p>
+<pre><code>Scheming.create name : Scheming.TYPES.String
+Scheming.create name : &#39;string&#39;
+Scheming.create name : String</code></pre>
+<h3 id="custom-types">Custom types</h3>
+<p>You can extend the Scheming TYPES object to add support for custom types. For example:</p>
+<pre><code>Scheming.TYPES.Symbol =
+    constructor : Symbol
+    string : &#39;symbol&#39;
+    identifier : (val) -&gt;
+        typeof val == &quot;symbol&quot;
+    parser : (val) -&gt;
+        Symbol(val)
+
+# I can now declare Schemas with my new type
+Scheming.create name : Symbol</code></pre>
+<h3 id="custom-parsing-and-identifiers">Custom parsing and identifiers</h3>
+<p>In addition to declaring new types, you can modify the currently existing types. For example, say you don&#39;t like dealing with javascript Date objects, and would rather use with moment.js.</p>
+<pre><code>Scheming.TYPES.Date.identifier = moment.isMoment
+Scheming.TYPES.Date.parser = moment
+
+Person = Scheming.create birthday : Date
+
+bill = new Person {birthday : &#39;9/14/86&#39;}
+
+bill.birthday.format &quot;YYYY MM DD&quot;
+# &quot;1986 09 14&quot;
+# Bill&#39;s birthday is a momentjs object, and has the format method!</code></pre>
+<h2 id="schemingdefault-options">Scheming.DEFAULT_OPTIONS</h2>
+<p>The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options.</p>
+<h2 id="schemingcreate">Scheming.create</h2>
+<p><code>Scheming.create([name], schema, [opts])</code></p>
+<p>Creates a new <a href="#Schema">Schema</a> constructor.</p>
+<h2 id="schema">Schema</h2></div></div></div></div></body></html>

@@ -16,7 +16,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "sourcePath": "/Users/erin.noe-payne/local/scheming/README.md",
         "projectPath": "README.md",
         "targetPath": "index",
-        "pageTitle": "index",
+        "pageTitle": "Scheming",
         "firstHeader": {
           "type": "heading",
           "data": {
@@ -30,7 +30,71 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "title": "Scheming!"
       },
       "depth": 1,
-      "outline": []
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "API Docs",
+            "slug": "api-docs"
+          },
+          "depth": 1,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Scheming.TYPES",
+                "slug": "schemingtypes"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Custom types",
+                    "slug": "custom-types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Custom parsing and identifiers",
+                    "slug": "custom-parsing-and-identifiers"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Scheming.DEFAULT_OPTIONS",
+                "slug": "schemingdefault-options"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Scheming.create",
+                "slug": "schemingcreate"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Schema",
+                "slug": "schema"
+              },
+              "depth": 2
+            }
+          ]
+        }
+      ]
     }, {
       "type": "file",
       "data": {
@@ -53,8 +117,8 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 1,
-            "title": "Scheming",
-            "slug": "scheming",
+            "title": "Annotated Source",
+            "slug": "annotated-source",
             "isFileHeader": true
           },
           "depth": 1,
@@ -94,7 +158,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
             }
           ]
         },
-        "title": "Scheming"
+        "title": "Annotated Source"
       },
       "depth": 1,
       "outline": [

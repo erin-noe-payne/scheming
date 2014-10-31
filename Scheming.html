@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><title>Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="Scheming"><meta name="groc-project-path" content="src/Scheming.coffee"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/src/Scheming.coffee">src/Scheming.coffee</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming</h1></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Support node.js or browser environments</p></div></div><div class="code"><div class="wrapper">root = @
+<!DOCTYPE html><html lang="en"><head><title>Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="Scheming"><meta name="groc-project-path" content="src/Scheming.coffee"><meta name="groc-github-url" content="https://github.com/autoric/scheming"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/autoric/scheming/blob/master/src/Scheming.coffee">src/Scheming.coffee</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="annotated-source">Annotated Source</h1></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Support node.js or browser environments</p></div></div><div class="code"><div class="wrapper">root = @
 
 isNode = <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">exports</span> != <span class="hljs-string">'undefined'</span> &amp;&amp; <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">module</span> != <span class="hljs-string">'undefined'</span> &amp;&amp; <span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span>
 
@@ -40,10 +40,6 @@ RESERVED_PROPERTIES =
     identifier : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
       _.isNumber(val) &amp;&amp; val % <span class="hljs-number">1</span> == <span class="hljs-number">0</span>
     parser     : parseInt
-  Float   :
-    string     : <span class="hljs-string">'float'</span>
-    identifier : _.isNumber
-    parser     : parseFloat
   Date    :
     ctor       : Date
     string     : <span class="hljs-string">'date'</span>
@@ -329,7 +325,7 @@ error if an assigned value does not match the property type.</li>
               data[fieldName] = val
 
           <span class="hljs-keyword">if</span> typeDefinition.<span class="hljs-reserved">default</span> <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">undefined</span>
-            @[fieldName] = typeDefinition.<span class="hljs-reserved">default</span>
+            @[fieldName] = typeDefinition.<span class="hljs-reserved">default</span>?() || typeDefinition.<span class="hljs-reserved">default</span>
 
       <span class="hljs-keyword">if</span> seal
         Object.seal @
