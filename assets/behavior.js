@@ -281,34 +281,139 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "TYPES",
-                "slug": "types"
+                "title": "Scheming",
+                "slug": "scheming"
               },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "DEFAULT_OPTIONS",
+                    "slug": "default-options"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "TYPES",
+                    "slug": "types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "NESTED_TYPES",
+                    "slug": "nested-types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "resolveType",
+                    "slug": "resolvetype"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "normalizePropertyConfig",
+                    "slug": "normalizepropertyconfig"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "get",
+                    "slug": "get"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "reset",
+                    "slug": "reset"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "create",
+                    "slug": "create"
+                  },
+                  "depth": 3
+                }
+              ]
             }, {
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "resolveType",
-                "slug": "resolvetype"
+                "title": "Schema",
+                "slug": "schema"
               },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "defineProperty",
+                    "slug": "defineproperty"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "defineProperties",
+                    "slug": "defineproperties"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "constructor",
+                    "slug": "constructor"
+                  },
+                  "depth": 3
+                }
+              ]
             }, {
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "normalizeProperty",
-                "slug": "normalizeproperty"
+                "title": "Instance",
+                "slug": "instance"
               },
-              "depth": 2
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "create",
-                "slug": "create"
-              },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "constructor",
+                    "slug": "constructor"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "validate",
+                    "slug": "validate"
+                  },
+                  "depth": 3
+                }
+              ]
             }
           ]
         },
@@ -320,34 +425,139 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "TYPES",
-            "slug": "types"
+            "title": "Scheming",
+            "slug": "scheming"
           },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "DEFAULT_OPTIONS",
+                "slug": "default-options"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "TYPES",
+                "slug": "types"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "NESTED_TYPES",
+                "slug": "nested-types"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "resolveType",
+                "slug": "resolvetype"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "normalizePropertyConfig",
+                "slug": "normalizepropertyconfig"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "get",
+                "slug": "get"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "reset",
+                "slug": "reset"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "create",
+                "slug": "create"
+              },
+              "depth": 3
+            }
+          ]
         }, {
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "resolveType",
-            "slug": "resolvetype"
+            "title": "Schema",
+            "slug": "schema"
           },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "defineProperty",
+                "slug": "defineproperty"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "defineProperties",
+                "slug": "defineproperties"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "constructor",
+                "slug": "constructor"
+              },
+              "depth": 3
+            }
+          ]
         }, {
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "normalizeProperty",
-            "slug": "normalizeproperty"
+            "title": "Instance",
+            "slug": "instance"
           },
-          "depth": 2
-        }, {
-          "type": "heading",
-          "data": {
-            "level": 2,
-            "title": "create",
-            "slug": "create"
-          },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "constructor",
+                "slug": "constructor"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "validate",
+                "slug": "validate"
+              },
+              "depth": 3
+            }
+          ]
         }
       ]
     }
