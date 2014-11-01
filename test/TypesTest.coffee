@@ -220,6 +220,11 @@ describe 'resolveType', ->
             expect(resolved.string).to.equal 'array'
             expect(resolved.childType).to.equal type
 
+      it 'should throw an error if the array does not have a type', ->
+        doResolve = -> Scheming.resolveType []
+
+        expect(doResolve).to.throw 'Error resolving type'
+
     describe 'with Schemas', ->
       it 'should pass an object type to Scheming.create', ->
         createSpy = sinon.stub Scheming, 'create'
@@ -367,7 +372,7 @@ describe 'resolveType', ->
 
           Scheming.TYPES.String.parser = parser
 
-describe 'normalizeProperty', ->
+describe 'normalizePropertyConfig', ->
   resolveType = null
   mockType = {}
 
@@ -379,62 +384,62 @@ describe 'normalizeProperty', ->
     resolveType.restore()
 
   it 'should, if it receives an object with a type key, pass the type key to resolveType', ->
-    Scheming.normalizeProperty {type : 'integer'}, 'age'
+    Scheming.normalizePropertyConfig {type : 'integer'}, 'age'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith 'integer'
 
   it 'should, if it receives an object without a type key, pass the entire object to resolveType', ->
     object = {name : 'String', age : 'Number'}
-    Scheming.normalizeProperty object, 'owner'
+    Scheming.normalizePropertyConfig object, 'owner'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith object
 
   it 'should pass TYPE references to resolveType', ->
-    Scheming.normalizeProperty Scheming.TYPES.String, 'name'
+    Scheming.normalizePropertyConfig Scheming.TYPES.String, 'name'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith Scheming.TYPES.String
 
   it 'should pass type strings to resolveType', ->
-    Scheming.normalizeProperty 'number', 'name'
+    Scheming.normalizePropertyConfig 'number', 'name'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith 'number'
 
   it 'should pass type constructors to resolveType', ->
-    Scheming.normalizeProperty Date, 'name'
+    Scheming.normalizePropertyConfig Date, 'name'
 
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith Date
 
   it 'should throw an error if the type cannot be resolved', ->
     invokeWithNoType = ->
-      Scheming.normalizeProperty(undefined, 'name')
+      Scheming.normalizePropertyConfig(undefined, 'name')
 
     expect(invokeWithNoType).to.throw 'Schema type must be defined'
 
   it 'should throw an error getter is defined and not a function', ->
     invokeWithStringGetter = ->
-      Scheming.normalizeProperty({type : 'string', getter : 'asdf'}, 'name')
+      Scheming.normalizePropertyConfig({type : 'string', getter : 'asdf'}, 'name')
 
     expect(invokeWithStringGetter).to.throw 'Schema getter must be a function'
 
   it 'should throw an error setter is defined and not a function', ->
     invokeWithStringSetter = ->
-      Scheming.normalizeProperty({type : 'string', setter : 'asdf'}, 'name')
+      Scheming.normalizePropertyConfig({type : 'string', setter : 'asdf'}, 'name')
 
     expect(invokeWithStringSetter).to.throw 'Schema setter must be a function'
 
   it 'should throw an error if a single validator is not a function', ->
     invokeWithStringValidate = ->
-      Scheming.normalizeProperty({type : 'string', validate : 'asdf'}, 'name')
+      Scheming.normalizePropertyConfig({type : 'string', validate : 'asdf'}, 'name')
 
     expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'
 
   it 'should throw an error if any validator is not a function', ->
     invokeWithStringValidate = ->
-      Scheming.normalizeProperty({type : 'string', validate : [(->), 'asdf', (->)]}, 'name')
+      Scheming.normalizePropertyConfig({type : 'string', validate : [(->), 'asdf', (->)]}, 'name')
 
     expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'

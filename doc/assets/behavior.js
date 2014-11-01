@@ -16,7 +16,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "sourcePath": "/Users/erin.noe-payne/local/scheming/README.md",
         "projectPath": "README.md",
         "targetPath": "index",
-        "pageTitle": "index",
+        "pageTitle": "Scheming",
         "firstHeader": {
           "type": "heading",
           "data": {
@@ -30,7 +30,225 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "title": "Scheming!"
       },
       "depth": 1,
-      "outline": []
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "API Docs",
+            "slug": "api-docs"
+          },
+          "depth": 1,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Scheming",
+                "slug": "scheming"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.TYPES",
+                    "slug": "schemingtypes"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Custom types",
+                        "slug": "custom-types"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Custom parsing and identifiers",
+                        "slug": "custom-parsing-and-identifiers"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.NESTED_TYPES",
+                    "slug": "schemingnested-types"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Arrays",
+                        "slug": "arrays"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Explicit Schemas",
+                        "slug": "explicit-schemas"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Implicit Schemas",
+                        "slug": "implicit-schemas"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.DEFAULT_OPTIONS",
+                    "slug": "schemingdefault-options"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.get(name)",
+                    "slug": "scheminggetname"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.create([name], schema, [opts])",
+                    "slug": "schemingcreatename-schema-opts"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Schema",
+                "slug": "schema"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.defineProperty(property, configuration)",
+                    "slug": "schemadefinepropertyproperty-configuration"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Simple type configuration",
+                        "slug": "simple-type-configuration"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Complex configuration",
+                    "slug": "complex-configuration"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.defineProperties(properties)",
+                    "slug": "schemadefinepropertiesproperties"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Schema.extend()",
+                    "slug": "schemaextend"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Instance",
+                "slug": "instance"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Instance.validate()",
+                    "slug": "instancevalidate"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Validation success",
+                        "slug": "validation-success"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Validation failure messages",
+                        "slug": "validation-failure-messages"
+                      },
+                      "depth": 4
+                    }, {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Required and Validators",
+                        "slug": "required-and-validators"
+                      },
+                      "depth": 4
+                    }
+                  ]
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Instance.watch()",
+                    "slug": "instancewatch"
+                  },
+                  "depth": 3
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }, {
       "type": "file",
       "data": {
@@ -53,8 +271,8 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 1,
-            "title": "Scheming",
-            "slug": "scheming",
+            "title": "Annotated Source",
+            "slug": "annotated-source",
             "isFileHeader": true
           },
           "depth": 1,
@@ -63,38 +281,143 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "TYPES",
-                "slug": "types"
+                "title": "Scheming",
+                "slug": "scheming"
               },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "DEFAULT_OPTIONS",
+                    "slug": "default-options"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "TYPES",
+                    "slug": "types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "NESTED_TYPES",
+                    "slug": "nested-types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "resolveType",
+                    "slug": "resolvetype"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "normalizePropertyConfig",
+                    "slug": "normalizepropertyconfig"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "get",
+                    "slug": "get"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "reset",
+                    "slug": "reset"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "create",
+                    "slug": "create"
+                  },
+                  "depth": 3
+                }
+              ]
             }, {
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "resolveType",
-                "slug": "resolvetype"
+                "title": "Schema",
+                "slug": "schema"
               },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "defineProperty",
+                    "slug": "defineproperty"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "defineProperties",
+                    "slug": "defineproperties"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "constructor",
+                    "slug": "constructor"
+                  },
+                  "depth": 3
+                }
+              ]
             }, {
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "normalizeProperty",
-                "slug": "normalizeproperty"
+                "title": "Instance",
+                "slug": "instance"
               },
-              "depth": 2
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "create",
-                "slug": "create"
-              },
-              "depth": 2
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "constructor",
+                    "slug": "constructor"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "validate",
+                    "slug": "validate"
+                  },
+                  "depth": 3
+                }
+              ]
             }
           ]
         },
-        "title": "Scheming"
+        "title": "Annotated Source"
       },
       "depth": 1,
       "outline": [
@@ -102,34 +425,139 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "TYPES",
-            "slug": "types"
+            "title": "Scheming",
+            "slug": "scheming"
           },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "DEFAULT_OPTIONS",
+                "slug": "default-options"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "TYPES",
+                "slug": "types"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "NESTED_TYPES",
+                "slug": "nested-types"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "resolveType",
+                "slug": "resolvetype"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "normalizePropertyConfig",
+                "slug": "normalizepropertyconfig"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "get",
+                "slug": "get"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "reset",
+                "slug": "reset"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "create",
+                "slug": "create"
+              },
+              "depth": 3
+            }
+          ]
         }, {
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "resolveType",
-            "slug": "resolvetype"
+            "title": "Schema",
+            "slug": "schema"
           },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "defineProperty",
+                "slug": "defineproperty"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "defineProperties",
+                "slug": "defineproperties"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "constructor",
+                "slug": "constructor"
+              },
+              "depth": 3
+            }
+          ]
         }, {
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "normalizeProperty",
-            "slug": "normalizeproperty"
+            "title": "Instance",
+            "slug": "instance"
           },
-          "depth": 2
-        }, {
-          "type": "heading",
-          "data": {
-            "level": 2,
-            "title": "create",
-            "slug": "create"
-          },
-          "depth": 2
+          "depth": 2,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "constructor",
+                "slug": "constructor"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "validate",
+                "slug": "validate"
+              },
+              "depth": 3
+            }
+          ]
         }
       ]
     }

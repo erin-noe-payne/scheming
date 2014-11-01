@@ -10,8 +10,8 @@ describe 'Scheming', ->
 
       expect(Schema).to.be.a.function
 
-    it 'should invoke normalizeProperty on each key / value pair in the schema config', ->
-      normalizeProperty = sinon.spy Scheming, 'normalizeProperty'
+    it 'should invoke normalizePropertyConfig on each key / value pair in the schema config', ->
+      normalizePropertyConfig = sinon.spy Scheming, 'normalizePropertyConfig'
 
       schema =
         name     : 'string'
@@ -23,23 +23,23 @@ describe 'Scheming', ->
       Scheming.create schema
 
       for k, v of schema
-        expect(normalizeProperty).to.have.been.calledWith v, k
+        expect(normalizePropertyConfig).to.have.been.calledWith v, k
 
-      normalizeProperty.restore()
+      normalizePropertyConfig.restore()
 
   describe 'Schema', ->
     describe 'defineProperty', ->
-      it 'should invoke Scheming.normalizeProperty', ->
-        sinon.spy Scheming, 'normalizeProperty'
+      it 'should invoke Scheming.normalizePropertyConfig', ->
+        sinon.spy Scheming, 'normalizePropertyConfig'
 
         Schema = Scheming.create()
         config = { type : 'string', getter : -> true }
         Schema.defineProperty 'name', config
 
-        expect(Scheming.normalizeProperty).to.have.been.called
-        expect(Scheming.normalizeProperty).to.have.been.calledWith config, 'name'
+        expect(Scheming.normalizePropertyConfig).to.have.been.called
+        expect(Scheming.normalizePropertyConfig).to.have.been.calledWith config, 'name'
 
-        Scheming.normalizeProperty.restore()
+        Scheming.normalizePropertyConfig.restore()
 
       it 'should extend the Schema with the new property', ->
         Schema = Scheming.create()

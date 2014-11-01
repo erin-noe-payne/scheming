@@ -5,6 +5,7 @@ root = @
 
 isNode = typeof exports != 'undefined' && typeof module != 'undefined' && module.exports
 
+# Depends on lodash
 if isNode
   _ = require 'lodash'
 
@@ -16,15 +17,16 @@ uuid = ->
     now = Math.floor now / 16
     ((if c is "x" then r else (r & 0x7 | 0x8))).toString 16
 
+# ## Scheming
+
+# ### DEFAULT_OPTIONS
+# Default options for `Schema.create`
 DEFAULT_OPTIONS =
-  seal : false
+  seal   : false
   strict : false
 
-RESERVED_PROPERTIES =
-  validate : 'validate'
-
+# ### TYPES
 ###
-   ## TYPES
   Scheming exports the default types that it uses for parsing schemas. You can extend with custom types, or
   override the identifier / parser functions of the default types. A custom type should provide:
    - ctor (optional) - Used in schema definitions to declare a type. `Scheming.create name : String`
@@ -69,6 +71,7 @@ TYPES =
       true
     parser     : _.identity
 
+# ### NESTED_TYPES
 ###
   Special type definitions for nested types. Used to identify and parse nested Arrays and Schemas.
   Should not be extended or overridden.
@@ -89,6 +92,10 @@ NESTED_TYPES =
     childType  : null
 
 # Used internally to resolve a type declaration to its primitive type.
+# Matches a primitive type if it is...
+# - a reference to the object straight from the `Schema.TYPES` object
+# - a reference to the `ctor`
+# - a match with the type `string` (case insensitive)
 getPrimitiveTypeOf = (type) ->
   for k, TYPE of TYPES
     if type == TYPE or
@@ -99,32 +106,30 @@ getPrimitiveTypeOf = (type) ->
 
   return null
 
-Scheming = {TYPES, NESTED_TYPES, RESERVED_PROPERTIES, DEFAULT_OPTIONS}
+# Expose TYPES and DEFAULT_OPTIONS for extension and overriding
+Scheming = {TYPES, NESTED_TYPES, DEFAULT_OPTIONS}
 
-###
-  ## resolveType
-  Resolves a type declaration to a type. This function is used internally when normalizing a schema,
-  and goes through the following steps:
-###
+# ### resolveType
+# Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.
 Scheming.resolveType = (typeDef) ->
-  #- Attempt to resolve the type declaration to a primitive type
+  # - Attempt to resolve the type declaration to a primitive type
   type = getPrimitiveTypeOf typeDef
 
   if !type?
-    ###
-    - If the type definition is an array `[]`
-      - Resolve the type of the array's children, defaulting to a Mixed type
-      - Set identifier and parser rules for the child type
-    ###
+    # - If the type definition is an array `[]`
     if _.isArray typeDef
+      #   - Set the type to a clone of the array NESTED_TYPE
       type = _.cloneDeep NESTED_TYPES.Array
-      childType = TYPES.Mixed
 
+      #   - Recurse to resolve childType of array members
       if typeDef.length
         childType = Scheming.resolveType(typeDef[0])
-        if !childType then throw new Error "Error resolving #{typeDef}"
+
+      #   - Throw an error if type is not explicitly declared
+      if !childType then throw new Error "Error resolving type of array value #{typeDef}"
 
       type.childType = childType
+      #   - Write parser for child members of the array
       type.childParser = (val) ->
         for index, member of val
           if !childType.identifier(member)
@@ -132,6 +137,8 @@ Scheming.resolveType = (typeDef) ->
 
         return val
 
+    # Function that builds identifier and parser for nested schema types. Needs to be factored out
+    # because nested schemas may be resolved lazily at a later time
     resolveSchemaType = (type, childType) ->
       type.childType = childType
       type.identifier = (val) ->
@@ -143,7 +150,7 @@ Scheming.resolveType = (typeDef) ->
     - If the type definition is an object `{}`
       - Create a new Schema from the object
       - Treat the field as a nested Schema
-      - Set identifier and parser functions
+      - Set identifier and parser functions immediately
     ###
     if _.isPlainObject typeDef
       type = _.cloneDeep NESTED_TYPES.Schema
@@ -153,9 +160,9 @@ Scheming.resolveType = (typeDef) ->
     ###
     - If the type definition is a reference to a Schema constructor
       - Treat the field as a nested Schema
-      - Set identifier and parser functions
+      - Set identifier and parser functions immediately
     ###
-    if _.isFunction(typeDef) && typeDef.__skemaId
+    if _.isFunction(typeDef) && typeDef.__schemaId
       type = _.cloneDeep NESTED_TYPES.Schema
       childType = typeDef
       resolveSchemaType type, childType
@@ -165,9 +172,9 @@ Scheming.resolveType = (typeDef) ->
       - It is assumed that the field is a reference to a nested Schema that will be registered with the name Car,
     but may not be registered yet
       - The Schema is not resolved immediately
-      - The parser and identifier functions are written so that the first time they are invoked, the Schema will be
-    looked up at that time via `Scheming.get`
-      - Set the identifier and parser functions based on the resolved schema
+      - The parser and identifier functions are written as wrappers, so that the first time they are invoked the Schema
+    will be looked up at that time via `Scheming.get`, and real identifier and parser are set at that time.
+      - If the registered Schema cannot be resolved, throw an error.
     ###
     if _.isString(typeDef) && typeDef[...7] == 'Schema:'
       type = _.cloneDeep NESTED_TYPES.Schema
@@ -184,56 +191,13 @@ Scheming.resolveType = (typeDef) ->
 
   return type || null
 
+# ### normalizePropertyConfig
 ###
-  ## normalizeProperty
-  `Scheming.normalizeProperty(config, [fieldName])`
   Normalizes a field declaration on a schema to capture type, default value, setter, getter, and validation.
   Used internally when a schema is created to build a normalized schema definition.
-  - config *object* - The field configuration. If the config value is anything other than an object with a type key,
-  its value will be treated as the type argument, and all other keys will be given their default values.
-  Accepts the following keys.
-    - config.type *type identifier* - An identifier value that is passed to the `resolveType` method. Should resolve to
-  a valid type primitive or nested type.
-    - config.default * - The default value to assign at construction.
-    - config.getter *function* - A getter function that will be executed on the value before retrieval. Receives the
-  raw value as input, and should return the modified value.
-    - config.setter *function* - A setter function that will be executed on the value before assignment. Receives the
-  raw value as input (after type parser), and should return the modified value.
-    - config.validate *function* or *[function]* - One or more validation functions. Validation functions are executed
-  on defined property values of an instance when the `.validate()` method is invoked. See validation documentation for
-  further details. Values received by validators are already processed by the getter function.
-    - config.required *boolean* - True if the field is required. Will return a validation error when the `.validate()`
-  method is executed on an instance if it is not defined.
-  - fieldName *string* - Optional field name for clearer messaging in the case of config errors.
-
-  **Examples**
-  ```
-  // All of the below create a field with a type of string
-  Schema.normalizeProperty String
-
-  Scheming.normalizeProperty type : 'string'
-
-  Scheming.normalizeProperty type : Scheming.TYPES.String
-
-  // Defines a field with type of array of string
-  Scheming.normalizeProperty type : [String]
-
-  // Defines a field with a nested Schema type
-  Scheming.normalizeProperty {name : String, age : Number}
-
-  Scheming.normalizeProperty type : {name : String, age : Number}
-
-  // Defines a field with all properties
-  Scheming.normalizeProperty
-    type : Number
-    default : 2
-    getter : (val) -> val * 2
-    setter : (val) -> val * 2
-    validate : (val) -> val % 2 == 0
-    required : true
-  ```
 ###
-Scheming.normalizeProperty = (config, fieldName='field') ->
+Scheming.normalizePropertyConfig = (propConfig, propName = 'field') ->
+  # initialize normalized property definition that we will return
   definition =
     type       : null
     default    : null
@@ -242,194 +206,265 @@ Scheming.normalizeProperty = (config, fieldName='field') ->
     validators : null
     required   : false
 
-  if !(_.isPlainObject(config) && config.type?)
-    config = {type : config}
+  # if property configuration is not an object with a type key, assume that
+  # the configuration value is just the property type
+  if !(_.isPlainObject(propConfig) && propConfig.type?)
+    propConfig = {type : propConfig}
 
-  {type, getter, setter, validate, required} = config
+  {type, getter, setter, validate, required} = propConfig
+  # This function throws errors on any bad configuration, attempting to fail fast.
 
+
+  # - Throw an error if type is not defined. Type must always be explicitly declared. Untyped fields
+  # must explicitly declared as Schema.TYPES.Mixed
   if !type?
-    throw new Error "Error resolving #{fieldName}. Schema type must be defined."
+    throw new Error "Error resolving #{propName}. Schema type must be defined."
+  # - Throw an error if getter is not a function
   if getter? && !_.isFunction getter
-    throw new Error "Error resolving #{fieldName}. Schema getter must be a function."
+    throw new Error "Error resolving #{propName}. Schema getter must be a function."
+  # - Throw an error if setter is not a function
   if setter? && !_.isFunction setter
-    throw new Error "Error resolving #{fieldName}. Schema setter must be a function."
+    throw new Error "Error resolving #{propName}. Schema setter must be a function."
+
 
   validate ?= []
+  # - If validate is a single function, transform to an array with one member
   if !_.isArray(validate)
     validate = [validate]
+  # - Check that all validators are a function, throw an error if it is not.
   for fn in validate
     if !_.isFunction fn
-      throw new Error "Error resolving #{fieldName}. Schema validate must be a function or array of functions."
+      throw new Error "Error resolving #{propName}. Schema validate must be a function or array of functions."
 
+  # - Resolve the declared type
   definition.type = Scheming.resolveType type
 
+  # - If type could not be resolved, throw an error
   if !definition.type?
-    throw new Error "Error resolving #{fieldName}. Unrecognized type #{type}"
+    throw new Error "Error resolving #{propName}. Unrecognized type #{type}"
 
-  definition.default = config.default
+  # `default` is a reserved word, so we can't do the nice clean denatured assignment
+  definition.default = propConfig.default
   definition.getter = getter
   definition.setter = setter
   definition.validators = validate
   definition.required = required
 
+  # Return a valid property configuration
   return definition
 
 # Internal registry for schemas created by `Scheming.create`. Schemas are registered by their name, which is either
 # provided at time of creation, or generated as a uuid.
 registry = {}
 
+# Used internally as part of `Scheming.create`, do not need to expose registration outside of Schema creation.
 addToRegistry = (key, value) ->
+  # Throw an error on naming collisions
   if registry[key]
     throw new Error "Naming conflict encountered. Schema #{key} already exists"
   registry[key] = value
 
+# ### get
 # Retrieves a schema by registered name
 Scheming.get = (name) ->
   return registry[name]
 
-# Resets the state of the Schema registry
+# ### reset
+# Resets the state of the Schema registry. Mainly exposed for testing, but could have use in production.
 Scheming.reset = ->
   registry = {}
 
-###
-  ## create
-  `Scheming.create([name], schemaConfig, [opts])`
-  - name *string* *optional* - Assigns a name to the schema for internal registration. If no name is provided
-  the schema will be registered with a uuid. Naming a schema is necessary if you want to retrieve your schema later
-  using `Scheming.get`, or to use lazy-loaded Schema types using the `'Schema:Name'` syntax.
-  - schemaConfig *object* - An object that defines the schema. Keys represent property names, values define the property
-  configuration. At a minimum, a property should provide its type. Property configuration can also include getter
-  and setter functions, a default value, one or more validation functions, and a required flag. Each key / value pair
-  is passed to the `normalizeProperty` function.
-  - opts * object* *optional* - Schema options.
-    - seal *boolean=false* - Indicates whether instances of the Schema should be run through `Object.seal`, disabling the
-  ability to attach arbitrary properties not defined by the Schema.
-    - strict *boolean=false* - Indicates whether type coercion should be allowed. By default, assigned values are
-  parsed by their type parser if they fail the identifier check. If strict is true, assignment will instead throw an
-  error if an assigned value does not match the property type.
-###
+# ### create
+# Creates a new Schema constructor
 Scheming.create = (args...) ->
+  # If the first argument is a string, then the Schema is being named & registered. Otherwise, it is being
+  # created anonymously, and we need to give it a uuid for registration.
   if !_.isString(args[0])
     args.unshift uuid()
 
+  # Get name, config, and options from the create arguments
   [name, schemaConfig, opts] = args
 
+  # Set options, defaulting to the Scheming.DEFAULT_OPTIONS
   opts = _.defaults (opts || {}), DEFAULT_OPTIONS
-  {seal, strict} = opts
 
-  normalizedSchema = {}
+  # Build a new Schema
+  Schema = schemaFactory(name, opts)
 
-  class Schema
-    @__skemaId : name
-
-    @defineProperties : (config) ->
-      for k, v of config
-        @defineProperty k, v
-
-    @defineProperty : (fieldName, config) ->
-      normalizedSchema[fieldName] = Scheming.normalizeProperty(config, fieldName)
-
-    constructor : (model) ->
-      data = {}
-
-      Object.defineProperty @, '__skemaId',
-        enumerable   : false
-        configurable : false
-        writable     : false
-        value        : Schema.__skemaId
-
-      for fieldName, typeDefinition of normalizedSchema
-        do (fieldName, typeDefinition) =>
-          {type, getter, setter} = typeDefinition
-
-          Object.defineProperty @, fieldName,
-            configurable : true
-            enumerable   : true
-            get          : ->
-              val = data[fieldName]
-              if val is undefined
-                return val
-              if getter
-                val = getter val
-              if type.string == NESTED_TYPES.Array.string
-                val = type.childParser val
-              return val
-            set          : (val) ->
-              if val is undefined
-                return data[fieldName] = val
-              if !type.identifier(val)
-                if strict then throw new Error "Error assigning #{val} to #{fieldName}. Value is not of type #{type.string}"
-                val = type.parser val
-              if setter
-                val = setter val
-              data[fieldName] = val
-
-          if typeDefinition.default != undefined
-            @[fieldName] = typeDefinition.default?() || typeDefinition.default
-
-      @validate = () ->
-        errors = {}
-        # prevents infinite loops in circular references
-        if @_validating then return null
-        @_validating = true
-
-        pushError = (key, err) ->
-          if _.isArray err
-            return pushError(key, e) for e in err
-          if !_.isString err
-            err = 'Validation error occurred.'
-          errors[key] ?= []
-          errors[key].push err
-
-        # apply validation rules
-        for key, value of normalizedSchema
-
-            {validators, required} = value
-
-            val = @[key]
-
-            if required && !val?
-              pushError key, "Field is required."
-            if val?
-              {type} = normalizedSchema[key]
-
-              for validator in validators
-                err = true
-                try
-                  err = validator(val)
-                catch e
-                  if e then err = e.message
-                if err != true then pushError key, err
-
-              if type.string == 'schema'
-                childErrors = val.validate()
-                for k, v of childErrors
-                  pushError "#{key}.#{k}", v
-              if type.string == 'array' && type.childType.string == 'schema'
-                for member, i in val
-                  childErrors = member.validate()
-                  for k, v of childErrors
-                    pushError "#{key}[#{i}].#{k}", v
-
-        @_validating = false
-
-        if _.size(errors) == 0
-          return null
-        else
-          return errors
-
-      if seal
-        Object.seal @
-
-      for key, value of model
-        @[key] = value
-
+  # Define properties on the Schema based on the schema configuration
   Schema.defineProperties schemaConfig
 
+  # Register the new Schema by the name provided or generated
   addToRegistry name, Schema
 
   return Schema
 
+# ## Schema
+# Factory method that builds Schema constructors
+schemaFactory = (name, opts) ->
+  # Normalized Schema is captured in closure
+  normalizedSchema = {}
+
+  class Schema
+    # __schemaId property references the schema name and identifies Schema constructors from any other function
+    @__schemaId       : name
+
+    # ### defineProperty
+    # Defines a property on the normalized schema, which is used at time of instance construction
+    @defineProperty   : (propName, propConfig) ->
+      normalizedSchema[propName] = Scheming.normalizePropertyConfig(propConfig, propName)
+
+    # ### defineProperties
+    # Convenience method for defining properties in bulk
+    @defineProperties : (config) ->
+      for k, v of config
+        @defineProperty k, v
+
+    # ### constructor
+    # Constructor that builds instances of the Schema
+    constructor       : (model) ->
+
+      # turn `this` into a Schema instance
+      instanceFactory(@, normalizedSchema, opts)
+
+      # Finally, initialize the instance with the model passed to the constructor
+      for key, value of model
+        @[key] = value
+
+# ## Instance
+# Factory method that builds accepts an object and turns it into a Schema instance
+instanceFactory = (instance, normalizedSchema, opts)->
+  # data hash wrapped in closure, keeps actual data members private
+  data = {}
+
+  {strict, seal} = opts
+
+  # ### constructor
+  # for each property of the normalized schema
+  for propName, propConfig of normalizedSchema
+    do (propName, propConfig) =>
+      # retrieve the type, getter, and setter from the normalized field config
+      {type, getter, setter} = propConfig
+
+      # define an enumerable property on the instance that is not configurable
+      # user get and set to manage getters, setters, and type parsing
+      Object.defineProperty instance, propName,
+        configurable : false
+        enumerable   : true
+      # **set**
+        set          : (val) ->
+          # - If a property is set to undefined, do not type cast or run through setter.
+          # You should always be able to clear a property.
+          if val is undefined
+            return data[propName] = val
+          # - If value is not undefined, run through type identifier to determine if it is the correct type
+          if !type.identifier(val)
+            #   - If not and strict mode is enabled, throw an error
+            if strict then throw new Error "Error assigning #{val} to #{propName}. Value is not of type #{type.string}"
+            #   - Otherwise, use parser to cast to the correct type
+            val = type.parser val
+          # - If a setter is defined, run the value through setter
+          if setter
+            val = setter val
+          # - Finally, assign to the data hash
+          data[propName] = val
+        # **get**
+        get          : ->
+          # - Retrieve data value from the hash
+          val = data[propName]
+          # - If value is not defined, immediately return it.
+          if val is undefined
+            return val
+          # - If getter is defined, run value through getter
+          if getter
+            val = getter val
+          # - If the property type is of array, perform parsing on child members now. This is costly but necessary.
+          # Because arrays can be mutated outside of assignment, we have no way to enforce parsing of child members
+          # until retrieval.
+          if type.string == NESTED_TYPES.Array.string
+            val = type.childParser val
+          # - Finally, return the value
+          return val
+
+      # Once the property is configured, assign a default value. This ensures that default values are still
+      # affected by type parsing and setters
+      if propConfig.default != undefined
+        instance[propName] = propConfig.default?() || propConfig.default
+
+  # ### validate
+  # Define validate method on instance
+  instance.validate = ->
+    # Create errors hash that will be returned on any validation failure.
+    errors = {}
+
+    # Flag validating state to prevent infinite loop in the case of circular references
+    if @_validating then return null
+    @_validating = true
+
+    # Factored code to push error messages onto the errors hash
+    pushError = (key, err) ->
+      if _.isArray err
+        return pushError(key, e) for e in err
+      if !_.isString err
+        err = 'Validation error occurred.'
+      errors[key] ?= []
+      errors[key].push err
+
+    # Apply validation rules
+    for key, value of normalizedSchema
+
+        {validators, required} = value
+
+        # - Retrieve value. This will be affected by getters.
+        val = @[key]
+
+        # - If the field is required and not defined, push the error and be done
+        if required && !val?
+          pushError key, "Field is required."
+        # - Only run validation on fields that are defined
+        if val?
+          {type} = normalizedSchema[key]
+
+          # - Run each validator on the field value
+          for validator in validators
+            err = true
+            # - Accept error strings that are returned, or errors that are thrown during processing
+            try
+              err = validator(val)
+            catch e
+              if e then err = e.message
+            # - If any validation errors are detected, push them
+            if err != true then pushError key, err
+
+          # - Additionally, if the property is a nested schema, run its validation
+          if type.string == 'schema'
+            childErrors = val.validate()
+            for k, v of childErrors
+              #   - The key on the errors hash should be the path to the field that had a validation error
+              pushError "#{key}.#{k}", v
+          # - If the property is an array of schemas, run validation on each member of the array
+          if type.string == 'array' && type.childType.string == 'schema'
+            for member, i in val
+              childErrors = member.validate()
+              for k, v of childErrors
+                #   - Again, the key on the errors hash should be the path to the field that had a validation error
+                pushError "#{key}[#{i}].#{k}", v
+
+    # Unset flag, indicating validation is complete
+    @_validating = false
+
+    # Return null if no validation errros ocurred
+    if _.size(errors) == 0
+      return null
+    else
+      return errors
+
+  # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
+  # defined by the Schema
+  if seal
+    Object.seal instance
+
+# All done. Export onto the correct root.
 if isNode
   module.exports = Scheming
 else
