@@ -1,6 +1,6 @@
 {
   "name": "scheming",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "./dest/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
