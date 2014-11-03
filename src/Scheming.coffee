@@ -109,7 +109,7 @@ getPrimitiveTypeOf = (type) ->
   return null
 
 # Expose TYPES and DEFAULT_OPTIONS for extension and overriding
-Scheming = {TYPES, NESTED_TYPES, DEFAULT_OPTIONS}
+Scheming = {uuid, TYPES, NESTED_TYPES, DEFAULT_OPTIONS}
 
 # ### resolveType
 # Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.
