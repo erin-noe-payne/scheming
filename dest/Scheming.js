@@ -8,6 +8,8 @@
 
   if (isNode) {
     _ = require('lodash');
+  } else {
+    _ = window._;
   }
 
   uuid = function() {
@@ -389,6 +391,10 @@
       propConfig = normalizedSchema[propName];
       _fn(propName, propConfig);
     }
+    Object.defineProperty(instance, '_validating', {
+      writable: true,
+      value: false
+    });
     instance.validate = function() {
       var childErrors, e, err, errors, i, k, key, member, pushError, required, type, v, val, validator, validators, value, _i, _j, _len, _len1;
       errors = {};

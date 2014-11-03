@@ -8,6 +8,8 @@ isNode = typeof exports != 'undefined' && typeof module != 'undefined' && module
 # Depends on lodash
 if isNode
   _ = require 'lodash'
+else
+  _ = window._
 
 # Uuid generator for anonymous Schema ids
 uuid = ->
