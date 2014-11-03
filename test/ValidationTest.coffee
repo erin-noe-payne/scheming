@@ -256,6 +256,27 @@ describe 'Validation', ->
 
     expect(_.size(errors)).to.equal 2
 
+  it 'should not fall into an infinite loop on validation of circular references if the schema is sealed', ->
+    Person = Scheming.create 'Person',
+      name : {type: String, required: true, validate :  -> true}
+      car :
+        make : {type : String, required : true}
+        model : {type : String, validate : -> 'Error!'}
+        owner : 'Schema:Person'
+    , seal:true
+
+    lisa = new Person
+      name : 'lisa'
+    lisa.car =
+      model : 'asdf'
+      owner : lisa
+
+    errors = lisa.validate()
+
+    expect(errors['car.make']).to.exist
+    expect(errors['car.model']).to.exist
+
+    expect(_.size(errors)).to.equal 2
 
   it 'should invoke validation on arrays of nested schemas', ->
     validator = sinon.spy -> true

@@ -392,6 +392,11 @@ instanceFactory = (instance, normalizedSchema, opts)->
         instance[propName] = propConfig.default?() || propConfig.default
 
   # ### validate
+  # Define a _validating flag, which is used to prevent infinite loops on validation of circular references
+  Object.defineProperty instance, '_validating',
+    writable : true
+    value : false
+
   # Define validate method on instance
   instance.validate = ->
     # Create errors hash that will be returned on any validation failure.
