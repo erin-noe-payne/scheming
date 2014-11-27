@@ -66,6 +66,40 @@ describe 'Scheming', ->
 
         Schema.defineProperty.restore()
 
+    describe 'getProperties', ->
+      beforeEach ->
+        sinon.stub Scheming, 'normalizePropertyConfig'
+
+      afterEach ->
+        Scheming.normalizePropertyConfig.restore()
+
+      it 'getProperty should return a clone of the normalized schema for the given path', ->
+        Schema = Scheming.create()
+        config = { type : 'string', getter : -> true }
+        Scheming.normalizePropertyConfig.returns config
+
+        Schema.defineProperty 'name', {}
+
+        expect(Schema.getProperty('name')).to.eql config
+        expect(Schema.getProperty('name')).to.not.equal config
+
+      it 'getProperties should return a clone of the normalized schema', ->
+        Schema = Scheming.create()
+        config = { type : 'string', getter : -> true }
+        config1 = {a:1}
+        Scheming.normalizePropertyConfig.returns config1
+        Schema.defineProperty 'name', {}
+        config2 = {b:2}
+        Scheming.normalizePropertyConfig.returns config2
+        Schema.defineProperty 'age', {}
+
+        expect(Schema.getProperties()).to.eql {
+          name : {a:1}
+          age  : {b:2}
+        }
+        expect(Schema.getProperties().name).to.not.equal config1
+        expect(Schema.getProperties().age).to.not.equal config2
+
     describe 'property', ->
       describe 'assignment', ->
         describe 'of primitive types', ->

@@ -414,6 +414,25 @@ describe 'normalizePropertyConfig', ->
     expect(resolveType).to.have.been.called
     expect(resolveType).to.have.been.calledWith Date
 
+  it 'should return a normalized definition with all property config options explicitly defined', ->
+    definition = Scheming.normalizePropertyConfig {type: String}, 'name'
+
+    expect(definition).to.have.ownProperty 'type'
+    expect(definition).to.have.ownProperty 'default'
+    expect(definition).to.have.ownProperty 'getter'
+    expect(definition).to.have.ownProperty 'setter'
+    expect(definition).to.have.ownProperty 'validate'
+    expect(definition).to.have.ownProperty 'required'
+
+  it 'should allow extension of the property config with arbitrary keys', ->
+    definition = Scheming.normalizePropertyConfig {
+      type: String
+      columnName : 'NameId'
+    }, 'name'
+
+    expect(definition).to.have.ownProperty 'columnName'
+    expect(definition.columnName).to.equal 'NameId'
+
   it 'should throw an error if the type cannot be resolved', ->
     invokeWithNoType = ->
       Scheming.normalizePropertyConfig(undefined, 'name')

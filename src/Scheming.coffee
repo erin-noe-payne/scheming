@@ -205,7 +205,7 @@ Scheming.normalizePropertyConfig = (propConfig, propName = 'field') ->
     default    : null
     getter     : null
     setter     : null
-    validators : null
+    validate   : null
     required   : false
 
   # if property configuration is not an object with a type key, assume that
@@ -215,7 +215,6 @@ Scheming.normalizePropertyConfig = (propConfig, propName = 'field') ->
 
   {type, getter, setter, validate, required} = propConfig
   # This function throws errors on any bad configuration, attempting to fail fast.
-
 
   # - Throw an error if type is not defined. Type must always be explicitly declared. Untyped fields
   # must explicitly declared as Schema.TYPES.Mixed
@@ -228,12 +227,11 @@ Scheming.normalizePropertyConfig = (propConfig, propName = 'field') ->
   if setter? && !_.isFunction setter
     throw new Error "Error resolving #{propName}. Schema setter must be a function."
 
-
   validate ?= []
   # - If validate is a single function, transform to an array with one member
   if !_.isArray(validate)
     validate = [validate]
-  # - Check that all validators are a function, throw an error if it is not.
+  # - Check that all validate are a function, throw an error if it is not.
   for fn in validate
     if !_.isFunction fn
       throw new Error "Error resolving #{propName}. Schema validate must be a function or array of functions."
@@ -249,8 +247,11 @@ Scheming.normalizePropertyConfig = (propConfig, propName = 'field') ->
   definition.default = propConfig.default
   definition.getter = getter
   definition.setter = setter
-  definition.validators = validate
+  definition.validate = validate
   definition.required = required
+
+  # allow any custom properties to be exposed on the definition object
+  definition = _.extend {}, propConfig, definition
 
   # Return a valid property configuration
   return definition
@@ -321,6 +322,22 @@ schemaFactory = (name, opts) ->
     @defineProperties : (config) ->
       for k, v of config
         @defineProperty k, v
+
+    # ### getProperties
+    # returns a clone of the normalized Schema
+    @getProperties : ->
+      return _.cloneDeep normalizedSchema
+
+    # ### getProperty
+    # returns a clone of the normalized Schema property
+    @getProperty : (propName) ->
+      return _.cloneDeep normalizedSchema[propName]
+
+    # ### eachProperty
+    # Iterates over each property name and configuration of the schema, invoking the provided callback
+    @eachProperty : (cb) ->
+      for propName, propConfig of normalizedSchema
+        cb propName, _.cloneDeep propConfig
 
     # ### constructor
     # Constructor that builds instances of the Schema
@@ -420,7 +437,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
     # Apply validation rules
     for key, value of normalizedSchema
 
-        {validators, required} = value
+        {validate, required} = value
 
         # - Retrieve value. This will be affected by getters.
         val = @[key]
@@ -433,7 +450,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
           {type} = normalizedSchema[key]
 
           # - Run each validator on the field value
-          for validator in validators
+          for validator in validate
             err = true
             # - Accept error strings that are returned, or errors that are thrown during processing
             try
