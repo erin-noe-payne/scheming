@@ -338,16 +338,10 @@ A convenience method for defining Schema properties in bulk.
 
 - properties **object** An object whose key value pairs are passed to [Schema.defineProperty](#sschemadefineproperty)
 
-### Schema.extend()
- TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...
 
-## Instance
+### Schema.validate(instance)
 
-The object instance returned by newing up a [Schema](#schema) constructor. 
-
-### Instance.validate()
-
-Validates the schema instance and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.
+Validates an instance of the schema and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.
 
 - returns errors **object** An object with any validation errors, where each key is the path that failed validation, and each value is an array of error messages. If validation passes, will return `null`.
 
@@ -412,6 +406,13 @@ errors = bill.validate()
 # {name : ["Field is required."]}
 
 ```
+
+### Schema.extend()
+ TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...
+
+## Instance
+
+The object instance returned by newing up a [Schema](#schema) constructor. 
 
 ### Instance.watch()
 

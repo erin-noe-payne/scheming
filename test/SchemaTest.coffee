@@ -350,7 +350,7 @@ describe 'Scheming', ->
 
         expect(instance.arr).to.eql ['1', '2', '3', '4']
 
-        expect(instance.validate()).to.be.null
+        expect(Contrived.validate(instance)).to.be.null
 
       it 'should support validators', ->
         Contrived = Scheming.create
@@ -367,14 +367,14 @@ describe 'Scheming', ->
 
         instance = new Contrived arr : undefined
 
-        errors = instance.validate()
+        errors = Contrived.validate(instance)
         expect(errors.arr).to.exist
         expect(errors.arr).to.have.length 1
         expect(errors.arr[0]).to.match /is required/
 
         instance = new Contrived()
 
-        errors = instance.validate()
+        errors = Contrived.validate(instance)
         expect(errors.arr).to.exist
         expect(errors.arr).to.have.length 1
         expect(errors.arr[0]).to.match /Not long enough/

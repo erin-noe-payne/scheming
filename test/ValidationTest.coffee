@@ -9,7 +9,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if there are no validation rules', ->
     Person = Scheming.create
@@ -18,7 +18,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if a field is required and defined', ->
     Person = Scheming.create
@@ -27,7 +27,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if a field has one validation rules that it passes', ->
     Person = Scheming.create
@@ -36,7 +36,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if a field has many validation rules that it passes', ->
     rules = [
@@ -51,7 +51,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if a field that is not required is undefined but would otherwise fail validation', ->
     Person = Scheming.create
@@ -60,7 +60,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if a nested schema passes validation', ->
     Person = Scheming.create
@@ -75,7 +75,7 @@ describe 'Validation', ->
         make : 'honda'
         model : 'civic'
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return null if an array of nested schema passes validation', ->
     Person = Scheming.create
@@ -92,7 +92,7 @@ describe 'Validation', ->
         {make : 'toyota', model : 'corolla'}
       ]
 
-    expect(lisa.validate()).to.be.null
+    expect(Person.validate(lisa)).to.be.null
 
   it 'should return an object if there are validation errors', ->
     Person = Scheming.create
@@ -100,7 +100,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    expect(lisa.validate()).to.be.an 'object'
+    expect(Person.validate(lisa)).to.be.an 'object'
 
   it 'should return an array of error messages on each key for which there is a validation error', ->
     Person = Scheming.create
@@ -108,7 +108,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
     expect(errors.name).to.exist
     expect(errors.name).to.be.an 'array'
 
@@ -120,7 +120,7 @@ describe 'Validation', ->
     lisa = new Person
       name : 'lisa'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
     expect(errors.name).to.not.exist
     expect(errors.age).to.exist
     expect(errors.age).to.be.an 'array'
@@ -133,7 +133,7 @@ describe 'Validation', ->
 
     lisa = new Person()
 
-    lisa.validate()
+    Person.validate(lisa)
 
     expect(validator).to.not.have.been.called
 
@@ -148,7 +148,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors.name).to.eql ['One', 'Two', 'Three']
 
@@ -163,7 +163,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors.name).to.eql ['One', 'Two', 'Three']
 
@@ -178,7 +178,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors.name).to.eql ['Validation error occurred.', 'Validation error occurred.', 'Validation error occurred.']
 
@@ -193,7 +193,7 @@ describe 'Validation', ->
 
     lisa = new Person name : 'lisa'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors).to.be.null
 
@@ -214,7 +214,7 @@ describe 'Validation', ->
         make : 'honda'
         model : 'civic'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(validator).to.have.been.called
     expect(validator).to.have.been.calledWith 'civic'
@@ -230,7 +230,7 @@ describe 'Validation', ->
       name : 'lisa'
       car : model : 'asdf'
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors['car.make']).to.exist
     expect(errors['car.model']).to.exist
@@ -249,7 +249,7 @@ describe 'Validation', ->
       model : 'asdf'
       owner : lisa
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors['car.make']).to.exist
     expect(errors['car.model']).to.exist
@@ -271,7 +271,7 @@ describe 'Validation', ->
       model : 'asdf'
       owner : lisa
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(errors['car.make']).to.exist
     expect(errors['car.model']).to.exist
@@ -294,7 +294,7 @@ describe 'Validation', ->
       {make : 'toyota', model : 'corolla'}
     ]
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(validator).to.have.been.calledTwice
     expect(validator).to.have.been.calledWith 'civic'
@@ -318,7 +318,7 @@ describe 'Validation', ->
       {model : 'corolla'}
     ]
 
-    errors = lisa.validate()
+    errors = Person.validate(lisa)
 
     expect(_.size(errors)).to.equal 4
     expect(errors['cars[0].make']).to.exist

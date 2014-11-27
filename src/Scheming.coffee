@@ -339,6 +339,72 @@ schemaFactory = (name, opts) ->
       for propName, propConfig of normalizedSchema
         cb propName, _.cloneDeep propConfig
 
+    # ### validate
+    # Run validation on an instance of the schema
+    @validate : (instance) ->
+      # Create errors hash that will be returned on any validation failure.
+      errors = {}
+
+      # Flag validating state to prevent infinite loop in the case of circular references
+      if instance._validating then return null
+      instance._validating = true
+
+      # Factored code to push error messages onto the errors hash
+      pushError = (key, err) ->
+        if _.isArray err
+          return pushError(key, e) for e in err
+        if !_.isString err
+          err = 'Validation error occurred.'
+        errors[key] ?= []
+        errors[key].push err
+
+      # Apply validation rules
+      for key, value of normalizedSchema
+        {validate, required} = value
+
+        # - Retrieve value. This will be affected by getters.
+        val = instance[key]
+
+        # - If the field is required and not defined, push the error and be done
+        if required && !val?
+          pushError key, "Field is required."
+        # - Only run validation on fields that are defined
+        if val?
+          {type} = normalizedSchema[key]
+
+          # - Run each validator on the field value
+          for validator in validate
+            err = true
+            # - Accept error strings that are returned, or errors that are thrown during processing
+            try
+              err = validator(val)
+            catch e
+              if e then err = e.message
+            # - If any validation errors are detected, push them
+            if err != true then pushError key, err
+
+          # - Additionally, if the property is a nested schema, run its validation
+          if type.string == 'schema'
+            childErrors = type.childType.validate(val)
+            for k, v of childErrors
+              #   - The key on the errors hash should be the path to the field that had a validation error
+              pushError "#{key}.#{k}", v
+          # - If the property is an array of schemas, run validation on each member of the array
+          if type.string == 'array' && type.childType.string == 'schema'
+            for member, i in val
+              childErrors = type.childType.childType.validate(member)
+              for k, v of childErrors
+                #   - Again, the key on the errors hash should be the path to the field that had a validation error
+                pushError "#{key}[#{i}].#{k}", v
+
+        # Unset flag, indicating validation is complete
+      instance._validating = false
+
+      # Return null if no validation errros ocurred
+      if _.size(errors) == 0
+        return null
+      else
+        return errors
     # ### constructor
     # Constructor that builds instances of the Schema
     constructor       : (model) ->
@@ -410,78 +476,10 @@ instanceFactory = (instance, normalizedSchema, opts)->
       if propConfig.default != undefined
         instance[propName] = propConfig.default?() || propConfig.default
 
-  # ### validate
   # Define a _validating flag, which is used to prevent infinite loops on validation of circular references
   Object.defineProperty instance, '_validating',
     writable : true
     value : false
-
-  # Define validate method on instance
-  instance.validate = ->
-    # Create errors hash that will be returned on any validation failure.
-    errors = {}
-
-    # Flag validating state to prevent infinite loop in the case of circular references
-    if @_validating then return null
-    @_validating = true
-
-    # Factored code to push error messages onto the errors hash
-    pushError = (key, err) ->
-      if _.isArray err
-        return pushError(key, e) for e in err
-      if !_.isString err
-        err = 'Validation error occurred.'
-      errors[key] ?= []
-      errors[key].push err
-
-    # Apply validation rules
-    for key, value of normalizedSchema
-
-        {validate, required} = value
-
-        # - Retrieve value. This will be affected by getters.
-        val = @[key]
-
-        # - If the field is required and not defined, push the error and be done
-        if required && !val?
-          pushError key, "Field is required."
-        # - Only run validation on fields that are defined
-        if val?
-          {type} = normalizedSchema[key]
-
-          # - Run each validator on the field value
-          for validator in validate
-            err = true
-            # - Accept error strings that are returned, or errors that are thrown during processing
-            try
-              err = validator(val)
-            catch e
-              if e then err = e.message
-            # - If any validation errors are detected, push them
-            if err != true then pushError key, err
-
-          # - Additionally, if the property is a nested schema, run its validation
-          if type.string == 'schema'
-            childErrors = val.validate()
-            for k, v of childErrors
-              #   - The key on the errors hash should be the path to the field that had a validation error
-              pushError "#{key}.#{k}", v
-          # - If the property is an array of schemas, run validation on each member of the array
-          if type.string == 'array' && type.childType.string == 'schema'
-            for member, i in val
-              childErrors = member.validate()
-              for k, v of childErrors
-                #   - Again, the key on the errors hash should be the path to the field that had a validation error
-                pushError "#{key}[#{i}].#{k}", v
-
-    # Unset flag, indicating validation is complete
-    @_validating = false
-
-    # Return null if no validation errros ocurred
-    if _.size(errors) == 0
-      return null
-    else
-      return errors
 
   # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
   # defined by the Schema
