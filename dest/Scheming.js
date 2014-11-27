@@ -124,6 +124,7 @@
   };
 
   Scheming = {
+    uuid: uuid,
     TYPES: TYPES,
     NESTED_TYPES: NESTED_TYPES,
     DEFAULT_OPTIONS: DEFAULT_OPTIONS
