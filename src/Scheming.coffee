@@ -43,28 +43,34 @@ TYPES =
     identifier : _.isString
     parser     : (val) ->
       '' + val
+    equals     : (a, b) -> a==b
   Number  :
     ctor       : Number
     string     : 'number'
     identifier : _.isNumber
     parser     : parseFloat
+    comparator : (a, b) -> a==b
+    equals     : (a, b) -> a==b
   Integer :
     string     : 'integer'
     identifier : (val) ->
       _.isNumber(val) && val % 1 == 0
     parser     : parseInt
+    equals     : (a, b) -> a==b
   Date    :
     ctor       : Date
     string     : 'date'
     identifier : _.isDate
     parser     : (val) ->
       new Date val
+    equals     : (a, b) -> a.valueOf() == b.valueOf()
   Boolean :
     ctor       : Boolean
     string     : 'boolean'
     identifier : _.isBoolean
     parser     : (val) ->
       !!val
+    equals     : (a, b) -> a==b
   Mixed   :
     ctor       : (val) ->
       val
@@ -72,6 +78,7 @@ TYPES =
     identifier : ->
       true
     parser     : _.identity
+    equals     : (a, b) -> a==b
 
 # ### NESTED_TYPES
 ###
@@ -405,6 +412,12 @@ schemaFactory = (name, opts) ->
         return null
       else
         return errors
+
+    # ### watch
+    # Watches an instance for changes to one or more properties
+    @watch : (instance, properties, cb) ->
+      instance._addWatcher properties, cb
+
     # ### constructor
     # Constructor that builds instances of the Schema
     constructor       : (model) ->
@@ -424,52 +437,73 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
   {strict, seal} = opts
 
-  # ### constructor
+  instance.set = (propName, val) ->
+    prevVals = {}
+    kvp = {}
+
+    if arguments.length == 2
+      kvp[propName] = val
+    else
+      kvp = propName
+
+    for propName, val of kvp
+      prevVals[propName] = @[prevVals]
+      # retrieve the type, getter, and setter from the normalized field config
+      {type, setter} = normalizedSchema[propName]
+
+      # - If a property is set to undefined, do not type cast or run through setter.
+      # You should always be able to clear a property.
+      if val is undefined
+        data[propName] = val
+      else
+        # - If value is not undefined, run through type identifier to determine if it is the correct type
+        if !type.identifier(val)
+          #   - If not and strict mode is enabled, throw an error
+          if strict then throw new Error "Error assigning #{val} to #{propName}. Value is not of type #{type.string}"
+          #   - Otherwise, use parser to cast to the correct type
+          val = type.parser val
+        # - If the property type is of array, perform parsing on child members.
+        if type.string == NESTED_TYPES.Array.string
+          val = type.childParser val
+        # - If a setter is defined, run the value through setter
+        if setter
+          val = setter val
+        # - Finally, assign to the data hash
+        data[propName] = val
+
+    @_fireWatchers prevVals
+
+  instance.get = (propName) ->
+    # retrieve the type, getter, and setter from the normalized field config
+    {type, getter} = normalizedSchema[propName]
+
+    # - Retrieve data value from the hash
+    val = data[propName]
+    # - If value is not defined, immediately return it.
+    if val is undefined
+      return val
+    # - Return a clone of the original value to protect data from mutation
+    unless type.string == 'schema'
+      val = _.clone val
+    # - If getter is defined, run value through getter
+    if getter
+      val = getter val
+    # - Finally, return the value
+    return val
+
+   # ### constructor
   # for each property of the normalized schema
   for propName, propConfig of normalizedSchema
     do (propName, propConfig) =>
-      # retrieve the type, getter, and setter from the normalized field config
-      {type, getter, setter} = propConfig
-
       # define an enumerable property on the instance that is not configurable
       # user get and set to manage getters, setters, and type parsing
       Object.defineProperty instance, propName,
         configurable : false
         enumerable   : true
-      # **set**
-        set          : (val) ->
-          # - If a property is set to undefined, do not type cast or run through setter.
-          # You should always be able to clear a property.
-          if val is undefined
-            return data[propName] = val
-          # - If value is not undefined, run through type identifier to determine if it is the correct type
-          if !type.identifier(val)
-            #   - If not and strict mode is enabled, throw an error
-            if strict then throw new Error "Error assigning #{val} to #{propName}. Value is not of type #{type.string}"
-            #   - Otherwise, use parser to cast to the correct type
-            val = type.parser val
-          # - If a setter is defined, run the value through setter
-          if setter
-            val = setter val
-          # - Finally, assign to the data hash
-          data[propName] = val
+        # **set**
+        set          : (val) -> instance.set propName, val
         # **get**
-        get          : ->
-          # - Retrieve data value from the hash
-          val = data[propName]
-          # - If value is not defined, immediately return it.
-          if val is undefined
-            return val
-          # - If getter is defined, run value through getter
-          if getter
-            val = getter val
-          # - If the property type is of array, perform parsing on child members now. This is costly but necessary.
-          # Because arrays can be mutated outside of assignment, we have no way to enforce parsing of child members
-          # until retrieval.
-          if type.string == NESTED_TYPES.Array.string
-            val = type.childParser val
-          # - Finally, return the value
-          return val
+        get          : -> instance.get propName
 
       # Once the property is configured, assign a default value. This ensures that default values are still
       # affected by type parsing and setters
@@ -478,10 +512,82 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
   # Define a _validating flag, which is used to prevent infinite loops on validation of circular references
   Object.defineProperty instance, '_validating',
+    configurable : false
+    enumerable : false
     writable : true
     value : false
 
-  # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
+  # Set up the _watchers hash
+  Object.defineProperty instance, '_watchers',
+    configurable : false
+    enumerable : false
+    writable : true
+    value : []
+
+  Object.defineProperty instance, '_addWatcher',
+    configurable : false
+    enumerable : false
+    writable : true
+    value : (properties, cb) ->
+      if arguments.length == 1
+        cb = properties
+        properties = _.keys normalizedSchema
+
+      if properties && !_.isArray properties
+        properties = [properties]
+
+      instance._watchers.push {properties, cb}
+
+      # returns an unwatch function
+      return ->
+        instance._removeWatcher cb
+
+  Object.defineProperty instance, '_removeWatcher',
+    configurable : false
+    enumerable : false
+    writable : true
+    value : (cb) ->
+      instance._watchers = _.remove instance._watchers, {cb}
+
+  Object.defineProperty instance, '_fireWatchers',
+    configurable : false
+    enumerable : false
+    writable : true
+    value : (prevVals) ->
+      triggeringProperties = _.keys prevVals
+
+      cached = {}
+      getCurrentVal = (propName) ->
+        if cached[propName]
+          return cached[propName]
+        else
+          val = instance[propName]
+          cached[propName] = val
+          return val
+      getPrevVal = (propName) ->
+        if prevVals[propName]
+          return prevVals[propName]
+        else
+          return getCurrentVal(propName)
+
+      for watcher in instance._watchers
+        shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0
+        if shouldFire
+          newVals = {}
+          oldVals = {}
+
+          for propName in watcher.properties
+            newVals[propName] = getCurrentVal(propName)
+            oldVals[propName] = getPrevVal(propName)
+
+          if watcher.properties.length == 1
+            propName = watcher.properties[0]
+            newVals = newVals[propName]
+            oldVals = oldVals[propName]
+
+          watcher.cb newVals, oldVals
+
+      # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
   # defined by the Schema
   if seal
     Object.seal instance

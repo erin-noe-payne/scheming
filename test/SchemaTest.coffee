@@ -312,6 +312,34 @@ describe 'Scheming', ->
 
             expect(a.age).to.equal 8
 
+          it 'should return a clone of the original value, such that mutators will not affect the stored value', ->
+            Schema = Scheming.create
+              age : Number
+              friends : [String]
+
+            a = new Schema {age : 7, friends : ['b', 'c', 'd']}
+
+            # TODO: evidently ++ operator is bypassing the clone?
+            # a.age++
+            a.friends.push 'e'
+
+            # expect(a.age).to.equal 7
+            expect(a.friends).to.eql ['b', 'c', 'd']
+
+          it 'should return a reference in the case of nested schemas', ->
+            Car = Scheming.create
+              make : String
+              model : String
+
+            Person = Scheming.create
+              name : String
+              car : Car
+
+            civic = new Car {make: 'Honda', model : 'Civic'}
+            person = new Person {name : 'bob', car : civic}
+
+            expect(person.car).to.equal civic
+
         describe 'of Arrays', ->
           it 'should parse child elements of arrays', ->
             Schema = Scheming.create
@@ -323,18 +351,6 @@ describe 'Scheming', ->
 
             expect(a.ages).to.eql [1, 3, 2, NaN]
 
-          it 'should not be thrown off by mutations', ->
-            Schema = Scheming.create
-              ages : [Scheming.TYPES.Integer]
-
-            a = new Schema()
-
-            a.ages = ['2.5']
-            a.ages.push null
-            a.ages.unshift 1
-            a.ages.splice 1, 0, 3.0
-            expect(a.ages).to.eql [1, 3, 2, NaN]
-
     describe 'complex array definitions', ->
       it 'should support arrays with defaults, setters, getters', ->
         Contrived = Scheming.create
@@ -342,13 +358,15 @@ describe 'Scheming', ->
             type : [String]
             default : [2, 3]
             setter : (val) ->
-              return val.concat [4]
+              return _.map val, (num) ->
+                return 'a' + num
             getter : (val) ->
-              return ([1]).concat val
+              return _.map val, (num) ->
+                return num + 'b'
 
         instance = new Contrived()
 
-        expect(instance.arr).to.eql ['1', '2', '3', '4']
+        expect(instance.arr).to.eql ['a2b', 'a3b']
 
         expect(Contrived.validate(instance)).to.be.null
 
