@@ -1,6 +1,6 @@
 {expect} = chai
 
-describe.only 'Schema watch', ->
+describe 'Schema watch', ->
   Person = null
   lisa = null
   unwatchers = null
@@ -21,18 +21,45 @@ describe.only 'Schema watch', ->
     watcher = sinon.spy()
 
   afterEach ->
+    lisa._flushWatches()
     Scheming.reset()
 
     unwatch() for unwatch in unwatchers
 
   describe 'watching single properties', ->
     it 'should take a property name, an instance, and a watch callback', ->
-      unwatchers.push Person.watch lisa, 'name', (name) ->
+      unwatchers.push lisa.watch 'name', (name) ->
+
+    it 'should fire watches asynchronously when the thread of execution is released', (done) ->
+      a = null
+      watcher = (newVal, oldVal)->
+        expect(a).to.equal 5
+        expect(newVal).to.equal 'lisa'
+        expect(oldVal).to.equal undefined
+        done()
+
+      lisa.name = 'lisa'
+      unwatchers.push lisa.watch 'name', watcher
+      a = 5
+
+    it 'should allow the use of _flushWatches to mock async calls', ->
+      a = null
+      watcher = (newVal, oldVal)->
+        expect(a).to.equal 5
+        expect(newVal).to.equal 'lisa'
+        expect(oldVal).to.equal undefined
+
+      lisa.name = 'lisa'
+      unwatchers.push lisa.watch 'name', watcher
+      a = 5
+
+      lisa._flushWatches()
 
     it 'should immediately invoke the watch callback with the current value', ->
       lisa.name = 'lisa'
 
-      unwatchers.push Person.watch lisa, 'name', watcher
+      unwatchers.push lisa.watch 'name', watcher
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith 'lisa'
@@ -40,165 +67,150 @@ describe.only 'Schema watch', ->
     it 'should fire the watch each time the value changes', ->
       lisa.name = 'lisa'
 
-      unwatchers.push Person.watch lisa, 'name', watcher
-
-      watcher.reset()
+      unwatchers.push lisa.watch 'name', watcher
 
       lisa.name = 'LISA!'
+
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith 'LISA!'
 
     it 'should not fire the watch if the value is set but is not changed', ->
       lisa.name = 'lisa'
-
-      unwatchers.push Person.watch lisa, 'name', watcher
-
+      unwatchers.push lisa.watch 'name', watcher
+      lisa._flushWatches()
       watcher.reset()
 
       lisa.name = 'lisa'
+      lisa._flushWatches()
 
       expect(watcher).to.not.have.been.called
 
     it 'should return an unwatch function', ->
       lisa.name = 'lisa'
 
-      unwatch = Person.watch lisa, 'name', watcher
+      unwatch = lisa.watch 'name', watcher
       unwatchers.push unwatch
-
-      watcher.reset()
 
       expect(unwatch).to.be.a 'function'
 
     it 'should not fire the watch once the unwatch has been invoked', ->
       lisa.name = 'lisa'
 
-      unwatch = Person.watch lisa, 'name', watcher
+      unwatch = lisa.watch 'name', watcher
       unwatchers.push unwatch
-
+      lisa._flushWatches()
+      expect(watcher).to.have.been.called
       watcher.reset()
-      expect(watcher).not.to.have.been.called
 
+      expect(watcher).not.to.have.been.called
       unwatch()
 
       lisa.name = 'LISA!'
+      lisa._flushWatches()
 
       expect(watcher).not.to.have.been.called
 
     it 'should not cause an error to invoke the unwatch more than once', ->
       lisa.name = 'lisa'
 
-      unwatch = Person.watch lisa, 'name', watcher
+      unwatch = lisa.watch 'name', watcher
       unwatchers.push unwatch
-
-      watcher.reset()
+      lisa._flushWatches()
 
       unwatch()
       expect(unwatch).to.not.throw 'Error'
 
     it 'should fire a watch on changes to arrays', ->
       lisa.favoriteNumbers = [1, 2, 3]
-      Person.watch lisa, 'favoriteNumbers', watcher
+      lisa.watch 'favoriteNumbers', watcher
 
       lisa.favoriteNumbers = lisa.favoriteNumbers.concat [4, 5]
 
+      lisa._flushWatches()
+
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+      expect(watcher).to.have.been.calledWith [1,2,3,4,5], undefined
 
-    it 'should not pass references to the actual array', ->
-      lisa.favoriteNumbers = [1, 2, 3]
-      Person.watch lisa, 'favoriteNumbers', watcher
+    it 'should fire a watch only once per synchronous block of changes, with the most recent value, and the original previous value', ->
+      lisa.watch 'name', watcher
 
-      newVal = [1,2,3,4,5]
-      lisa.favoriteNumbers = [1,2,3,4,5]
+      lisa.name = 'lisa'
+      lisa.name = 'LiSa'
+      lisa.name = 'LISA!'
 
-      passedArray = watcher.firstCall.args[0]
-      expect(passedArray).to.not.equal newVal
+      lisa._flushWatches()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith 'LISA!', undefined
 
   describe 'watching multiple properties', ->
     it 'should accept multiple properties in an array', ->
-      unwatchers.push Person.watch lisa, ['name', 'age'], (name, age) ->
+      unwatchers.push lisa.watch ['name', 'age'], (name, age) ->
 
-    it 'should immediately invoke the watch callback with each of the current values as a separate argument', ->
+    it 'should immediately invoke the watch callback with each of the current values', ->
       lisa.name = 'lisa'
       lisa.age = 7
 
-      unwatchers.push Person.watch lisa, ['name', 'age'], watcher
+      unwatchers.push lisa.watch ['name', 'age'], watcher
+
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith {name : 'lisa', age : 7}, {name : 'lisa', age : 7}
+      expect(watcher).to.have.been.calledWith {name : 'lisa', age : 7}, {name : undefined, age : undefined}
 
-    it 'should fire the watch each time any one of the properties change', ->
+    it 'should aggregate each synchronous block of property changes', ->
+      unwatchers.push lisa.watch ['name', 'age'], watcher
       lisa.name = 'lisa'
       lisa.age = 7
-
-      unwatchers.push Person.watch lisa, ['name', 'age'], watcher
-
-      watcher.reset()
 
       lisa.name = 'LISA!'
 
-      expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith {name : 'LISA!', age : 7}, {name : 'lisa', age : 7}
+      lisa._flushWatches()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith {name : 'LISA!', age : 7}, {name : undefined, age : undefined}
 
       watcher.reset()
 
       lisa.age = 8
+      lisa._flushWatches()
 
-      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith {name : 'LISA!', age : 8}, {name : 'LISA!', age : 7}
 
     it 'should not fire the watch if any of the values is set but not changed', ->
       lisa.name = 'lisa'
       lisa.age = 7
 
-      unwatchers.push Person.watch lisa, ['name', 'age'], watcher
-
+      unwatchers.push lisa.watch ['name', 'age'], watcher
+      lisa._flushWatches()
       watcher.reset()
 
       lisa.name = 'lisa'
       lisa.age = 7
+      lisa._flushWatches()
 
       expect(watcher).to.not.have.been.called
 
-    it 'should fire a watch once per assignment', ->
-      unwatchers.push Person.watch lisa, ['name', 'age'], watcher
+  describe 'watching objects', ->
+    it 'should accept a watch with no specified properties', ->
+      unwatchers.push lisa.watch ->
 
-      watcher.reset()
+    it 'should fire the watch when any property of the object changes', ->
+      unwatchers.push lisa.watch watcher
 
       lisa.name = 'lisa'
       lisa.age = 7
-
-      expect(watcher).to.have.been.calledTwice
-
-    it 'should fire a watch once per `set`', ->
-      unwatchers.push Person.watch lisa, ['name', 'age'], watcher
-
-      watcher.reset()
-
-      lisa.set
-        name : 'lisa'
-        age  : 7
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.calledOnce
 
-  describe 'watching objects', ->
-    it 'should accept a watch with no specified properties', ->
-      unwatchers.push Person.watch lisa, ->
-
-    it 'should fire the watch when any property of the object changes', ->
-      unwatchers.push Person.watch lisa, watcher
-
-      lisa.name = 'lisa'
-      lisa.age = 7
-
-      expect(watcher).to.have.been.calledThrice
-
     it 'should return all properties of object on a watch', ->
-      unwatchers.push Person.watch lisa, watcher
-      watcher.reset()
-
+      unwatchers.push lisa.watch watcher
       lisa.name = 'lisa'
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.calledWith {
         age             : undefined
@@ -206,6 +218,12 @@ describe.only 'Schema watch', ->
         friends         : undefined
         mother          : undefined
         name            : "lisa"
+      }, {
+        age             : undefined
+        favoriteNumbers : undefined
+        friends         : undefined
+        mother          : undefined
+        name            : undefined
       }
 
   describe 'multiple watches', ->
@@ -214,37 +232,45 @@ describe.only 'Schema watch', ->
       w2 = sinon.spy()
       w3 = sinon.spy()
 
-      unwatchers.push Person.watch lisa, ['name'], w1
-      unwatchers.push Person.watch lisa, ['age'], w2
-      unwatchers.push Person.watch lisa, w3
-
-      w1.reset()
-      w2.reset()
-      w3.reset()
+      unwatchers.push lisa.watch ['name'], w1
+      unwatchers.push lisa.watch ['age'], w2
+      unwatchers.push lisa.watch w3
 
       lisa.name = 'lisa'
+      lisa._flushWatches()
 
-      expect(w1).to.have.been.called
+      expect(w1).to.have.been.calledOnce
       expect(w1).to.have.been.calledWith 'lisa', undefined
       expect(w2).to.not.have.been.called
-      expect(w3).to.have.been.called
+      expect(w3).to.have.been.calledOnce
+      expect(w3).to.have.been.calledWith {
+        age             : undefined
+        favoriteNumbers : undefined
+        friends         : undefined
+        mother          : undefined
+        name            : "lisa"
+      }, {
+        age             : undefined
+        favoriteNumbers : undefined
+        friends         : undefined
+        mother          : undefined
+        name            : undefined
+      }
 
     it 'should continue to fire other watches when one watch is unlistened', ->
       w1 = sinon.spy()
       w2 = sinon.spy()
       w3 = sinon.spy()
 
-      unwatchers.push Person.watch lisa, ['name'], w1
-      unwatchers.push Person.watch lisa, ['age'], w2
-      uw3 = Person.watch lisa, w3
+      unwatchers.push lisa.watch ['name'], w1
+      unwatchers.push lisa.watch ['age'], w2
+      uw3 = lisa.watch w3
       unwatchers.push uw3
 
-      w1.reset()
-      w2.reset()
-      w3.reset()
       uw3()
 
       lisa.name = 'lisa'
+      lisa._flushWatches()
 
       expect(w1).to.have.been.calledOnce
       expect(w1).to.have.been.calledWith 'lisa', undefined
@@ -254,23 +280,23 @@ describe.only 'Schema watch', ->
   describe 'error conditions', ->
     it 'should throw an error if no callback is provided for a watch', ->
       noCb = ->
-        Person.watch lisa, 'name'
+        lisa.watch 'name'
 
       noCbOrProps = ->
-        Person.watch lisa
+        lisa.watch()
 
       expect(noCb).to.throw 'A watch must be provided with a callback function'
       expect(noCbOrProps).to.throw 'A watch must be provided with a callback function'
 
     it 'should throw an error if single property is specified that is not part of the schema', ->
       badProp = ->
-        Person.watch lisa, 'face', ->
+        lisa.watch 'face', ->
 
       expect(badProp).to.throw 'Cannot set watch on face'
 
     it 'should throw an error if one of multiple properties is not part of the schema', ->
       badProp = ->
-        Person.watch lisa, ['name', 'age', 'face'], ->
+        lisa.watch ['name', 'age', 'face'], ->
 
       expect(badProp).to.throw 'Cannot set watch on face'
 
@@ -285,21 +311,23 @@ describe.only 'Schema watch', ->
       homer = new Person()
 
     it 'should fire a watch when a nested schema reference changes', ->
-      Person.watch lisa, ['mother'], watcher
-      watcher.reset()
+      lisa.watch ['mother'], watcher
 
       lisa.mother = marge
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith marge, undefined
 
     it 'should propagate changes on a nested schema to the parent schema', ->
-      Person.watch lisa, ['mother'], watcher
+      lisa.watch ['mother'], watcher
 
       lisa.mother = marge
-      watcher.reset()
 
       marge.name = 'marge'
+
+      marge._flushWatches()
+      lisa._flushWatches()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith {
@@ -308,66 +336,89 @@ describe.only 'Schema watch', ->
         favoriteNumbers : undefined
         mother          : undefined
         friends         : undefined
+      }, undefined
+
+      watcher.reset()
+
+      marge.age = 45
+      marge.favoriteNumbers = [1, 2, 3]
+
+      marge._flushWatches()
+      lisa._flushWatches()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith {
+        name            : 'marge'
+        age             : 45
+        favoriteNumbers : [1, 2, 3]
+        mother          : undefined
+        friends         : undefined
       }, {
-        name            : undefined
+        name            : 'marge'
         age             : undefined
         favoriteNumbers : undefined
         mother          : undefined
         friends         : undefined
       }
 
-    it 'should propagate changes on a nested schema in an array to the parent schema', ->
-      Person.watch lisa, watcher
+    it.only 'should propagate changes on a nested schema to the parent schema', (done) ->
+      console.log '-----'
+
+      console.log '---> assign marge name, age, favorite numbers'
+      marge.name = 'marge'
+      marge.age = 45
+      marge.favoriteNumbers = [1, 2, 3]
+
+      console.log '---> set watch'
+      lisa.watch ['mother'], ->
+        console.log '<--- DONE'
+        done()
+
+      console.log '---> assign lisa name, mother'
+      lisa.name = 'lisa'
+      lisa.mother = marge
+
+
+
+      console.log '---> finish set'
+
+    it 'should propagate changes on a nested schema in an array to the parent schema', (done) ->
+      console.log '---------'
+      lisa.watch 'friends', (newVal, oldVal) ->
+        console.trace()
+        console.log JSON.stringify newVal
+        done()
 
       lisa.friends = [marge, bart, homer]
-      watcher.reset()
 
       marge.name = 'marge'
 
-      expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [{
-        name            : 'marge'
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }, {
-        name            : undefined
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }, {
-        name            : undefined
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }], [{
-        name            : undefined
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }, {
-        name            : undefined
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }, {
-        name            : undefined
-        age             : undefined
-        favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
-      }]
+#      expect(watcher).to.have.been.calledOnce
+#      expect(watcher).to.have.been.calledWith [{
+#        name            : 'marge'
+#        age             : undefined
+#        favoriteNumbers : undefined
+#        mother          : undefined
+#        friends         : undefined
+#      }, {
+#        name            : undefined
+#        age             : undefined
+#        favoriteNumbers : undefined
+#        mother          : undefined
+#        friends         : undefined
+#      }, {
+#        name            : undefined
+#        age             : undefined
+#        favoriteNumbers : undefined
+#        mother          : undefined
+#        friends         : undefined
+#      }], undefined
 
     it 'should not cause an infinite loop if a change fires on a circular reference', ->
       lisa.friends = [bart]
       bart.friends = [lisa]
 
-      Person.watch lisa, watcher
+      lisa.watch watcher
 
       bart.name = 'bart'
       lisa.name = 'lisa'

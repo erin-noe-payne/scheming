@@ -312,20 +312,6 @@ describe 'Scheming', ->
 
             expect(a.age).to.equal 8
 
-          it 'should return a clone of the original value, such that mutators will not affect the stored value', ->
-            Schema = Scheming.create
-              age : Number
-              friends : [String]
-
-            a = new Schema {age : 7, friends : ['b', 'c', 'd']}
-
-            # TODO: evidently ++ operator is bypassing the clone?
-            # a.age++
-            a.friends.push 'e'
-
-            # expect(a.age).to.equal 7
-            expect(a.friends).to.eql ['b', 'c', 'd']
-
           it 'should return a reference in the case of nested schemas', ->
             Car = Scheming.create
               make : String
