@@ -1,7 +1,7 @@
 # # Annotated Source
 
 log = (args...) ->
-  console.log args...
+#  console.log args...
 
 # Support node.js or browser environments
 root = @
@@ -430,37 +430,62 @@ schemaFactory = (name, opts) ->
       for propName, value of model
         @[propName] = value
 
-changeHandlers = []
-timeout = null
+class ChangeManager
+  constructor : ->
+    @changes = {}
+    @internalChangeQueue = []
+    @timeout = null
 
-queueChangeHandler = (fn) ->
-  if !_.contains changeHandlers, fn
-    log '-> change handler queued'
-    changeHandlers.push fn
+  queueChanges : (id, oldVals, fireWatchers) ->
+    if !_.has @changes, id
+      @changes[id] ?= {changedProps : {}, fireWatchers}
+      if !_.contains @internalChangeQueue, id
+        log '-> pushed to internal change queue'
+        @internalChangeQueue.push id
+    {changedProps} = @changes[id]
+    for key, value of oldVals
+      if !_.has changedProps, key
+        changedProps[key] = value
+        log '-> change handler queued'
+        if !_.contains @internalChangeQueue, id
+          log '-> pushed to internal change queue'
+          @internalChangeQueue.push id
 
-  timeout ?= setTimeout ->
-    timeout = null
-    invokeChangeHandlers()
+    @timeout ?= setTimeout @resolve, 0
 
-invokeChangeHandlers = ->
-  # TODO : need to detect and end to change propagation?
-  for watcher in changeHandlers
-    watcher('internal')
-  for watcher in changeHandlers
-    watcher('internal')
-  for watcher in changeHandlers
-    watcher('internal')
-  for watcher in changeHandlers
-    watcher('external')
+  reset : ->
+    @changes = {}
+    @internalChangeQueue = []
+    @timeout = null
 
-  #TODO: clear queued changes
-  changeHandlers = []
+  resolve : =>
+    clearTimeout @timeout
+    i = 0
+    while @internalChangeQueue.length
+      i++
+      if i > 100
+        throw new Error '100 event propagation cycles, that seems wrong.'
+      internalChanges = @internalChangeQueue
+      @internalChangeQueue = []
+
+      for id in internalChanges
+        {changedProps, fireWatchers} = @changes[id]
+
+        fireWatchers changedProps, 'internal'
+
+    for id of @changes
+      {changedProps, fireWatchers} = @changes[id]
+
+      fireWatchers changedProps, 'external'
+
+    @reset()
+
+cm = new ChangeManager
 
 Scheming._flush = ->
-  clearTimeout timeout
-  timeout = null
-  invokeChangeHandlers()
-i = 0
+  cm.resolve()
+
+j = 0
 # ## Instance
 # Factory method that builds accepts an object and turns it into a Schema instance
 instanceFactory = (instance, normalizedSchema, opts)->
@@ -470,12 +495,10 @@ instanceFactory = (instance, normalizedSchema, opts)->
   watchers =
     internal : []
     external : []
-  # changes queued for next fire of watchers
-  queuedChanges = {}
   # watchers on nested properties to support change event propagation
   propagationWatchers = {}
 
-  id = i++
+  id = uuid()
   log '-> creating', id
   instance.id = id
 
@@ -564,7 +587,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
     watcher = {properties, cb, first : true}
     watchers[target].push watcher
 
-    queueChangeHandler fireWatchers
+    cm.queueChanges id, {}, fireWatchers
 
     # returns an unwatch function
     return ->
@@ -593,12 +616,12 @@ instanceFactory = (instance, normalizedSchema, opts)->
         , internal : true
 
   queueChanges = (propName, oldVal) ->
-    if !_.has(queuedChanges, propName)
-      log '-> change queued', propName, id
-      queuedChanges[propName] = oldVal
-      queueChangeHandler fireWatchers
+    obj = {}
+    obj[propName] = oldVal
 
-  fireWatchers = (target='external') ->
+    cm.queueChanges id, obj, fireWatchers
+
+  fireWatchers = (queuedChanges, target='external') ->
     log '<- watchers fired', target, id
     triggeringProperties = _.keys queuedChanges
 
@@ -633,12 +656,6 @@ instanceFactory = (instance, normalizedSchema, opts)->
           oldVals = oldVals[propName]
 
         watcher.cb newVals, oldVals
-
-    # TODO: need to clear queued changes
-    if target == 'external'
-      n = _.size queuedChanges
-      log "<- clearing #{n} queued changes on", id
-      queuedChanges = {}
 
   # ### watch
   # Watches an instance for changes to one or more properties

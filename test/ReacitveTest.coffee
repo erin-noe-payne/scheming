@@ -7,7 +7,7 @@ describe 'Schema watch', ->
   watcher = null
 
   log = (args...) ->
-    console.log args...
+#    console.log args...
 
   beforeEach ->
     log '**** BEFOREEACH 1 ****'
@@ -328,9 +328,9 @@ describe 'Schema watch', ->
 
     beforeEach ->
       log '**** BEFOREEACH 2 ****'
-      bart = new Person()
       marge = new Person()
       homer = new Person()
+      bart = new Person()
 
     it 'should fire a watch when a nested schema reference changes', ->
       lisa.watch ['mother'], watcher
@@ -434,7 +434,7 @@ describe 'Schema watch', ->
       bart.name = 'bart'
       lisa.name = 'lisa'
 
-    it.only 'should propagate deeply nested events', ->
+    it 'should propagate deeply nested events', ->
       spies = (sinon.spy() for n in [0...4])
 
       [wLisa, wMarge, wHomer, wBart] = spies
@@ -451,6 +451,7 @@ describe 'Schema watch', ->
       log 'FIRSTFLUSH'
       Scheming._flush()
       for spy, i in spies
+#        console.log i, spy.callCount
         expect(spy).to.have.been.calledOnce
         spy.reset()
 
@@ -458,5 +459,5 @@ describe 'Schema watch', ->
       log 'SECONDFLUSH'
       Scheming._flush()
       for spy, i in spies
-        console.log i, spy.callCount
-#        expect(spy).to.have.been.calledOnce
+#        console.log i, spy.callCount
+        expect(spy).to.have.been.calledOnce
