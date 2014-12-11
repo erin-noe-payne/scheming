@@ -4,7 +4,7 @@
   "main": "./dest/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
-    "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
+    "test": "mocha test --debug -w  --growl --reporter spec --compilers coffee:coffee-script/register",
     "prepublish": "gulp build"
   },
   "dependencies": {
@@ -27,6 +27,7 @@
     "karma-coffee-preprocessor": "~0.2.1",
     "karma-sinon": "~1.0.3",
     "karma-sinon-chai": "~0.2.0",
-    "karma-chai": "~0.1.0"
+    "karma-chai": "~0.1.0",
+    "gulp-mocha": "~2.0.0"
   }
 }

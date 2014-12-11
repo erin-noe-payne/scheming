@@ -1,5 +1,8 @@
 # # Annotated Source
 
+log = (args...) ->
+  console.log args...
+
 # Support node.js or browser environments
 root = @
 
@@ -427,24 +430,60 @@ schemaFactory = (name, opts) ->
       for propName, value of model
         @[propName] = value
 
+changeHandlers = []
+timeout = null
+
+queueChangeHandler = (fn) ->
+  if !_.contains changeHandlers, fn
+    log '-> change handler queued'
+    changeHandlers.push fn
+
+  timeout ?= setTimeout ->
+    timeout = null
+    invokeChangeHandlers()
+
+invokeChangeHandlers = ->
+  # TODO : need to detect and end to change propagation?
+  for watcher in changeHandlers
+    watcher('internal')
+  for watcher in changeHandlers
+    watcher('internal')
+  for watcher in changeHandlers
+    watcher('internal')
+  for watcher in changeHandlers
+    watcher('external')
+
+  #TODO: clear queued changes
+  changeHandlers = []
+
+Scheming._flush = ->
+  clearTimeout timeout
+  timeout = null
+  invokeChangeHandlers()
+i = 0
 # ## Instance
 # Factory method that builds accepts an object and turns it into a Schema instance
 instanceFactory = (instance, normalizedSchema, opts)->
   # data hash wrapped in closure, keeps actual data members private
   data = {}
   # private watchers array
-  watchers = []
-  # watcher timeout
-  watchersTimeout = null
+  watchers =
+    internal : []
+    external : []
   # changes queued for next fire of watchers
   queuedChanges = {}
   # watchers on nested properties to support change event propagation
   propagationWatchers = {}
 
+  id = i++
+  log '-> creating', id
+  instance.id = id
+
   {strict, seal} = opts
 
   # ### Property Setter
   set = (propName, val) ->
+    log '-> set', propName, id
     prevVal = data[propName]
 
     # if the property is not a part of the schema, simply set it on the instance.
@@ -497,10 +536,16 @@ instanceFactory = (instance, normalizedSchema, opts)->
     # - Finally, return the value
     return val
 
-  addWatcher = (properties, cb) ->
+  addWatcher = (properties, cb, opts) ->
     if _.isFunction properties
+      opts = cb
       cb = properties
       properties = _.keys normalizedSchema
+
+    opts ?= {}
+    opts.internal ?= false
+
+    target = if opts.internal then 'internal' else 'external'
 
     if !_.isFunction cb
       throw new Error 'A watch must be provided with a callback function.'
@@ -516,19 +561,17 @@ instanceFactory = (instance, normalizedSchema, opts)->
     if properties.length == 1
       newVals = newVals[propName]
 
-    watcher = {properties, cb}
-    watchers.push watcher
+    watcher = {properties, cb, first : true}
+    watchers[target].push watcher
 
-    if !watchersTimeout
-      console.log 'setting watchersTimeout', data.name
-      watchersTimeout ?= setTimeout fireWatchers, 0
+    queueChangeHandler fireWatchers
 
     # returns an unwatch function
     return ->
-      removeWatcher watcher
+      removeWatcher watcher, target
 
-  removeWatcher = (watcher) ->
-    _.remove watchers, watcher
+  removeWatcher = (watcher, target) ->
+    _.remove watchers[target], watcher
 
   watchForPropagation = (propName, val) ->
     {type} = normalizedSchema[propName]
@@ -536,8 +579,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
     if type.string == NESTED_TYPES.Schema.string
       propagationWatchers[propName]?()
       propagationWatchers[propName] = val.watch (newVal, oldVal)->
-        console.log 'propagated changes'
+        log 'propagated changes'
         queueChanges propName, oldVal
+      , internal : true
 
     if type.string == NESTED_TYPES.Array.string and type.childType.string == NESTED_TYPES.Schema.string
       for unwatcher in (propagationWatchers[propName] || [])
@@ -546,17 +590,16 @@ instanceFactory = (instance, normalizedSchema, opts)->
       for schema in val
         propagationWatchers[propName].push schema.watch (newVal, oldVal)->
           queueChanges propName, oldVal
+        , internal : true
 
   queueChanges = (propName, oldVal) ->
     if !_.has(queuedChanges, propName)
-      console.log 'changes queued', propName, data.name
+      log '-> change queued', propName, id
       queuedChanges[propName] = oldVal
-      if !watchersTimeout
-        console.log 'setting watchersTimeout', data.name
-        watchersTimeout ?= setTimeout fireWatchers, 0
+      queueChangeHandler fireWatchers
 
-  fireWatchers = ->
-    console.log 'watchers fired', data.name
+  fireWatchers = (target='external') ->
+    log '<- watchers fired', target, id
     triggeringProperties = _.keys queuedChanges
 
     cached = {}
@@ -573,8 +616,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
       else
         return getCurrentVal(propName)
 
-    for watcher in watchers
-      shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0
+    for watcher in watchers[target]
+      shouldFire = (_.intersection(triggeringProperties, watcher.properties).length > 0) || watcher.first
+      watcher.first = false
       if shouldFire
         newVals = {}
         oldVals = {}
@@ -590,8 +634,11 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
         watcher.cb newVals, oldVals
 
-    queuedChanges = {}
-    watchersTimeout = null
+    # TODO: need to clear queued changes
+    if target == 'external'
+      n = _.size queuedChanges
+      log "<- clearing #{n} queued changes on", id
+      queuedChanges = {}
 
   # ### watch
   # Watches an instance for changes to one or more properties
@@ -599,17 +646,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
     configurable : false
     enumerable : false
     writable : false
-    value : (properties, cb) -> addWatcher properties, cb
-
-  # ### _flushWatches
-  # Synchronously fires watchers. Intended for testing.
-  Object.defineProperty instance, '_flushWatches',
-    configurable : false
-    enumerable : false
-    writable : false
-    value : ->
-      clearTimeout watchersTimeout
-      fireWatchers()
+    value : (properties, cb, opts) -> addWatcher properties, cb, opts
 
   # Define a validating flag, which is used to prevent infinite loops on validation of circular references
   Object.defineProperty instance, '_validating',

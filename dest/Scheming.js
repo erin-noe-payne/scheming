@@ -1,5 +1,5 @@
 (function() {
-  var DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _,
+  var DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, changeHandlers, getPrimitiveTypeOf, instanceFactory, invokeChangeHandlers, isNode, queueChangeHandler, registry, root, schemaFactory, timeout, uuid, _,
     __slice = [].slice;
 
   root = this;
@@ -448,13 +448,13 @@
         }
       };
 
-      Schema.watch = function(instance, properties, cb) {
-        return instance._addWatcher(properties, cb);
-      };
-
       function Schema(model) {
+        var propName, value;
         instanceFactory(this, normalizedSchema, opts);
-        this.set(model);
+        for (propName in model) {
+          value = model[propName];
+          this[propName] = value;
+        }
       }
 
       return Schema;
@@ -462,73 +462,234 @@
     })();
   };
 
-  instanceFactory = function(instance, normalizedSchema, opts) {
-    var data, propConfig, propName, seal, strict, _fn;
-    data = {};
-    strict = opts.strict, seal = opts.seal;
-    Object.defineProperty(instance, 'set', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: function(propName, val) {
-        var kvp, prevVal, prevVals, setter, type, _ref;
-        prevVals = {};
-        kvp = {};
-        if (arguments.length === 2) {
-          kvp[propName] = val;
-        } else {
-          kvp = propName;
-        }
-        for (propName in kvp) {
-          val = kvp[propName];
-          prevVal = data[propName];
-          if (!normalizedSchema[propName]) {
-            return instance[propName] = val;
-          }
-          _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
-          if (val === void 0) {
-            data[propName] = val;
-          } else {
-            if (!type.identifier(val)) {
-              if (strict) {
-                throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
-              }
-              val = type.parser(val);
-            }
-            if (type.string === NESTED_TYPES.Array.string) {
-              val = type.childParser(val);
-            }
-            if (setter) {
-              val = setter(val);
-            }
-            data[propName] = val;
-            if (!type.equals(prevVal, val)) {
-              prevVals[propName] = prevVal;
-            }
-          }
-        }
-        return this._fireWatchers(prevVals);
-      }
+  changeHandlers = [];
+
+  timeout = null;
+
+  queueChangeHandler = function(fn) {
+    if (!_.contains(changeHandlers, fn)) {
+      changeHandlers.push(fn);
+    }
+    return timeout != null ? timeout : timeout = setTimeout(function() {
+      timeout = null;
+      return invokeChangeHandlers();
     });
-    Object.defineProperty(instance, 'get', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: function(propName) {
-        var getter, type, val, _ref;
-        _ref = normalizedSchema[propName], type = _ref.type, getter = _ref.getter;
-        val = data[propName];
-        if (val === void 0) {
-          return val;
+  };
+
+  invokeChangeHandlers = function() {
+    var watcher, _i, _j, _len, _len1, _results;
+    for (_i = 0, _len = changeHandlers.length; _i < _len; _i++) {
+      watcher = changeHandlers[_i];
+      watcher('internal');
+    }
+    _results = [];
+    for (_j = 0, _len1 = changeHandlers.length; _j < _len1; _j++) {
+      watcher = changeHandlers[_j];
+      _results.push(watcher('external'));
+    }
+    return _results;
+  };
+
+  Scheming._flush = function() {
+    clearTimeout(timeout);
+    timeout = null;
+    return invokeChangeHandlers();
+  };
+
+  instanceFactory = function(instance, normalizedSchema, opts) {
+    var addWatcher, data, fireWatchers, get, propConfig, propName, propagationWatchers, queueChanges, queuedChanges, removeWatcher, seal, set, strict, watchForPropagation, watchers, _fn;
+    data = {};
+    watchers = {
+      internal: [],
+      external: []
+    };
+    queuedChanges = {};
+    propagationWatchers = {};
+    strict = opts.strict, seal = opts.seal;
+    set = function(propName, val) {
+      var prevVal, setter, type, _ref;
+      prevVal = data[propName];
+      if (!normalizedSchema[propName]) {
+        return instance[propName] = val;
+      }
+      _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
+      if (val === void 0) {
+        return data[propName] = val;
+      } else {
+        if (!type.identifier(val)) {
+          if (strict) {
+            throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
+          }
+          val = type.parser(val);
         }
-        if (type.string !== 'schema') {
-          val = _.clone(val);
+        if (type.string === NESTED_TYPES.Array.string) {
+          val = type.childParser(val);
         }
-        if (getter) {
-          val = getter(val);
+        if (setter) {
+          val = setter(val);
         }
+        data[propName] = val;
+        watchForPropagation(propName, val);
+        if (!type.equals(prevVal, val)) {
+          return queueChanges(propName, prevVal);
+        }
+      }
+    };
+    get = function(propName) {
+      var getter, val;
+      getter = normalizedSchema[propName].getter;
+      val = data[propName];
+      if (val === void 0) {
         return val;
       }
+      if (getter) {
+        val = getter(val);
+      }
+      return val;
+    };
+    addWatcher = function(properties, cb, opts) {
+      var newVals, propName, target, watcher, _i, _len;
+      if (_.isFunction(properties)) {
+        opts = cb;
+        cb = properties;
+        properties = _.keys(normalizedSchema);
+      }
+      if (opts == null) {
+        opts = {};
+      }
+      if (opts.internal == null) {
+        opts.internal = false;
+      }
+      target = opts.internal ? 'internal' : 'external';
+      if (!_.isFunction(cb)) {
+        throw new Error('A watch must be provided with a callback function.');
+      }
+      if (properties && !_.isArray(properties)) {
+        properties = [properties];
+      }
+      newVals = {};
+      for (_i = 0, _len = properties.length; _i < _len; _i++) {
+        propName = properties[_i];
+        if (!_.has(normalizedSchema, propName)) {
+          throw new Error("Cannot set watch on " + propName + ", property is not defined in schema.");
+        }
+        newVals[propName] = instance[propName];
+      }
+      if (properties.length === 1) {
+        newVals = newVals[propName];
+      }
+      watcher = {
+        properties: properties,
+        cb: cb
+      };
+      watchers[target].push(watcher);
+      queueChangeHandler(fireWatchers);
+      return function() {
+        return removeWatcher(watcher, target);
+      };
+    };
+    removeWatcher = function(watcher, target) {
+      return _.remove(watchers[target], watcher);
+    };
+    watchForPropagation = function(propName, val) {
+      var schema, type, unwatcher, _i, _j, _len, _len1, _ref, _results;
+      type = normalizedSchema[propName].type;
+      if (type.string === NESTED_TYPES.Schema.string) {
+        if (typeof propagationWatchers[propName] === "function") {
+          propagationWatchers[propName]();
+        }
+        propagationWatchers[propName] = val.watch(function(newVal, oldVal) {
+          console.log('propagated changes');
+          return queueChanges(propName, oldVal);
+        });
+      }
+      if (type.string === NESTED_TYPES.Array.string && type.childType.string === NESTED_TYPES.Schema.string) {
+        _ref = propagationWatchers[propName] || [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          unwatcher = _ref[_i];
+          unwatcher();
+        }
+        propagationWatchers[propName] = [];
+        _results = [];
+        for (_j = 0, _len1 = val.length; _j < _len1; _j++) {
+          schema = val[_j];
+          _results.push(propagationWatchers[propName].push(schema.watch(function(newVal, oldVal) {
+            return queueChanges(propName, oldVal);
+          })));
+        }
+        return _results;
+      }
+    };
+    queueChanges = function(propName, oldVal) {
+      if (!_.has(queuedChanges, propName)) {
+        queuedChanges[propName] = oldVal;
+        return queueChangeHandler(fireWatchers);
+      }
+    };
+    fireWatchers = function(target) {
+      var cached, getCurrentVal, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1;
+      if (target == null) {
+        target = 'external';
+      }
+      console.log('watchers fired', data.name);
+      triggeringProperties = _.keys(queuedChanges);
+      cached = {};
+      getCurrentVal = function(propName) {
+        var val;
+        if (cached[propName]) {
+          return cached[propName];
+        } else {
+          val = instance[propName];
+          cached[propName] = val;
+          return val;
+        }
+      };
+      getPrevVal = function(propName) {
+        if (_.has(queuedChanges, propName)) {
+          return queuedChanges[propName];
+        } else {
+          return getCurrentVal(propName);
+        }
+      };
+      console.log(target, watchers);
+      _ref = watchers[target];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        watcher = _ref[_i];
+        shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0;
+        if (shouldFire) {
+          newVals = {};
+          oldVals = {};
+          _ref1 = watcher.properties;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            propName = _ref1[_j];
+            newVals[propName] = getCurrentVal(propName);
+            oldVals[propName] = getPrevVal(propName);
+          }
+          if (watcher.properties.length === 1) {
+            propName = watcher.properties[0];
+            newVals = newVals[propName];
+            oldVals = oldVals[propName];
+          }
+          watcher.cb(newVals, oldVals);
+        }
+      }
+      if (target === 'external') {
+        return queuedChanges = {};
+      }
+    };
+    Object.defineProperty(instance, 'watch', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: function(properties, cb) {
+        return addWatcher(properties, cb);
+      }
+    });
+    Object.defineProperty(instance, '_flushWatches', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: function() {}
     });
     Object.defineProperty(instance, '_validating', {
       configurable: false,
@@ -536,120 +697,16 @@
       writable: true,
       value: false
     });
-    Object.defineProperty(instance, '_watchers', {
-      configurable: false,
-      enumerable: false,
-      writable: true,
-      value: []
-    });
-    Object.defineProperty(instance, '_addWatcher', {
-      configurable: false,
-      enumerable: false,
-      writable: true,
-      value: function(properties, cb) {
-        var newVals, propName, watcher, _i, _len;
-        if (_.isFunction(properties)) {
-          cb = properties;
-          properties = _.keys(normalizedSchema);
-        }
-        if (!_.isFunction(cb)) {
-          throw new Error('A watch must be provided with a callback function.');
-        }
-        if (properties && !_.isArray(properties)) {
-          properties = [properties];
-        }
-        newVals = {};
-        for (_i = 0, _len = properties.length; _i < _len; _i++) {
-          propName = properties[_i];
-          if (!_.has(normalizedSchema, propName)) {
-            throw new Error("Cannot set watch on " + propName + ", property is not defined in schema.");
-          }
-          newVals[propName] = instance[propName];
-        }
-        if (properties.length === 1) {
-          newVals = newVals[propName];
-        }
-        cb(newVals, newVals);
-        watcher = {
-          properties: properties,
-          cb: cb
-        };
-        instance._watchers.push(watcher);
-        return function() {
-          return instance._removeWatcher(watcher);
-        };
-      }
-    });
-    Object.defineProperty(instance, '_removeWatcher', {
-      configurable: false,
-      enumerable: false,
-      writable: true,
-      value: function(watcher) {
-        return _.remove(instance._watchers, watcher);
-      }
-    });
-    Object.defineProperty(instance, '_fireWatchers', {
-      configurable: false,
-      enumerable: false,
-      writable: true,
-      value: function(prevVals) {
-        var cached, getCurrentVal, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1, _results;
-        triggeringProperties = _.keys(prevVals);
-        cached = {};
-        getCurrentVal = function(propName) {
-          var val;
-          if (cached[propName]) {
-            return cached[propName];
-          } else {
-            val = instance[propName];
-            cached[propName] = val;
-            return val;
-          }
-        };
-        getPrevVal = function(propName) {
-          if (_.has(prevVals, propName)) {
-            return prevVals[propName];
-          } else {
-            return getCurrentVal(propName);
-          }
-        };
-        _ref = instance._watchers;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          watcher = _ref[_i];
-          shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0;
-          if (shouldFire) {
-            newVals = {};
-            oldVals = {};
-            _ref1 = watcher.properties;
-            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-              propName = _ref1[_j];
-              newVals[propName] = getCurrentVal(propName);
-              oldVals[propName] = getPrevVal(propName);
-            }
-            if (watcher.properties.length === 1) {
-              propName = watcher.properties[0];
-              newVals = newVals[propName];
-              oldVals = oldVals[propName];
-            }
-            _results.push(watcher.cb(newVals, oldVals));
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      }
-    });
     _fn = (function(_this) {
       return function(propName, propConfig) {
         Object.defineProperty(instance, propName, {
           configurable: false,
           enumerable: true,
           set: function(val) {
-            return instance.set(propName, val);
+            return set(propName, val);
           },
           get: function() {
-            return instance.get(propName);
+            return get(propName);
           }
         });
         if (propConfig["default"] !== void 0) {
