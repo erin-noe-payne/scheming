@@ -1,8 +1,5 @@
 # # Annotated Source
 
-log = (args...) ->
-#  console.log args...
-
 # Support node.js or browser environments
 root = @
 
@@ -430,83 +427,104 @@ schemaFactory = (name, opts) ->
       for propName, value of model
         @[propName] = value
 
+# ### Change Manager
+# Internal Change Manager class, responsible for queueing and resolving change event propagation for watches
 class ChangeManager
+
   constructor : ->
     @changes = {}
     @internalChangeQueue = []
     @timeout = null
 
-  queueChanges : (id, oldVals, fireWatchers) ->
+  # Registers changes that have occurred on an instance by instance id, holding a reference to the original value
+  queueChanges : (id, propName, oldVal, fireWatchers) ->
+    # if there are no changes yet queued for the insance, add to the changes hash by id
     if !_.has @changes, id
       @changes[id] ?= {changedProps : {}, fireWatchers}
-      if !_.contains @internalChangeQueue, id
-        log '-> pushed to internal change queue'
-        @internalChangeQueue.push id
+      @internalChangeQueue.push id
     {changedProps} = @changes[id]
-    for key, value of oldVals
-      if !_.has changedProps, key
-        changedProps[key] = value
-        log '-> change handler queued'
-        if !_.contains @internalChangeQueue, id
-          log '-> pushed to internal change queue'
-          @internalChangeQueue.push id
 
+    # for each changed property, track the original value of the property if it has not already been capturechangedPropsd.
+    if propName && !_.has changedProps, propName
+      changedProps[propName] = oldVal
+      @internalChangeQueue.push id
+
+    # set a timeout of zero to push the resolution step onto the event queue, once the thread has been released from
+    # a synchronous block of changes
     @timeout ?= setTimeout @resolve, 0
 
+  # reset the the change manager to a pristine state
   reset : ->
     @changes = {}
     @internalChangeQueue = []
     @timeout = null
 
+  # resolves queued changes, firing watchers on instances that have changed
   resolve : =>
+    # clear timeout to ensure to guarantee resolve is not called more than once.
     clearTimeout @timeout
+
     i = 0
+    # fire internal watches as many times as necessary to to make sure all changes propagate from all child -> parent
+    # schema instances
     while @internalChangeQueue.length
       i++
-      if i > 100
-        throw new Error '100 event propagation cycles, that seems wrong.'
-      internalChanges = @internalChangeQueue
+      # track iteration count and throw an error after some limit to prevent infinite loops
+      if Scheming.ITERATION_LIMIT > 0 && i > Scheming.ITERATION_LIMIT
+        throw new Error "Aborting change propagation after #{Scheming.ITERATION_LIMIT} cycles. If you have very deeply nested schemas you may consider raising the ITERATION_LIMIT configuration."
+      # A single id may have been pushed to the change queue many times, to take a unique list of ids.
+      internalChanges = _.unique @internalChangeQueue
+      # Immediately reset the state of the change queue
       @internalChangeQueue = []
 
+      # Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
+      # any parent schemas, whose changes will populate `@internalChangeQueue`
       for id in internalChanges
         {changedProps, fireWatchers} = @changes[id]
-
         fireWatchers changedProps, 'internal'
 
+    # Once internal watches have fired without causing a change on a parent schema instance, there are no more changes
+    # to propagate. At this point all changes on each instance have been aggregated into a single change set. Now
+    # fire all external watchers on each instance.
     for id of @changes
       {changedProps, fireWatchers} = @changes[id]
 
       fireWatchers changedProps, 'external'
 
+    # Finally reset state to begin capturing next set of changes
     @reset()
 
+# set up global change manager that will be consumed by all schema instances
 cm = new ChangeManager
 
+# Configuration for limiting number of iterations
+Scheming.ITERATION_LIMIT = 100
+
+# Synchronously cause the change manager resolve. Should be used for testing ONLY, to avoid having to write
+# asynchronous tests.
 Scheming._flush = ->
   cm.resolve()
 
-j = 0
 # ## Instance
 # Factory method that builds accepts an object and turns it into a Schema instance
 instanceFactory = (instance, normalizedSchema, opts)->
   # data hash wrapped in closure, keeps actual data members private
   data = {}
-  # private watchers array
+  # private watchers array. External watches - those set by consuming client code - are tracked separately from
+  # internal watches - those to watch change propagation on nested schemas
   watchers =
     internal : []
     external : []
-  # watchers on nested properties to support change event propagation
-  propagationWatchers = {}
+  # The unwatch functions from internal watches
+  unwatchers = {}
 
+  # Set an id on each instance that is not exposed, is used internally only for change management
   id = uuid()
-  log '-> creating', id
-  instance.id = id
 
   {strict, seal} = opts
 
   # ### Property Setter
   set = (propName, val) ->
-    log '-> set', propName, id
     prevVal = data[propName]
 
     # if the property is not a part of the schema, simply set it on the instance.
@@ -539,9 +557,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # - If the value being assigned is of type schema, we need to listen for changes to propagate
       watchForPropagation propName, val
 
-      # - Finally, check if the value has changed and needs to fire a watch
+      # - Finally, check if the value has changed and queue up for instance watches
       if !type.equals prevVal, val
-        queueChanges propName, prevVal
+        cm.queueChanges id, propName, prevVal, fireWatchers
 
   # ### Property Getter
   get = (propName) ->
@@ -559,12 +577,17 @@ instanceFactory = (instance, normalizedSchema, opts)->
     # - Finally, return the value
     return val
 
+  # Adds a watcher to the instance
   addWatcher = (properties, cb, opts) ->
+    # properties and opts arguments are optional
     if _.isFunction properties
       opts = cb
       cb = properties
+      # if no properties are specified, the watcher is registered to watch all properties of the object
       properties = _.keys normalizedSchema
 
+    # unless specified, a watch is assumed to be external. Clinet code should not set watches as internal!
+    # Behavior is undefined.
     opts ?= {}
     opts.internal ?= false
 
@@ -573,83 +596,86 @@ instanceFactory = (instance, normalizedSchema, opts)->
     if !_.isFunction cb
       throw new Error 'A watch must be provided with a callback function.'
 
+    # Cast the properties to an array. A watch can support one or more property names.
     if properties && !_.isArray properties
       properties = [properties]
 
-    newVals = {}
+    # Throw an error if client code attempts to set a watch on a property that is not defined as part of the schema.
     for propName in properties
       if !_.has normalizedSchema, propName
         throw new Error "Cannot set watch on #{propName}, property is not defined in schema."
-      newVals[propName] = instance[propName]
-    if properties.length == 1
-      newVals = newVals[propName]
 
+    # Register the watcher on the correct internal or external watchers array. Flag new watchers with `first` so that
+    # they will get called on the first change loop, regardless of whether the watch properties have changed.
     watcher = {properties, cb, first : true}
     watchers[target].push watcher
 
-    cm.queueChanges id, {}, fireWatchers
+    # Queue a change event on the change manager.
+    cm.queueChanges id, null, null, fireWatchers
 
-    # returns an unwatch function
+    # return an unwatch function
     return ->
       removeWatcher watcher, target
 
+  # Remove a watch listener from the appropraite watchers array
   removeWatcher = (watcher, target) ->
     _.remove watchers[target], watcher
 
+  # This function is called on value assignment
   watchForPropagation = (propName, val) ->
     {type} = normalizedSchema[propName]
 
+    # If the assigned property is of type schema, we need to listen for changes on the child instance to propagate
+    # changes to this instance
     if type.string == NESTED_TYPES.Schema.string
-      propagationWatchers[propName]?()
-      propagationWatchers[propName] = val.watch (newVal, oldVal)->
-        log 'propagated changes'
-        queueChanges propName, oldVal
+      # If there was a watcher from the previously assigned value, stop listening.
+      unwatchers[propName]?()
+      # Watch the new value for changes and propagate this changes to this instance. Flag the watch as internal.
+      unwatchers[propName] = val.watch (newVal, oldVal)->
+        cm.queueChanges id, propName, oldVal, fireWatchers
+
       , internal : true
 
+    # If the assigned property is an array of type schema, set a watch on each array memeber.
     if type.string == NESTED_TYPES.Array.string and type.childType.string == NESTED_TYPES.Schema.string
-      for unwatcher in (propagationWatchers[propName] || [])
+      # If there were watchers on the previous array members, clear those listeners.
+      for unwatcher in (unwatchers[propName] || [])
         unwatcher()
-      propagationWatchers[propName] = []
+      # reset the unwatchers array
+      unwatchers[propName] = []
+      # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
       for schema in val
-        propagationWatchers[propName].push schema.watch (newVal, oldVal)->
-          queueChanges propName, oldVal
+        unwatchers[propName].push schema.watch (newVal, oldVal)->
+          cm.queueChanges id, propName, oldVal, fireWatchers
         , internal : true
 
-  queueChanges = (propName, oldVal) ->
-    obj = {}
-    obj[propName] = oldVal
-
-    cm.queueChanges id, obj, fireWatchers
-
+  # Given a change set, fires all watchers that are watching one or more of the changed properties
   fireWatchers = (queuedChanges, target='external') ->
-    log '<- watchers fired', target, id
     triggeringProperties = _.keys queuedChanges
 
-    cached = {}
-    getCurrentVal = (propName) ->
-      if cached[propName]
-        return cached[propName]
-      else
-        val = instance[propName]
-        cached[propName] = val
-        return val
+    # Retrieves the previous value for a property, pulling from queued changes if present, otherwise retreiving
+    # current value - i.e. no change.
     getPrevVal = (propName) ->
       if _.has queuedChanges, propName
         return queuedChanges[propName]
       else
-        return getCurrentVal(propName)
+        return instance[propName]
 
+    # for each registered watcher
     for watcher in watchers[target]
-      shouldFire = (_.intersection(triggeringProperties, watcher.properties).length > 0) || watcher.first
+      # That watcher should fire if it is new, or if it is watching one or more of the changed properties
+      shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0)
       watcher.first = false
       if shouldFire
         newVals = {}
         oldVals = {}
 
+        # build the hash of new / old values
         for propName in watcher.properties
-          newVals[propName] = getCurrentVal(propName)
+          newVals[propName] = instance[propName]
           oldVals[propName] = getPrevVal(propName)
 
+        # if the watcher is set against a single property, invoke the callback with the raw new / old values
         if watcher.properties.length == 1
           propName = watcher.properties[0]
           newVals = newVals[propName]
