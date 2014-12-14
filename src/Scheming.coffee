@@ -387,7 +387,7 @@ schemaFactory = (name, opts) ->
             err = true
             # - Accept error strings that are returned, or errors that are thrown during processing
             try
-              err = validator(val)
+              err = validator.call(instance, val)
             catch e
               if e then err = e.message
             # - If any validation errors are detected, push them
@@ -395,14 +395,14 @@ schemaFactory = (name, opts) ->
 
           # - Additionally, if the property is a nested schema, run its validation
           if type.string == 'schema'
-            childErrors = type.childType.validate(val)
+            childErrors = type.childType.validate.call(instance, val)
             for k, v of childErrors
               #   - The key on the errors hash should be the path to the field that had a validation error
               pushError "#{key}.#{k}", v
           # - If the property is an array of schemas, run validation on each member of the array
           if type.string == 'array' && type.childType.string == 'schema'
             for member, i in val
-              childErrors = type.childType.childType.validate(member)
+              childErrors = type.childType.childType.validate.call(instance, member)
               for k, v of childErrors
                 #   - Again, the key on the errors hash should be the path to the field that had a validation error
                 pushError "#{key}[#{i}].#{k}", v

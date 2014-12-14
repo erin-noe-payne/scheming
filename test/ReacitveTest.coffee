@@ -6,11 +6,8 @@ describe 'Schema watch', ->
   unwatchers = null
   watcher = null
 
-  log = (args...) ->
-#    console.log args...
 
   beforeEach ->
-    log '**** BEFOREEACH 1 ****'
     Person = Scheming.create 'Person',
       name            : String
       age             : Number
@@ -25,7 +22,6 @@ describe 'Schema watch', ->
     watcher = sinon.spy()
 
   afterEach ->
-    log '**** AFTEREACH ****'
     Scheming._flush()
     Scheming.reset()
 
@@ -74,6 +70,14 @@ describe 'Schema watch', ->
       Scheming._flush()
 
       expect(watcher).to.have.been.called
+
+    it 'should reflect the construction as a change', ->
+      lisa = new Person name : 'lisa'
+      lisa.watch 'name', watcher
+      Scheming._flush()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith 'lisa', undefined
 
     it 'should fire the watch each time the value changes', ->
       lisa.name = 'lisa'
@@ -327,7 +331,6 @@ describe 'Schema watch', ->
     homer = null
 
     beforeEach ->
-      log '**** BEFOREEACH 2 ****'
       marge = new Person()
       homer = new Person()
       bart = new Person()
@@ -343,7 +346,6 @@ describe 'Schema watch', ->
 
     it 'should propagate changes on a nested schema to the parent schema', ->
       watcher = sinon.spy (newVal, oldVal)->
-        log ''
 
       lisa.watch ['mother'], watcher
 
@@ -373,47 +375,29 @@ describe 'Schema watch', ->
       }
 
     it 'simple test case', (done) ->
-      log '**** TEST BODY ****'
-
-      log '---> assign marge name, age, favorite numbers'
       marge.name = 'marge'
       marge.age = 45
       marge.favoriteNumbers = [1, 2, 3]
 
-      log '---> set watch'
       lisa.watch ['mother'], (newVal, oldVal) ->
-        log newVal
-        log oldVal
-        log '<--- DONE'
         done()
 
-      log '---> assign lisa name, mother'
       lisa.name = 'lisa'
       lisa.mother = marge
 
-      log '---> finish set'
 
-    it 'should not care about order but it does!', (done) ->
-      log '-----'
-
-      log '---> set watch'
+    it 'should not care about order', (done) ->
       lisa.watch ['mother'], ->
-        log '<--- DONE'
         done()
 
-      log '---> assign marge name, age, favorite numbers'
       marge.name = 'marge'
       marge.age = 45
       marge.favoriteNumbers = [1, 2, 3]
 
-      log '---> assign lisa name, mother'
       lisa.name = 'lisa'
       lisa.mother = marge
-
-      log '---> finish set'
 
     it 'should propagate changes on a nested schema in an array to the parent schema', ->
-      log '---------'
       lisa.watch 'friends', watcher
       lisa.friends = [marge, bart, homer]
 
@@ -448,16 +432,12 @@ describe 'Schema watch', ->
       marge.mother = homer
       homer.mother = bart
 
-      log 'FIRSTFLUSH'
       Scheming._flush()
       for spy, i in spies
-#        console.log i, spy.callCount
         expect(spy).to.have.been.calledOnce
         spy.reset()
 
       bart.name = 'bart'
-      log 'SECONDFLUSH'
       Scheming._flush()
       for spy, i in spies
-#        console.log i, spy.callCount
         expect(spy).to.have.been.calledOnce
