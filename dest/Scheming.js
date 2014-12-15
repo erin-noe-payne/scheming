@@ -1,5 +1,5 @@
 (function() {
-  var DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _,
+  var DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, changeHandlers, getPrimitiveTypeOf, instanceFactory, invokeChangeHandlers, isNode, queueChangeHandler, registry, root, schemaFactory, timeout, uuid, _,
     __slice = [].slice;
 
   root = this;
@@ -45,20 +45,32 @@
       identifier: _.isString,
       parser: function(val) {
         return '' + val;
+      },
+      equals: function(a, b) {
+        return a === b;
       }
     },
     Number: {
       ctor: Number,
       string: 'number',
       identifier: _.isNumber,
-      parser: parseFloat
+      parser: parseFloat,
+      comparator: function(a, b) {
+        return a === b;
+      },
+      equals: function(a, b) {
+        return a === b;
+      }
     },
     Integer: {
       string: 'integer',
       identifier: function(val) {
         return _.isNumber(val) && val % 1 === 0;
       },
-      parser: parseInt
+      parser: parseInt,
+      equals: function(a, b) {
+        return a === b;
+      }
     },
     Date: {
       ctor: Date,
@@ -66,6 +78,9 @@
       identifier: _.isDate,
       parser: function(val) {
         return new Date(val);
+      },
+      equals: function(a, b) {
+        return a.valueOf() === b.valueOf();
       }
     },
     Boolean: {
@@ -74,6 +89,9 @@
       identifier: _.isBoolean,
       parser: function(val) {
         return !!val;
+      },
+      equals: function(a, b) {
+        return a === b;
       }
     },
     Mixed: {
@@ -84,7 +102,10 @@
       identifier: function() {
         return true;
       },
-      parser: _.identity
+      parser: _.identity,
+      equals: function(a, b) {
+        return a === b;
+      }
     }
   };
 
@@ -101,14 +122,20 @@
       identifier: _.isArray,
       parser: _.toArray,
       childType: null,
-      childParser: null
+      childParser: null,
+      equals: function(a, b) {
+        return _.isEqual(a, b);
+      }
     },
     Schema: {
       ctor: Object,
       string: 'schema',
       identifier: null,
       parser: null,
-      childType: null
+      childType: null,
+      equals: function(a, b) {
+        return a === b;
+      }
     }
   };
 
@@ -235,7 +262,7 @@
       "default": null,
       getter: null,
       setter: null,
-      validators: null,
+      validate: null,
       required: false
     };
     if (!(_.isPlainObject(propConfig) && (propConfig.type != null))) {
@@ -272,8 +299,9 @@
     definition["default"] = propConfig["default"];
     definition.getter = getter;
     definition.setter = setter;
-    definition.validators = validate;
+    definition.validate = validate;
     definition.required = required;
+    definition = _.extend({}, propConfig, definition);
     return definition;
   };
 
@@ -328,12 +356,104 @@
         return _results;
       };
 
+      Schema.getProperties = function() {
+        return _.cloneDeep(normalizedSchema);
+      };
+
+      Schema.getProperty = function(propName) {
+        return _.cloneDeep(normalizedSchema[propName]);
+      };
+
+      Schema.eachProperty = function(cb) {
+        var propConfig, propName, _results;
+        _results = [];
+        for (propName in normalizedSchema) {
+          propConfig = normalizedSchema[propName];
+          _results.push(cb(propName, _.cloneDeep(propConfig)));
+        }
+        return _results;
+      };
+
+      Schema.validate = function(instance) {
+        var childErrors, e, err, errors, i, k, key, member, pushError, required, type, v, val, validate, validator, value, _i, _j, _len, _len1;
+        errors = {};
+        if (instance._validating) {
+          return null;
+        }
+        instance._validating = true;
+        pushError = function(key, err) {
+          var e, _i, _len;
+          if (_.isArray(err)) {
+            for (_i = 0, _len = err.length; _i < _len; _i++) {
+              e = err[_i];
+              return pushError(key, e);
+            }
+          }
+          if (!_.isString(err)) {
+            err = 'Validation error occurred.';
+          }
+          if (errors[key] == null) {
+            errors[key] = [];
+          }
+          return errors[key].push(err);
+        };
+        for (key in normalizedSchema) {
+          value = normalizedSchema[key];
+          validate = value.validate, required = value.required;
+          val = instance[key];
+          if (required && (val == null)) {
+            pushError(key, "Field is required.");
+          }
+          if (val != null) {
+            type = normalizedSchema[key].type;
+            for (_i = 0, _len = validate.length; _i < _len; _i++) {
+              validator = validate[_i];
+              err = true;
+              try {
+                err = validator(val);
+              } catch (_error) {
+                e = _error;
+                if (e) {
+                  err = e.message;
+                }
+              }
+              if (err !== true) {
+                pushError(key, err);
+              }
+            }
+            if (type.string === 'schema') {
+              childErrors = type.childType.validate(val);
+              for (k in childErrors) {
+                v = childErrors[k];
+                pushError("" + key + "." + k, v);
+              }
+            }
+            if (type.string === 'array' && type.childType.string === 'schema') {
+              for (i = _j = 0, _len1 = val.length; _j < _len1; i = ++_j) {
+                member = val[i];
+                childErrors = type.childType.childType.validate(member);
+                for (k in childErrors) {
+                  v = childErrors[k];
+                  pushError("" + key + "[" + i + "]." + k, v);
+                }
+              }
+            }
+          }
+        }
+        instance._validating = false;
+        if (_.size(errors) === 0) {
+          return null;
+        } else {
+          return errors;
+        }
+      };
+
       function Schema(model) {
-        var key, value;
+        var propName, value;
         instanceFactory(this, normalizedSchema, opts);
-        for (key in model) {
-          value = model[key];
-          this[key] = value;
+        for (propName in model) {
+          value = model[propName];
+          this[propName] = value;
         }
       }
 
@@ -342,45 +462,251 @@
     })();
   };
 
+  changeHandlers = [];
+
+  timeout = null;
+
+  queueChangeHandler = function(fn) {
+    if (!_.contains(changeHandlers, fn)) {
+      changeHandlers.push(fn);
+    }
+    return timeout != null ? timeout : timeout = setTimeout(function() {
+      timeout = null;
+      return invokeChangeHandlers();
+    });
+  };
+
+  invokeChangeHandlers = function() {
+    var watcher, _i, _j, _len, _len1, _results;
+    for (_i = 0, _len = changeHandlers.length; _i < _len; _i++) {
+      watcher = changeHandlers[_i];
+      watcher('internal');
+    }
+    _results = [];
+    for (_j = 0, _len1 = changeHandlers.length; _j < _len1; _j++) {
+      watcher = changeHandlers[_j];
+      _results.push(watcher('external'));
+    }
+    return _results;
+  };
+
+  Scheming._flush = function() {
+    clearTimeout(timeout);
+    timeout = null;
+    return invokeChangeHandlers();
+  };
+
   instanceFactory = function(instance, normalizedSchema, opts) {
-    var data, propConfig, propName, seal, strict, _fn;
+    var addWatcher, data, fireWatchers, get, propConfig, propName, propagationWatchers, queueChanges, queuedChanges, removeWatcher, seal, set, strict, watchForPropagation, watchers, _fn;
     data = {};
+    watchers = {
+      internal: [],
+      external: []
+    };
+    queuedChanges = {};
+    propagationWatchers = {};
     strict = opts.strict, seal = opts.seal;
+    set = function(propName, val) {
+      var prevVal, setter, type, _ref;
+      prevVal = data[propName];
+      if (!normalizedSchema[propName]) {
+        return instance[propName] = val;
+      }
+      _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
+      if (val === void 0) {
+        return data[propName] = val;
+      } else {
+        if (!type.identifier(val)) {
+          if (strict) {
+            throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
+          }
+          val = type.parser(val);
+        }
+        if (type.string === NESTED_TYPES.Array.string) {
+          val = type.childParser(val);
+        }
+        if (setter) {
+          val = setter(val);
+        }
+        data[propName] = val;
+        watchForPropagation(propName, val);
+        if (!type.equals(prevVal, val)) {
+          return queueChanges(propName, prevVal);
+        }
+      }
+    };
+    get = function(propName) {
+      var getter, val;
+      getter = normalizedSchema[propName].getter;
+      val = data[propName];
+      if (val === void 0) {
+        return val;
+      }
+      if (getter) {
+        val = getter(val);
+      }
+      return val;
+    };
+    addWatcher = function(properties, cb, opts) {
+      var newVals, propName, target, watcher, _i, _len;
+      if (_.isFunction(properties)) {
+        opts = cb;
+        cb = properties;
+        properties = _.keys(normalizedSchema);
+      }
+      if (opts == null) {
+        opts = {};
+      }
+      if (opts.internal == null) {
+        opts.internal = false;
+      }
+      target = opts.internal ? 'internal' : 'external';
+      if (!_.isFunction(cb)) {
+        throw new Error('A watch must be provided with a callback function.');
+      }
+      if (properties && !_.isArray(properties)) {
+        properties = [properties];
+      }
+      newVals = {};
+      for (_i = 0, _len = properties.length; _i < _len; _i++) {
+        propName = properties[_i];
+        if (!_.has(normalizedSchema, propName)) {
+          throw new Error("Cannot set watch on " + propName + ", property is not defined in schema.");
+        }
+        newVals[propName] = instance[propName];
+      }
+      if (properties.length === 1) {
+        newVals = newVals[propName];
+      }
+      watcher = {
+        properties: properties,
+        cb: cb
+      };
+      watchers[target].push(watcher);
+      queueChangeHandler(fireWatchers);
+      return function() {
+        return removeWatcher(watcher, target);
+      };
+    };
+    removeWatcher = function(watcher, target) {
+      return _.remove(watchers[target], watcher);
+    };
+    watchForPropagation = function(propName, val) {
+      var schema, type, unwatcher, _i, _j, _len, _len1, _ref, _results;
+      type = normalizedSchema[propName].type;
+      if (type.string === NESTED_TYPES.Schema.string) {
+        if (typeof propagationWatchers[propName] === "function") {
+          propagationWatchers[propName]();
+        }
+        propagationWatchers[propName] = val.watch(function(newVal, oldVal) {
+          console.log('propagated changes');
+          return queueChanges(propName, oldVal);
+        });
+      }
+      if (type.string === NESTED_TYPES.Array.string && type.childType.string === NESTED_TYPES.Schema.string) {
+        _ref = propagationWatchers[propName] || [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          unwatcher = _ref[_i];
+          unwatcher();
+        }
+        propagationWatchers[propName] = [];
+        _results = [];
+        for (_j = 0, _len1 = val.length; _j < _len1; _j++) {
+          schema = val[_j];
+          _results.push(propagationWatchers[propName].push(schema.watch(function(newVal, oldVal) {
+            return queueChanges(propName, oldVal);
+          })));
+        }
+        return _results;
+      }
+    };
+    queueChanges = function(propName, oldVal) {
+      if (!_.has(queuedChanges, propName)) {
+        queuedChanges[propName] = oldVal;
+        return queueChangeHandler(fireWatchers);
+      }
+    };
+    fireWatchers = function(target) {
+      var cached, getCurrentVal, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1;
+      if (target == null) {
+        target = 'external';
+      }
+      console.log('watchers fired', data.name);
+      triggeringProperties = _.keys(queuedChanges);
+      cached = {};
+      getCurrentVal = function(propName) {
+        var val;
+        if (cached[propName]) {
+          return cached[propName];
+        } else {
+          val = instance[propName];
+          cached[propName] = val;
+          return val;
+        }
+      };
+      getPrevVal = function(propName) {
+        if (_.has(queuedChanges, propName)) {
+          return queuedChanges[propName];
+        } else {
+          return getCurrentVal(propName);
+        }
+      };
+      console.log(target, watchers);
+      _ref = watchers[target];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        watcher = _ref[_i];
+        shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0;
+        if (shouldFire) {
+          newVals = {};
+          oldVals = {};
+          _ref1 = watcher.properties;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            propName = _ref1[_j];
+            newVals[propName] = getCurrentVal(propName);
+            oldVals[propName] = getPrevVal(propName);
+          }
+          if (watcher.properties.length === 1) {
+            propName = watcher.properties[0];
+            newVals = newVals[propName];
+            oldVals = oldVals[propName];
+          }
+          watcher.cb(newVals, oldVals);
+        }
+      }
+      if (target === 'external') {
+        return queuedChanges = {};
+      }
+    };
+    Object.defineProperty(instance, 'watch', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: function(properties, cb) {
+        return addWatcher(properties, cb);
+      }
+    });
+    Object.defineProperty(instance, '_flushWatches', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: function() {}
+    });
+    Object.defineProperty(instance, '_validating', {
+      configurable: false,
+      enumerable: false,
+      writable: true,
+      value: false
+    });
     _fn = (function(_this) {
       return function(propName, propConfig) {
-        var getter, setter, type;
-        type = propConfig.type, getter = propConfig.getter, setter = propConfig.setter;
         Object.defineProperty(instance, propName, {
           configurable: false,
           enumerable: true,
           set: function(val) {
-            if (val === void 0) {
-              return data[propName] = val;
-            }
-            if (!type.identifier(val)) {
-              if (strict) {
-                throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
-              }
-              val = type.parser(val);
-            }
-            if (setter) {
-              val = setter(val);
-            }
-            return data[propName] = val;
+            return set(propName, val);
           },
           get: function() {
-            var val;
-            val = data[propName];
-            if (val === void 0) {
-              return val;
-            }
-            if (getter) {
-              val = getter(val);
-            }
-            if (type.string === NESTED_TYPES.Array.string) {
-              val = type.childParser(val);
-            }
-            return val;
+            return get(propName);
           }
         });
         if (propConfig["default"] !== void 0) {
@@ -392,83 +718,6 @@
       propConfig = normalizedSchema[propName];
       _fn(propName, propConfig);
     }
-    Object.defineProperty(instance, '_validating', {
-      writable: true,
-      value: false
-    });
-    instance.validate = function() {
-      var childErrors, e, err, errors, i, k, key, member, pushError, required, type, v, val, validator, validators, value, _i, _j, _len, _len1;
-      errors = {};
-      if (this._validating) {
-        return null;
-      }
-      this._validating = true;
-      pushError = function(key, err) {
-        var e, _i, _len;
-        if (_.isArray(err)) {
-          for (_i = 0, _len = err.length; _i < _len; _i++) {
-            e = err[_i];
-            return pushError(key, e);
-          }
-        }
-        if (!_.isString(err)) {
-          err = 'Validation error occurred.';
-        }
-        if (errors[key] == null) {
-          errors[key] = [];
-        }
-        return errors[key].push(err);
-      };
-      for (key in normalizedSchema) {
-        value = normalizedSchema[key];
-        validators = value.validators, required = value.required;
-        val = this[key];
-        if (required && (val == null)) {
-          pushError(key, "Field is required.");
-        }
-        if (val != null) {
-          type = normalizedSchema[key].type;
-          for (_i = 0, _len = validators.length; _i < _len; _i++) {
-            validator = validators[_i];
-            err = true;
-            try {
-              err = validator(val);
-            } catch (_error) {
-              e = _error;
-              if (e) {
-                err = e.message;
-              }
-            }
-            if (err !== true) {
-              pushError(key, err);
-            }
-          }
-          if (type.string === 'schema') {
-            childErrors = val.validate();
-            for (k in childErrors) {
-              v = childErrors[k];
-              pushError("" + key + "." + k, v);
-            }
-          }
-          if (type.string === 'array' && type.childType.string === 'schema') {
-            for (i = _j = 0, _len1 = val.length; _j < _len1; i = ++_j) {
-              member = val[i];
-              childErrors = member.validate();
-              for (k in childErrors) {
-                v = childErrors[k];
-                pushError("" + key + "[" + i + "]." + k, v);
-              }
-            }
-          }
-        }
-      }
-      this._validating = false;
-      if (_.size(errors) === 0) {
-        return null;
-      } else {
-        return errors;
-      }
-    };
     if (seal) {
       return Object.seal(instance);
     }

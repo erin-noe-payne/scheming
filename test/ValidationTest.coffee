@@ -182,6 +182,26 @@ describe 'Validation', ->
 
     expect(errors.name).to.eql ['Validation error occurred.', 'Validation error occurred.', 'Validation error occurred.']
 
+  it 'should invoke validator functions with a this context of the instance', ->
+    DateRange = Scheming.create
+      startDate :
+        type : Number
+        validate : (val) ->
+          expect(@endDate).to.equal 2
+          return val < @endDate
+      endDate :
+        type : Number
+        validate : (val) ->
+          expect(@startDate).to.equal 1
+          return val > @startDate
+
+    range = new DateRange
+      startDate : 1
+      endDate : 2
+
+    expect(DateRange.validate(range)).to.be.null
+
+
   it 'should not invoke validation on nested schemas if they are undefined', ->
     validator = sinon.spy -> 'Validation error'
 

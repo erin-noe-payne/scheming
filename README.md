@@ -414,8 +414,74 @@ errors = bill.validate()
 
 The object instance returned by newing up a [Schema](#schema) constructor. 
 
-### Instance.watch()
+### Instance.watch([properties], listener)
 
-TODO! The goal is to make instances reactive, so that you can register for changes on an instance or individual properties of an instance.
+Watches a schmea instance for changes. The registered listenenr function will fire asynchronously each time one or more of the specified properties change.
+
+**IMPORTANT** Watchers and change detection depend on the `set` functionality of `Object.defineProperty`. This means that changes made by mutating a value (such as array splicing) will not be detected, and may result in memory leaks or unexpected behavior. As a best practice, only manipulate schema instance data via assignment with the `=` operator, and do not use mutators.
+
+- properties [optional] **String** || **[String]** Specifies the properties to watch on the instance. Accepts a string representing a single property or an array of strings representing one or more properties. If no properties are specified, the entire object will be watched for a change on any property. Will throw an error if any property being watched is not declared as part of the Schema.
+- listener **Function** *function(oldVal, newVal)* The listener function that will be called each time the watched properties change.
+  - Listener functions are called asynchronously with a setTimeout of 0. If multiple changes are made to an instance in a synchronous block of code, the listener will not be called for each change. It will be called once, with all changes aggregated.
+  - A listener function is always called when the watch is set, even if there were no changes to the watched properties.
+  - Listener functions are invoked with the current and previous values of the watched properties. If a watch is set against a single property, newVal and oldVal will be the new and previous values. If the watch is set against multiple properties, newVal and oldVal will be objects whose key / value pairs represent the watcher property names and their respective values.
+  - In the case of a watch against the entire object, newVal and oldVal will represent the current and previous state of all properties of the object. However. Note that newVal is NOT a reference to the instance object, it is a plain object whose key / value pairs represent the current state of the instance.
+  - Watches are "deep". This means changes to nested schemas are propagated up to the parent elements.
+
+
+#### Examples
+
+For all examples, we will use the following schema. For more examples, see the tests.
+```
+Person = Scheming.create 'Person',
+  name : String
+  age : Number
+  mother : 'Schema:Person'
+  friends : ['Schema:Person']
+
+lisa = new Person()
+```
+
+**Watching a single property**
+
+When a watch is set, it will always be called with the current value, even if no changes were made to the object.
+```
+lisa.watch 'name', (newVal, oldVal) ->
+  # will be called when the event queue clears
+  newVal == undefined
+  oldVal == undefined
+```
+
+Snchronous changes will be reflected when the watcher fires.
+```
+lisa.name = 'lisa'
+lisa.watch 'name', (newVal, oldVal) ->
+  newVal == 'lisa'
+  oldVal == undefined
+```
+
+Multiple synchronous changes are rolled up
+```
+lisa.watch 'name', (newVal, oldVal) ->
+  # this listner is called once
+  newVal == 'lisa'
+  oldVal == undefined
+
+lisa.name = 'a'
+lisa.name = 'b'
+lisa.name = 'lisa'
+```
+
+**Watching multiple properties**
+```
+lisa.watch ['name', 'age'], (newVal, oldVal) ->
+
+```
+
+
+
+
+
+
 
  

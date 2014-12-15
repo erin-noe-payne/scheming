@@ -93,12 +93,15 @@ NESTED_TYPES =
     parser      : _.toArray
     childType   : null
     childParser : null
+    equals     : (a, b) -> _.isEqual a, b
   Schema :
     ctor       : Object
     string     : 'schema'
     identifier : null
     parser     : null
     childType  : null
+    equals     : (a, b) -> a == b
+
 
 # Used internally to resolve a type declaration to its primitive type.
 # Matches a primitive type if it is...
@@ -384,7 +387,7 @@ schemaFactory = (name, opts) ->
             err = true
             # - Accept error strings that are returned, or errors that are thrown during processing
             try
-              err = validator(val)
+              err = validator.call(instance, val)
             catch e
               if e then err = e.message
             # - If any validation errors are detected, push them
@@ -392,14 +395,14 @@ schemaFactory = (name, opts) ->
 
           # - Additionally, if the property is a nested schema, run its validation
           if type.string == 'schema'
-            childErrors = type.childType.validate(val)
+            childErrors = type.childType.validate.call(instance, val)
             for k, v of childErrors
               #   - The key on the errors hash should be the path to the field that had a validation error
               pushError "#{key}.#{k}", v
           # - If the property is an array of schemas, run validation on each member of the array
           if type.string == 'array' && type.childType.string == 'schema'
             for member, i in val
-              childErrors = type.childType.childType.validate(member)
+              childErrors = type.childType.childType.validate.call(instance, member)
               for k, v of childErrors
                 #   - Again, the key on the errors hash should be the path to the field that had a validation error
                 pushError "#{key}[#{i}].#{k}", v
@@ -413,11 +416,6 @@ schemaFactory = (name, opts) ->
       else
         return errors
 
-    # ### watch
-    # Watches an instance for changes to one or more properties
-    @watch : (instance, properties, cb) ->
-      instance._addWatcher properties, cb
-
     # ### constructor
     # Constructor that builds instances of the Schema
     constructor       : (model) ->
@@ -426,72 +424,281 @@ schemaFactory = (name, opts) ->
       instanceFactory(@, normalizedSchema, opts)
 
       # Finally, initialize the instance with the model passed to the constructor
-      for key, value of model
-        @[key] = value
+      for propName, value of model
+        @[propName] = value
+
+# ### Change Manager
+# Internal Change Manager class, responsible for queueing and resolving change event propagation for watches
+class ChangeManager
+
+  constructor : ->
+    @changes = {}
+    @internalChangeQueue = []
+    @timeout = null
+
+  # Registers changes that have occurred on an instance by instance id, holding a reference to the original value
+  queueChanges : (id, propName, oldVal, fireWatchers) ->
+    # if there are no changes yet queued for the insance, add to the changes hash by id
+    if !_.has @changes, id
+      @changes[id] ?= {changedProps : {}, fireWatchers}
+      @internalChangeQueue.push id
+    {changedProps} = @changes[id]
+
+    # for each changed property, track the original value of the property if it has not already been capturechangedPropsd.
+    if propName && !_.has changedProps, propName
+      changedProps[propName] = oldVal
+      @internalChangeQueue.push id
+
+    # set a timeout of zero to push the resolution step onto the event queue, once the thread has been released from
+    # a synchronous block of changes
+    @timeout ?= setTimeout @resolve, 0
+
+  # reset the the change manager to a pristine state
+  reset : ->
+    @changes = {}
+    @internalChangeQueue = []
+    @timeout = null
+
+  # resolves queued changes, firing watchers on instances that have changed
+  resolve : =>
+    # clear timeout to ensure to guarantee resolve is not called more than once.
+    clearTimeout @timeout
+
+    i = 0
+    # fire internal watches as many times as necessary to to make sure all changes propagate from all child -> parent
+    # schema instances
+    while @internalChangeQueue.length
+      i++
+      # track iteration count and throw an error after some limit to prevent infinite loops
+      if Scheming.ITERATION_LIMIT > 0 && i > Scheming.ITERATION_LIMIT
+        throw new Error "Aborting change propagation after #{Scheming.ITERATION_LIMIT} cycles. If you have very deeply nested schemas you may consider raising the ITERATION_LIMIT configuration."
+      # A single id may have been pushed to the change queue many times, to take a unique list of ids.
+      internalChanges = _.unique @internalChangeQueue
+      # Immediately reset the state of the change queue
+      @internalChangeQueue = []
+
+      # Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
+      # any parent schemas, whose changes will populate `@internalChangeQueue`
+      for id in internalChanges
+        {changedProps, fireWatchers} = @changes[id]
+        fireWatchers changedProps, 'internal'
+
+    # Once internal watches have fired without causing a change on a parent schema instance, there are no more changes
+    # to propagate. At this point all changes on each instance have been aggregated into a single change set. Now
+    # fire all external watchers on each instance.
+    for id of @changes
+      {changedProps, fireWatchers} = @changes[id]
+
+      fireWatchers changedProps, 'external'
+
+    # Finally reset state to begin capturing next set of changes
+    @reset()
+
+# set up global change manager that will be consumed by all schema instances
+cm = new ChangeManager
+
+# Configuration for limiting number of iterations
+Scheming.ITERATION_LIMIT = 100
+
+# Synchronously cause the change manager resolve. Should be used for testing ONLY, to avoid having to write
+# asynchronous tests.
+Scheming._flush = ->
+  cm.resolve()
 
 # ## Instance
 # Factory method that builds accepts an object and turns it into a Schema instance
 instanceFactory = (instance, normalizedSchema, opts)->
   # data hash wrapped in closure, keeps actual data members private
   data = {}
+  # private watchers array. External watches - those set by consuming client code - are tracked separately from
+  # internal watches - those to watch change propagation on nested schemas
+  watchers =
+    internal : []
+    external : []
+  # The unwatch functions from internal watches
+  unwatchers = {}
+
+  # Set an id on each instance that is not exposed, is used internally only for change management
+  id = uuid()
 
   {strict, seal} = opts
 
-  instance.set = (propName, val) ->
-    prevVals = {}
-    kvp = {}
+  # ### Property Setter
+  set = (propName, val) ->
+    prevVal = data[propName]
 
-    if arguments.length == 2
-      kvp[propName] = val
-    else
-      kvp = propName
+    # if the property is not a part of the schema, simply set it on the instance.
+    # if the seal option is enabled this will fail silently, otherwise it will allow for arbitrary properties
+    if !normalizedSchema[propName]
+      return instance[propName] = val
 
-    for propName, val of kvp
-      prevVals[propName] = @[prevVals]
-      # retrieve the type, getter, and setter from the normalized field config
-      {type, setter} = normalizedSchema[propName]
-
-      # - If a property is set to undefined, do not type cast or run through setter.
-      # You should always be able to clear a property.
-      if val is undefined
-        data[propName] = val
-      else
-        # - If value is not undefined, run through type identifier to determine if it is the correct type
-        if !type.identifier(val)
-          #   - If not and strict mode is enabled, throw an error
-          if strict then throw new Error "Error assigning #{val} to #{propName}. Value is not of type #{type.string}"
-          #   - Otherwise, use parser to cast to the correct type
-          val = type.parser val
-        # - If the property type is of array, perform parsing on child members.
-        if type.string == NESTED_TYPES.Array.string
-          val = type.childParser val
-        # - If a setter is defined, run the value through setter
-        if setter
-          val = setter val
-        # - Finally, assign to the data hash
-        data[propName] = val
-
-    @_fireWatchers prevVals
-
-  instance.get = (propName) ->
     # retrieve the type, getter, and setter from the normalized field config
-    {type, getter} = normalizedSchema[propName]
+    {type, setter} = normalizedSchema[propName]
+
+    # - If a property is set to undefined, do not type cast or run through setter.
+    # You should always be able to clear a property.
+    if val is undefined
+      data[propName] = val
+    else
+      # - If value is not undefined, run through type identifier to determine if it is the correct type
+      if !type.identifier(val)
+        #   - If not and strict mode is enabled, throw an error
+        if strict then throw new Error "Error assigning #{val} to #{propName}. Value is not of type #{type.string}"
+        #   - Otherwise, use parser to cast to the correct type
+        val = type.parser val
+      # - If the property type is of array, perform parsing on child members.
+      if type.string == NESTED_TYPES.Array.string
+        val = type.childParser val
+      # - If a setter is defined, run the value through setter
+      if setter
+        val = setter val
+      # - Assign to the data hash
+      data[propName] = val
+      # - If the value being assigned is of type schema, we need to listen for changes to propagate
+      watchForPropagation propName, val
+
+      # - Finally, check if the value has changed and queue up for instance watches
+      if !type.equals prevVal, val
+        cm.queueChanges id, propName, prevVal, fireWatchers
+
+  # ### Property Getter
+  get = (propName) ->
+    # retrieve the type, getter, and setter from the normalized field config
+    {getter} = normalizedSchema[propName]
 
     # - Retrieve data value from the hash
     val = data[propName]
     # - If value is not defined, immediately return it.
     if val is undefined
       return val
-    # - Return a clone of the original value to protect data from mutation
-    unless type.string == 'schema'
-      val = _.clone val
     # - If getter is defined, run value through getter
     if getter
       val = getter val
     # - Finally, return the value
     return val
 
-   # ### constructor
+  # Adds a watcher to the instance
+  addWatcher = (properties, cb, opts) ->
+    # properties and opts arguments are optional
+    if _.isFunction properties
+      opts = cb
+      cb = properties
+      # if no properties are specified, the watcher is registered to watch all properties of the object
+      properties = _.keys normalizedSchema
+
+    # unless specified, a watch is assumed to be external. Clinet code should not set watches as internal!
+    # Behavior is undefined.
+    opts ?= {}
+    opts.internal ?= false
+
+    target = if opts.internal then 'internal' else 'external'
+
+    if !_.isFunction cb
+      throw new Error 'A watch must be provided with a callback function.'
+
+    # Cast the properties to an array. A watch can support one or more property names.
+    if properties && !_.isArray properties
+      properties = [properties]
+
+    # Throw an error if client code attempts to set a watch on a property that is not defined as part of the schema.
+    for propName in properties
+      if !_.has normalizedSchema, propName
+        throw new Error "Cannot set watch on #{propName}, property is not defined in schema."
+
+    # Register the watcher on the correct internal or external watchers array. Flag new watchers with `first` so that
+    # they will get called on the first change loop, regardless of whether the watch properties have changed.
+    watcher = {properties, cb, first : true}
+    watchers[target].push watcher
+
+    # Queue a change event on the change manager.
+    cm.queueChanges id, null, null, fireWatchers
+
+    # return an unwatch function
+    return ->
+      removeWatcher watcher, target
+
+  # Remove a watch listener from the appropraite watchers array
+  removeWatcher = (watcher, target) ->
+    _.remove watchers[target], watcher
+
+  # This function is called on value assignment
+  watchForPropagation = (propName, val) ->
+    {type} = normalizedSchema[propName]
+
+    # If the assigned property is of type schema, we need to listen for changes on the child instance to propagate
+    # changes to this instance
+    if type.string == NESTED_TYPES.Schema.string
+      # If there was a watcher from the previously assigned value, stop listening.
+      unwatchers[propName]?()
+      # Watch the new value for changes and propagate this changes to this instance. Flag the watch as internal.
+      unwatchers[propName] = val.watch (newVal, oldVal)->
+        cm.queueChanges id, propName, oldVal, fireWatchers
+
+      , internal : true
+
+    # If the assigned property is an array of type schema, set a watch on each array memeber.
+    if type.string == NESTED_TYPES.Array.string and type.childType.string == NESTED_TYPES.Schema.string
+      # If there were watchers on the previous array members, clear those listeners.
+      for unwatcher in (unwatchers[propName] || [])
+        unwatcher()
+      # reset the unwatchers array
+      unwatchers[propName] = []
+      # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
+      for schema in val
+        unwatchers[propName].push schema.watch (newVal, oldVal)->
+          cm.queueChanges id, propName, oldVal, fireWatchers
+        , internal : true
+
+  # Given a change set, fires all watchers that are watching one or more of the changed properties
+  fireWatchers = (queuedChanges, target='external') ->
+    triggeringProperties = _.keys queuedChanges
+
+    # Retrieves the previous value for a property, pulling from queued changes if present, otherwise retreiving
+    # current value - i.e. no change.
+    getPrevVal = (propName) ->
+      if _.has queuedChanges, propName
+        return queuedChanges[propName]
+      else
+        return instance[propName]
+
+    # for each registered watcher
+    for watcher in watchers[target]
+      # That watcher should fire if it is new, or if it is watching one or more of the changed properties
+      shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0)
+      watcher.first = false
+      if shouldFire
+        newVals = {}
+        oldVals = {}
+
+        # build the hash of new / old values
+        for propName in watcher.properties
+          newVals[propName] = instance[propName]
+          oldVals[propName] = getPrevVal(propName)
+
+        # if the watcher is set against a single property, invoke the callback with the raw new / old values
+        if watcher.properties.length == 1
+          propName = watcher.properties[0]
+          newVals = newVals[propName]
+          oldVals = oldVals[propName]
+
+        watcher.cb newVals, oldVals
+
+  # ### watch
+  # Watches an instance for changes to one or more properties
+  Object.defineProperty instance, 'watch',
+    configurable : false
+    enumerable : false
+    writable : false
+    value : (properties, cb, opts) -> addWatcher properties, cb, opts
+
+  # Define a validating flag, which is used to prevent infinite loops on validation of circular references
+  Object.defineProperty instance, '_validating',
+    configurable : false
+    enumerable : false
+    writable : true
+    value : false
+
+  # ### constructor
   # for each property of the normalized schema
   for propName, propConfig of normalizedSchema
     do (propName, propConfig) =>
@@ -501,93 +708,16 @@ instanceFactory = (instance, normalizedSchema, opts)->
         configurable : false
         enumerable   : true
         # **set**
-        set          : (val) -> instance.set propName, val
+        set          : (val) -> set propName, val
         # **get**
-        get          : -> instance.get propName
+        get          : -> get propName
 
       # Once the property is configured, assign a default value. This ensures that default values are still
       # affected by type parsing and setters
       if propConfig.default != undefined
         instance[propName] = propConfig.default?() || propConfig.default
 
-  # Define a _validating flag, which is used to prevent infinite loops on validation of circular references
-  Object.defineProperty instance, '_validating',
-    configurable : false
-    enumerable : false
-    writable : true
-    value : false
-
-  # Set up the _watchers hash
-  Object.defineProperty instance, '_watchers',
-    configurable : false
-    enumerable : false
-    writable : true
-    value : []
-
-  Object.defineProperty instance, '_addWatcher',
-    configurable : false
-    enumerable : false
-    writable : true
-    value : (properties, cb) ->
-      if arguments.length == 1
-        cb = properties
-        properties = _.keys normalizedSchema
-
-      if properties && !_.isArray properties
-        properties = [properties]
-
-      instance._watchers.push {properties, cb}
-
-      # returns an unwatch function
-      return ->
-        instance._removeWatcher cb
-
-  Object.defineProperty instance, '_removeWatcher',
-    configurable : false
-    enumerable : false
-    writable : true
-    value : (cb) ->
-      instance._watchers = _.remove instance._watchers, {cb}
-
-  Object.defineProperty instance, '_fireWatchers',
-    configurable : false
-    enumerable : false
-    writable : true
-    value : (prevVals) ->
-      triggeringProperties = _.keys prevVals
-
-      cached = {}
-      getCurrentVal = (propName) ->
-        if cached[propName]
-          return cached[propName]
-        else
-          val = instance[propName]
-          cached[propName] = val
-          return val
-      getPrevVal = (propName) ->
-        if prevVals[propName]
-          return prevVals[propName]
-        else
-          return getCurrentVal(propName)
-
-      for watcher in instance._watchers
-        shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0
-        if shouldFire
-          newVals = {}
-          oldVals = {}
-
-          for propName in watcher.properties
-            newVals[propName] = getCurrentVal(propName)
-            oldVals[propName] = getPrevVal(propName)
-
-          if watcher.properties.length == 1
-            propName = watcher.properties[0]
-            newVals = newVals[propName]
-            oldVals = oldVals[propName]
-
-          watcher.cb newVals, oldVals
-
-      # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
+  # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
   # defined by the Schema
   if seal
     Object.seal instance

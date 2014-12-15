@@ -1,6 +1,6 @@
 {
   "name": "scheming",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "main": "./dest/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
@@ -27,6 +27,7 @@
     "karma-coffee-preprocessor": "~0.2.1",
     "karma-sinon": "~1.0.3",
     "karma-sinon-chai": "~0.2.0",
-    "karma-chai": "~0.1.0"
+    "karma-chai": "~0.1.0",
+    "gulp-mocha": "~2.0.0"
   }
 }
