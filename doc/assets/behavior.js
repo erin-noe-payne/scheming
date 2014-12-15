@@ -185,27 +185,8 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "Schema.extend()",
-                    "slug": "schemaextend"
-                  },
-                  "depth": 3
-                }
-              ]
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Instance",
-                "slug": "instance"
-              },
-              "depth": 2,
-              "children": [
-                {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "Instance.validate()",
-                    "slug": "instancevalidate"
+                    "title": "Schema.validate(instance)",
+                    "slug": "schemavalidateinstance"
                   },
                   "depth": 3,
                   "children": [
@@ -239,10 +220,40 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "Instance.watch()",
-                    "slug": "instancewatch"
+                    "title": "Schema.extend()",
+                    "slug": "schemaextend"
                   },
                   "depth": 3
+                }
+              ]
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Instance",
+                "slug": "instance"
+              },
+              "depth": 2,
+              "children": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Instance.watch([properties], listener)",
+                    "slug": "instancewatchproperties-listener"
+                  },
+                  "depth": 3,
+                  "children": [
+                    {
+                      "type": "heading",
+                      "data": {
+                        "level": 4,
+                        "title": "Examples",
+                        "slug": "examples"
+                      },
+                      "depth": 4
+                    }
+                  ]
                 }
               ]
             }
@@ -381,8 +392,48 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
+                    "title": "getProperties",
+                    "slug": "getproperties"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "getProperty",
+                    "slug": "getproperty"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "eachProperty",
+                    "slug": "eachproperty"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "validate",
+                    "slug": "validate"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
                     "title": "constructor",
                     "slug": "constructor"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Change Manager",
+                    "slug": "change-manager"
                   },
                   "depth": 3
                 }
@@ -400,16 +451,32 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "constructor",
-                    "slug": "constructor"
+                    "title": "Property Setter",
+                    "slug": "property-setter"
                   },
                   "depth": 3
                 }, {
                   "type": "heading",
                   "data": {
                     "level": 3,
-                    "title": "validate",
-                    "slug": "validate"
+                    "title": "Property Getter",
+                    "slug": "property-getter"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "watch",
+                    "slug": "watch"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "constructor",
+                    "slug": "constructor"
                   },
                   "depth": 3
                 }
@@ -525,8 +592,48 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 3,
+                "title": "getProperties",
+                "slug": "getproperties"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "getProperty",
+                "slug": "getproperty"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "eachProperty",
+                "slug": "eachproperty"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "validate",
+                "slug": "validate"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
                 "title": "constructor",
                 "slug": "constructor"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "Change Manager",
+                "slug": "change-manager"
               },
               "depth": 3
             }
@@ -544,16 +651,32 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 3,
-                "title": "constructor",
-                "slug": "constructor"
+                "title": "Property Setter",
+                "slug": "property-setter"
               },
               "depth": 3
             }, {
               "type": "heading",
               "data": {
                 "level": 3,
-                "title": "validate",
-                "slug": "validate"
+                "title": "Property Getter",
+                "slug": "property-getter"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "watch",
+                "slug": "watch"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "constructor",
+                "slug": "constructor"
               },
               "depth": 3
             }
