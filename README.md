@@ -35,13 +35,13 @@ jane = new User
   birthday : '9/14/86'
   password : 'p@$$w0rd!'
 
-console.log jane.validate()
+console.log Person.validate jane
 # {name : 'Field is required.', email: 'An email address must have an @ symbol!'}
 
 jane.name = 'jane'
 jane.email = 'jane@gmail.com'
 
-console.log jane.validate
+console.log Person.validate jane
 # null
 
 ```
@@ -329,7 +329,7 @@ Schema.create
 - default **value** or **function** Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.
 - getter **function** A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval.
 - setter **function** A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type.
-- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not `true` or a string, validation will fail with a generic error message. See [Instance.validate](#instancevalidate) for details on how validation works.
+- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not `true` or a string, validation will fail with a generic error message. See [Schema.validate](#schemavalidate) for details on how validation works.
 - required **boolean** A special validator that indicates whether the field is required.
 
 ### Schema.defineProperties(properties)
@@ -354,7 +354,7 @@ Person = Scheming.create {name : String}
       
 bill = new Person {name : 'bill}
 
-errors = bill.validate() # null
+errors = Person.validate bill # null
 ```
 
 #### Validation failure messages
@@ -376,11 +376,11 @@ Person = Scheming.create
     
 bill = new Person()
 
-errors = bill.validate() 
+errors = Person.validate bill
 # returns null, because bill object does not have a name defined, and name is not required
 
 bill.name = 'bill'
-errors = bill.validate()
+errors = Person.validate bill
 # {name : ["Error number one", "Error number two", "Validation error occurred."]}
 ```
 
@@ -402,7 +402,7 @@ Person = Scheming.create
     
 bill = new Person()
 
-errors = bill.validate() 
+errors = Person.validate bill
 # {name : ["Field is required."]}
 
 ```

@@ -1,6 +1,7 @@
 (function() {
-  var DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, changeHandlers, getPrimitiveTypeOf, instanceFactory, invokeChangeHandlers, isNode, queueChangeHandler, registry, root, schemaFactory, timeout, uuid, _,
-    __slice = [].slice;
+  var ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _,
+    __slice = [].slice,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   root = this;
 
@@ -410,7 +411,7 @@
               validator = validate[_i];
               err = true;
               try {
-                err = validator(val);
+                err = validator.call(instance, val);
               } catch (_error) {
                 e = _error;
                 if (e) {
@@ -422,7 +423,7 @@
               }
             }
             if (type.string === 'schema') {
-              childErrors = type.childType.validate(val);
+              childErrors = type.childType.validate.call(instance, val);
               for (k in childErrors) {
                 v = childErrors[k];
                 pushError("" + key + "." + k, v);
@@ -431,7 +432,7 @@
             if (type.string === 'array' && type.childType.string === 'schema') {
               for (i = _j = 0, _len1 = val.length; _j < _len1; i = ++_j) {
                 member = val[i];
-                childErrors = type.childType.childType.validate(member);
+                childErrors = type.childType.childType.validate.call(instance, member);
                 for (k in childErrors) {
                   v = childErrors[k];
                   pushError("" + key + "[" + i + "]." + k, v);
@@ -462,49 +463,84 @@
     })();
   };
 
-  changeHandlers = [];
-
-  timeout = null;
-
-  queueChangeHandler = function(fn) {
-    if (!_.contains(changeHandlers, fn)) {
-      changeHandlers.push(fn);
+  ChangeManager = (function() {
+    function ChangeManager() {
+      this.resolve = __bind(this.resolve, this);
+      this.changes = {};
+      this.internalChangeQueue = [];
+      this.timeout = null;
     }
-    return timeout != null ? timeout : timeout = setTimeout(function() {
-      timeout = null;
-      return invokeChangeHandlers();
-    });
-  };
 
-  invokeChangeHandlers = function() {
-    var watcher, _i, _j, _len, _len1, _results;
-    for (_i = 0, _len = changeHandlers.length; _i < _len; _i++) {
-      watcher = changeHandlers[_i];
-      watcher('internal');
-    }
-    _results = [];
-    for (_j = 0, _len1 = changeHandlers.length; _j < _len1; _j++) {
-      watcher = changeHandlers[_j];
-      _results.push(watcher('external'));
-    }
-    return _results;
-  };
+    ChangeManager.prototype.queueChanges = function(id, propName, oldVal, fireWatchers) {
+      var changedProps, _base;
+      if (!_.has(this.changes, id)) {
+        if ((_base = this.changes)[id] == null) {
+          _base[id] = {
+            changedProps: {},
+            fireWatchers: fireWatchers
+          };
+        }
+        this.internalChangeQueue.push(id);
+      }
+      changedProps = this.changes[id].changedProps;
+      if (propName && !_.has(changedProps, propName)) {
+        changedProps[propName] = oldVal;
+        this.internalChangeQueue.push(id);
+      }
+      return this.timeout != null ? this.timeout : this.timeout = setTimeout(this.resolve, 0);
+    };
+
+    ChangeManager.prototype.reset = function() {
+      this.changes = {};
+      this.internalChangeQueue = [];
+      return this.timeout = null;
+    };
+
+    ChangeManager.prototype.resolve = function() {
+      var changedProps, fireWatchers, i, id, internalChanges, _i, _len, _ref, _ref1;
+      clearTimeout(this.timeout);
+      i = 0;
+      while (this.internalChangeQueue.length) {
+        i++;
+        if (Scheming.ITERATION_LIMIT > 0 && i > Scheming.ITERATION_LIMIT) {
+          throw new Error("Aborting change propagation after " + Scheming.ITERATION_LIMIT + " cycles. If you have very deeply nested schemas you may consider raising the ITERATION_LIMIT configuration.");
+        }
+        internalChanges = _.unique(this.internalChangeQueue);
+        this.internalChangeQueue = [];
+        for (_i = 0, _len = internalChanges.length; _i < _len; _i++) {
+          id = internalChanges[_i];
+          _ref = this.changes[id], changedProps = _ref.changedProps, fireWatchers = _ref.fireWatchers;
+          fireWatchers(changedProps, 'internal');
+        }
+      }
+      for (id in this.changes) {
+        _ref1 = this.changes[id], changedProps = _ref1.changedProps, fireWatchers = _ref1.fireWatchers;
+        fireWatchers(changedProps, 'external');
+      }
+      return this.reset();
+    };
+
+    return ChangeManager;
+
+  })();
+
+  cm = new ChangeManager;
+
+  Scheming.ITERATION_LIMIT = 100;
 
   Scheming._flush = function() {
-    clearTimeout(timeout);
-    timeout = null;
-    return invokeChangeHandlers();
+    return cm.resolve();
   };
 
   instanceFactory = function(instance, normalizedSchema, opts) {
-    var addWatcher, data, fireWatchers, get, propConfig, propName, propagationWatchers, queueChanges, queuedChanges, removeWatcher, seal, set, strict, watchForPropagation, watchers, _fn;
+    var addWatcher, data, fireWatchers, get, id, propConfig, propName, removeWatcher, seal, set, strict, unwatchers, watchForPropagation, watchers, _fn;
     data = {};
     watchers = {
       internal: [],
       external: []
     };
-    queuedChanges = {};
-    propagationWatchers = {};
+    unwatchers = {};
+    id = uuid();
     strict = opts.strict, seal = opts.seal;
     set = function(propName, val) {
       var prevVal, setter, type, _ref;
@@ -531,7 +567,7 @@
         data[propName] = val;
         watchForPropagation(propName, val);
         if (!type.equals(prevVal, val)) {
-          return queueChanges(propName, prevVal);
+          return cm.queueChanges(id, propName, prevVal, fireWatchers);
         }
       }
     };
@@ -548,7 +584,7 @@
       return val;
     };
     addWatcher = function(properties, cb, opts) {
-      var newVals, propName, target, watcher, _i, _len;
+      var propName, target, watcher, _i, _len;
       if (_.isFunction(properties)) {
         opts = cb;
         cb = properties;
@@ -567,23 +603,19 @@
       if (properties && !_.isArray(properties)) {
         properties = [properties];
       }
-      newVals = {};
       for (_i = 0, _len = properties.length; _i < _len; _i++) {
         propName = properties[_i];
         if (!_.has(normalizedSchema, propName)) {
           throw new Error("Cannot set watch on " + propName + ", property is not defined in schema.");
         }
-        newVals[propName] = instance[propName];
-      }
-      if (properties.length === 1) {
-        newVals = newVals[propName];
       }
       watcher = {
         properties: properties,
-        cb: cb
+        cb: cb,
+        first: true
       };
       watchers[target].push(watcher);
-      queueChangeHandler(fireWatchers);
+      cm.queueChanges(id, null, null, fireWatchers);
       return function() {
         return removeWatcher(watcher, target);
       };
@@ -595,74 +627,60 @@
       var schema, type, unwatcher, _i, _j, _len, _len1, _ref, _results;
       type = normalizedSchema[propName].type;
       if (type.string === NESTED_TYPES.Schema.string) {
-        if (typeof propagationWatchers[propName] === "function") {
-          propagationWatchers[propName]();
+        if (typeof unwatchers[propName] === "function") {
+          unwatchers[propName]();
         }
-        propagationWatchers[propName] = val.watch(function(newVal, oldVal) {
-          console.log('propagated changes');
-          return queueChanges(propName, oldVal);
+        unwatchers[propName] = val.watch(function(newVal, oldVal) {
+          return cm.queueChanges(id, propName, oldVal, fireWatchers);
+        }, {
+          internal: true
         });
       }
       if (type.string === NESTED_TYPES.Array.string && type.childType.string === NESTED_TYPES.Schema.string) {
-        _ref = propagationWatchers[propName] || [];
+        _ref = unwatchers[propName] || [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           unwatcher = _ref[_i];
           unwatcher();
         }
-        propagationWatchers[propName] = [];
+        unwatchers[propName] = [];
         _results = [];
         for (_j = 0, _len1 = val.length; _j < _len1; _j++) {
           schema = val[_j];
-          _results.push(propagationWatchers[propName].push(schema.watch(function(newVal, oldVal) {
-            return queueChanges(propName, oldVal);
+          _results.push(unwatchers[propName].push(schema.watch(function(newVal, oldVal) {
+            return cm.queueChanges(id, propName, oldVal, fireWatchers);
+          }, {
+            internal: true
           })));
         }
         return _results;
       }
     };
-    queueChanges = function(propName, oldVal) {
-      if (!_.has(queuedChanges, propName)) {
-        queuedChanges[propName] = oldVal;
-        return queueChangeHandler(fireWatchers);
-      }
-    };
-    fireWatchers = function(target) {
-      var cached, getCurrentVal, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1;
+    fireWatchers = function(queuedChanges, target) {
+      var getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1, _results;
       if (target == null) {
         target = 'external';
       }
-      console.log('watchers fired', data.name);
       triggeringProperties = _.keys(queuedChanges);
-      cached = {};
-      getCurrentVal = function(propName) {
-        var val;
-        if (cached[propName]) {
-          return cached[propName];
-        } else {
-          val = instance[propName];
-          cached[propName] = val;
-          return val;
-        }
-      };
       getPrevVal = function(propName) {
         if (_.has(queuedChanges, propName)) {
           return queuedChanges[propName];
         } else {
-          return getCurrentVal(propName);
+          return instance[propName];
         }
       };
-      console.log(target, watchers);
       _ref = watchers[target];
+      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         watcher = _ref[_i];
-        shouldFire = _.intersection(triggeringProperties, watcher.properties).length > 0;
+        shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0);
+        watcher.first = false;
         if (shouldFire) {
           newVals = {};
           oldVals = {};
           _ref1 = watcher.properties;
           for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
             propName = _ref1[_j];
-            newVals[propName] = getCurrentVal(propName);
+            newVals[propName] = instance[propName];
             oldVals[propName] = getPrevVal(propName);
           }
           if (watcher.properties.length === 1) {
@@ -670,26 +688,20 @@
             newVals = newVals[propName];
             oldVals = oldVals[propName];
           }
-          watcher.cb(newVals, oldVals);
+          _results.push(watcher.cb(newVals, oldVals));
+        } else {
+          _results.push(void 0);
         }
       }
-      if (target === 'external') {
-        return queuedChanges = {};
-      }
+      return _results;
     };
     Object.defineProperty(instance, 'watch', {
       configurable: false,
       enumerable: false,
       writable: false,
-      value: function(properties, cb) {
-        return addWatcher(properties, cb);
+      value: function(properties, cb, opts) {
+        return addWatcher(properties, cb, opts);
       }
-    });
-    Object.defineProperty(instance, '_flushWatches', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: function() {}
     });
     Object.defineProperty(instance, '_validating', {
       configurable: false,
