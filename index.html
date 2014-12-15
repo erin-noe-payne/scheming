@@ -31,13 +31,13 @@ jane = new User
   birthday : &#39;9/14/86&#39;
   password : &#39;p@$$w0rd!&#39;
 
-console.log jane.validate()
+console.log Person.validate jane
 # {name : &#39;Field is required.&#39;, email: &#39;An email address must have an @ symbol!&#39;}
 
 jane.name = &#39;jane&#39;
 jane.email = &#39;jane@gmail.com&#39;
 
-console.log jane.validate
+console.log Person.validate jane
 # null</code></pre>
 <h1 id="api-docs">API Docs</h1>
 <h2 id="scheming">Scheming</h2>
@@ -255,7 +255,7 @@ lisa = new Person
 <li>default <strong>value</strong> or <strong>function</strong> Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.</li>
 <li>getter <strong>function</strong> A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval.</li>
 <li>setter <strong>function</strong> A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type.</li>
-<li>validate <strong>function</strong> or <strong>Array of functions</strong> Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not <code>true</code> or a string, validation will fail with a generic error message. See <a href="#instancevalidate">Instance.validate</a> for details on how validation works.</li>
+<li>validate <strong>function</strong> or <strong>Array of functions</strong> Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not <code>true</code> or a string, validation will fail with a generic error message. See <a href="#schemavalidate">Schema.validate</a> for details on how validation works.</li>
 <li>required <strong>boolean</strong> A special validator that indicates whether the field is required.</li>
 </ul>
 <h3 id="schemadefinepropertiesproperties">Schema.defineProperties(properties)</h3>
@@ -263,12 +263,8 @@ lisa = new Person
 <ul>
 <li>properties <strong>object</strong> An object whose key value pairs are passed to <a href="#sschemadefineproperty">Schema.defineProperty</a></li>
 </ul>
-<h3 id="schemaextend">Schema.extend()</h3>
-<p> TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...</p>
-<h2 id="instance">Instance</h2>
-<p>The object instance returned by newing up a <a href="#schema">Schema</a> constructor. </p>
-<h3 id="instancevalidate">Instance.validate()</h3>
-<p>Validates the schema instance and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.</p>
+<h3 id="schemavalidateinstance">Schema.validate(instance)</h3>
+<p>Validates an instance of the schema and all child schema instances. Checks for required fields and runs all validators. Validators are not run on fields which are not defined.</p>
 <ul>
 <li>returns errors <strong>object</strong> An object with any validation errors, where each key is the path that failed validation, and each value is an array of error messages. If validation passes, will return <code>null</code>.</li>
 </ul>
@@ -278,7 +274,7 @@ lisa = new Person
 
 bill = new Person {name : &#39;bill}
 
-errors = bill.validate() # null</code></pre>
+errors = Person.validate bill # null</code></pre>
 <h4 id="validation-failure-messages">Validation failure messages</h4>
 <p>A validator function should return true if it passes. Any other return value will be treated as validation failure. If a validator returns a string, that string will be treated as the failure message. If a validator throws an error at any point, the <code>error.message</code> property will be treated as the failure message. Otherwise, the validation will fail with a generic error message.</p>
 <p>If multiple validators are defined, all will be run against the value. The errors object will return error messages for all validators that failed.</p>
@@ -294,11 +290,11 @@ errors = bill.validate() # null</code></pre>
 
 bill = new Person()
 
-errors = bill.validate() 
+errors = Person.validate bill
 # returns null, because bill object does not have a name defined, and name is not required
 
 bill.name = &#39;bill&#39;
-errors = bill.validate()
+errors = Person.validate bill
 # {name : [&quot;Error number one&quot;, &quot;Error number two&quot;, &quot;Validation error occurred.&quot;]}</code></pre>
 <h4 id="required-and-validators">Required and Validators</h4>
 <p>The <code>required</code> configuration is a special validator that checks if the value is defined. If required validation fails, other validators will not be run. This means that validators are guaranteed to receive a value, and do not need to do null checking.</p>
@@ -315,7 +311,54 @@ errors = bill.validate()
 
 bill = new Person()
 
-errors = bill.validate() 
+errors = Person.validate bill
 # {name : [&quot;Field is required.&quot;]}</code></pre>
-<h3 id="instancewatch">Instance.watch()</h3>
-<p>TODO! The goal is to make instances reactive, so that you can register for changes on an instance or individual properties of an instance.</p></div></div></div></div></body></html>
+<h3 id="schemaextend">Schema.extend()</h3>
+<p> TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...</p>
+<h2 id="instance">Instance</h2>
+<p>The object instance returned by newing up a <a href="#schema">Schema</a> constructor. </p>
+<h3 id="instancewatchproperties-listener">Instance.watch([properties], listener)</h3>
+<p>Watches a schmea instance for changes. The registered listenenr function will fire asynchronously each time one or more of the specified properties change.</p>
+<p><strong>IMPORTANT</strong> Watchers and change detection depend on the <code>set</code> functionality of <code>Object.defineProperty</code>. This means that changes made by mutating a value (such as array splicing) will not be detected, and may result in memory leaks or unexpected behavior. As a best practice, only manipulate schema instance data via assignment with the <code>=</code> operator, and do not use mutators.</p>
+<ul>
+<li>properties [optional] <strong>String</strong> || <strong>[String]</strong> Specifies the properties to watch on the instance. Accepts a string representing a single property or an array of strings representing one or more properties. If no properties are specified, the entire object will be watched for a change on any property. Will throw an error if any property being watched is not declared as part of the Schema.</li>
+<li>listener <strong>Function</strong> <em>function(oldVal, newVal)</em> The listener function that will be called each time the watched properties change.<ul>
+<li>Listener functions are called asynchronously with a setTimeout of 0. If multiple changes are made to an instance in a synchronous block of code, the listener will not be called for each change. It will be called once, with all changes aggregated.</li>
+<li>A listener function is always called when the watch is set, even if there were no changes to the watched properties.</li>
+<li>Listener functions are invoked with the current and previous values of the watched properties. If a watch is set against a single property, newVal and oldVal will be the new and previous values. If the watch is set against multiple properties, newVal and oldVal will be objects whose key / value pairs represent the watcher property names and their respective values.</li>
+<li>In the case of a watch against the entire object, newVal and oldVal will represent the current and previous state of all properties of the object. However. Note that newVal is NOT a reference to the instance object, it is a plain object whose key / value pairs represent the current state of the instance.</li>
+<li>Watches are &quot;deep&quot;. This means changes to nested schemas are propagated up to the parent elements.</li>
+</ul>
+</li>
+</ul>
+<h4 id="examples">Examples</h4>
+<p>For all examples, we will use the following schema. For more examples, see the tests.</p>
+<pre><code>Person = Scheming.create &#39;Person&#39;,
+  name : String
+  age : Number
+  mother : &#39;Schema:Person&#39;
+  friends : [&#39;Schema:Person&#39;]
+
+lisa = new Person()</code></pre>
+<p><strong>Watching a single property</strong></p>
+<p>When a watch is set, it will always be called with the current value, even if no changes were made to the object.</p>
+<pre><code>lisa.watch &#39;name&#39;, (newVal, oldVal) -&gt;
+  # will be called when the event queue clears
+  newVal == undefined
+  oldVal == undefined</code></pre>
+<p>Snchronous changes will be reflected when the watcher fires.</p>
+<pre><code>lisa.name = &#39;lisa&#39;
+lisa.watch &#39;name&#39;, (newVal, oldVal) -&gt;
+  newVal == &#39;lisa&#39;
+  oldVal == undefined</code></pre>
+<p>Multiple synchronous changes are rolled up</p>
+<pre><code>lisa.watch &#39;name&#39;, (newVal, oldVal) -&gt;
+  # this listner is called once
+  newVal == &#39;lisa&#39;
+  oldVal == undefined
+
+lisa.name = &#39;a&#39;
+lisa.name = &#39;b&#39;
+lisa.name = &#39;lisa&#39;</code></pre>
+<p><strong>Watching multiple properties</strong></p>
+<pre><code>lisa.watch [&#39;name&#39;, &#39;age&#39;], (newVal, oldVal) -&gt;</code></pre></div></div></div></div></body></html>
