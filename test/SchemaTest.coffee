@@ -337,6 +337,38 @@ describe 'Scheming', ->
 
             expect(a.ages).to.eql [1, 3, 2, NaN]
 
+    describe 'defaults', ->
+      now = null
+      nowStub = null
+
+      beforeEach ->
+        now = Date.now()
+        nowStub = sinon.stub Date, 'now'
+        nowStub.returns now
+
+      afterEach ->
+        nowStub.restore()
+
+      it 'should compare an undefined date value to a new date value without error', ->
+        Schema = Scheming.create
+          createdOn :
+            type : Date
+            default : -> Date.now()
+
+        instance = new Schema()
+
+        expect(instance.createdOn.valueOf()).to.eql now
+
+      it 'should respect a default function that returns a falsey value', ->
+        Schema = Scheming.create
+          bool :
+            type : Boolean
+            default : -> false
+
+        instance = new Schema()
+
+        expect(instance.bool).to.equal false
+
     describe 'complex array definitions', ->
       it 'should support arrays with defaults, setters, getters', ->
         Contrived = Scheming.create

@@ -63,7 +63,7 @@ TYPES =
     identifier : _.isDate
     parser     : (val) ->
       new Date val
-    equals     : (a, b) -> a.valueOf() == b.valueOf()
+    equals     : (a, b) -> a?.valueOf() == b?.valueOf()
   Boolean :
     ctor       : Boolean
     string     : 'boolean'
@@ -715,7 +715,8 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # Once the property is configured, assign a default value. This ensures that default values are still
       # affected by type parsing and setters
       if propConfig.default != undefined
-        instance[propName] = propConfig.default?() || propConfig.default
+        val = if _.isFunction(propConfig.default) then propConfig.default() else propConfig.default
+        instance[propName] = val
 
   # If seal option is enabled, seal the instance, preventing addition of other properties besides those explicitly
   # defined by the Schema
