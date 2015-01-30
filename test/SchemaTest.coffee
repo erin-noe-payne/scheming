@@ -415,6 +415,17 @@ describe 'Scheming', ->
         expect(errors.arr).to.have.length 1
         expect(errors.arr[0]).to.match /Not long enough/
 
+      it 'should support string for required validator', ->
+        Contrived = Scheming.create
+          str :
+            type: String
+            required : 'a custom message'
+
+        instance = new Contrived arr : undefined
+
+        errors = Contrived.validate(instance)
+        expect(errors.str[0]).to.match /a custom message/
+
     describe 'circular definitions', ->
 
       it 'should allow two Schemas to reference one another', ->

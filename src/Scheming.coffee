@@ -377,7 +377,8 @@ schemaFactory = (name, opts) ->
 
         # - If the field is required and not defined, push the error and be done
         if required && !val?
-          pushError key, "Field is required."
+          requiredMessage = if required == true then "Field is required." else required
+          pushError key, requiredMessage
         # - Only run validation on fields that are defined
         if val?
           {type} = normalizedSchema[key]
