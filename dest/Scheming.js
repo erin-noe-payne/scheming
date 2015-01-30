@@ -81,7 +81,7 @@
         return new Date(val);
       },
       equals: function(a, b) {
-        return a.valueOf() === b.valueOf();
+        return (a != null ? a.valueOf() : void 0) === (b != null ? b.valueOf() : void 0);
       }
     },
     Boolean: {
@@ -469,7 +469,15 @@
       this.changes = {};
       this.internalChangeQueue = [];
       this.timeout = null;
+      this.recursionCount = 0;
     }
+
+    ChangeManager.prototype.reset = function() {
+      this.changes = {};
+      this.internalChangeQueue = [];
+      this.timeout = null;
+      return this.recursionCount = 0;
+    };
 
     ChangeManager.prototype.queueChanges = function(id, propName, oldVal, fireWatchers) {
       var changedProps, _base;
@@ -490,32 +498,33 @@
       return this.timeout != null ? this.timeout : this.timeout = setTimeout(this.resolve, 0);
     };
 
-    ChangeManager.prototype.reset = function() {
-      this.changes = {};
-      this.internalChangeQueue = [];
-      return this.timeout = null;
-    };
-
     ChangeManager.prototype.resolve = function() {
-      var changedProps, fireWatchers, i, id, internalChanges, _i, _len, _ref, _ref1;
-      clearTimeout(this.timeout);
-      i = 0;
-      while (this.internalChangeQueue.length) {
-        i++;
-        if (Scheming.ITERATION_LIMIT > 0 && i > Scheming.ITERATION_LIMIT) {
-          throw new Error("Aborting change propagation after " + Scheming.ITERATION_LIMIT + " cycles. If you have very deeply nested schemas you may consider raising the ITERATION_LIMIT configuration.");
-        }
-        internalChanges = _.unique(this.internalChangeQueue);
-        this.internalChangeQueue = [];
-        for (_i = 0, _len = internalChanges.length; _i < _len; _i++) {
-          id = internalChanges[_i];
-          _ref = this.changes[id], changedProps = _ref.changedProps, fireWatchers = _ref.fireWatchers;
-          fireWatchers(changedProps, 'internal');
-        }
+      var changedProps, changes, fireWatchers, id, internalChanges, _i, _len, _ref, _ref1;
+      this.recursionCount++;
+      if (Scheming.ITERATION_LIMIT > 0 && this.recursionCount > Scheming.ITERATION_LIMIT) {
+        changes = this.changes;
+        this.reset();
+        throw new Error("Aborting change propagation after " + Scheming.ITERATION_LIMIT + " cycles.\nThis is probably indicative of a circular watch. Check the following watches for clues:\n" + (JSON.stringify(changes)));
       }
-      for (id in this.changes) {
-        _ref1 = this.changes[id], changedProps = _ref1.changedProps, fireWatchers = _ref1.fireWatchers;
+      clearTimeout(this.timeout);
+      internalChanges = _.unique(this.internalChangeQueue);
+      this.internalChangeQueue = [];
+      for (_i = 0, _len = internalChanges.length; _i < _len; _i++) {
+        id = internalChanges[_i];
+        _ref = this.changes[id], changedProps = _ref.changedProps, fireWatchers = _ref.fireWatchers;
+        fireWatchers(changedProps, 'internal');
+      }
+      if (this.internalChangeQueue.length) {
+        this.resolve();
+      }
+      changes = this.changes;
+      this.changes = {};
+      for (id in changes) {
+        _ref1 = changes[id], changedProps = _ref1.changedProps, fireWatchers = _ref1.fireWatchers;
         fireWatchers(changedProps, 'external');
+      }
+      if (_.size(this.changes) > 0) {
+        this.resolve();
       }
       return this.reset();
     };
@@ -564,9 +573,9 @@
         if (setter) {
           val = setter(val);
         }
-        data[propName] = val;
-        watchForPropagation(propName, val);
         if (!type.equals(prevVal, val)) {
+          data[propName] = val;
+          watchForPropagation(propName, val);
           return cm.queueChanges(id, propName, prevVal, fireWatchers);
         }
       }
@@ -624,7 +633,7 @@
       return _.remove(watchers[target], watcher);
     };
     watchForPropagation = function(propName, val) {
-      var schema, type, unwatcher, _i, _j, _len, _len1, _ref, _results;
+      var type, unwatcher, _i, _len, _ref;
       type = normalizedSchema[propName].type;
       if (type.string === NESTED_TYPES.Schema.string) {
         if (typeof unwatchers[propName] === "function") {
@@ -643,20 +652,20 @@
           unwatcher();
         }
         unwatchers[propName] = [];
-        _results = [];
-        for (_j = 0, _len1 = val.length; _j < _len1; _j++) {
-          schema = val[_j];
-          _results.push(unwatchers[propName].push(schema.watch(function(newVal, oldVal) {
-            return cm.queueChanges(id, propName, oldVal, fireWatchers);
+        return _.each(val, function(schema, i) {
+          return unwatchers[propName].push(schema.watch(function(newVal, oldVal) {
+            var oldArray;
+            oldArray = _.cloneDeep(instance[propName]);
+            oldArray[i] = oldVal;
+            return cm.queueChanges(id, propName, oldArray, fireWatchers);
           }, {
             internal: true
-          })));
-        }
-        return _results;
+          }));
+        });
       }
     };
     fireWatchers = function(queuedChanges, target) {
-      var getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1, _results;
+      var e, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1, _results;
       if (target == null) {
         target = 'external';
       }
@@ -688,7 +697,12 @@
             newVals = newVals[propName];
             oldVals = oldVals[propName];
           }
-          _results.push(watcher.cb(newVals, oldVals));
+          try {
+            _results.push(watcher.cb(newVals, oldVals));
+          } catch (_error) {
+            e = _error;
+            _results.push(console.error(e.stack || e));
+          }
         } else {
           _results.push(void 0);
         }
@@ -711,6 +725,7 @@
     });
     _fn = (function(_this) {
       return function(propName, propConfig) {
+        var val;
         Object.defineProperty(instance, propName, {
           configurable: false,
           enumerable: true,
@@ -722,7 +737,8 @@
           }
         });
         if (propConfig["default"] !== void 0) {
-          return instance[propName] = (typeof propConfig["default"] === "function" ? propConfig["default"]() : void 0) || propConfig["default"];
+          val = _.isFunction(propConfig["default"]) ? propConfig["default"]() : propConfig["default"];
+          return instance[propName] = val;
         }
       };
     })(this);

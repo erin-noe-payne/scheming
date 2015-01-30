@@ -436,6 +436,16 @@ class ChangeManager
     @internalChangeQueue = []
     @timeout = null
 
+    @recursionCount = 0
+
+  # reset the the change manager to a pristine state
+  reset : ->
+    @changes = {}
+    @internalChangeQueue = []
+    @timeout = null
+
+    @recursionCount = 0
+
   # Registers changes that have occurred on an instance by instance id, holding a reference to the original value
   queueChanges : (id, propName, oldVal, fireWatchers) ->
     # if there are no changes yet queued for the insance, add to the changes hash by id
@@ -444,7 +454,7 @@ class ChangeManager
       @internalChangeQueue.push id
     {changedProps} = @changes[id]
 
-    # for each changed property, track the original value of the property if it has not already been capturechangedPropsd.
+    # for each changed property, track the original value of the property if it has not already been captured.
     if propName && !_.has changedProps, propName
       changedProps[propName] = oldVal
       @internalChangeQueue.push id
@@ -453,45 +463,52 @@ class ChangeManager
     # a synchronous block of changes
     @timeout ?= setTimeout @resolve, 0
 
-  # reset the the change manager to a pristine state
-  reset : ->
-    @changes = {}
-    @internalChangeQueue = []
-    @timeout = null
-
   # resolves queued changes, firing watchers on instances that have changed
   resolve : =>
-    # clear timeout to ensure to guarantee resolve is not called more than once.
+    @recursionCount++
+    # track iteration count and throw an error after some limit to prevent infinite loops
+    if Scheming.ITERATION_LIMIT > 0 && @recursionCount > Scheming.ITERATION_LIMIT
+      changes = @changes
+      @reset()
+      # TODO: try to make a more meaningful error message from the instances (schema type, properties, etc)
+      throw new Error """Aborting change propagation after #{Scheming.ITERATION_LIMIT} cycles.
+        This is probably indicative of a circular watch. Check the following watches for clues:
+        #{JSON.stringify(changes)}"""
+
+    # clear timeout to guarantee resolve is not called more than once.
     clearTimeout @timeout
 
-    i = 0
-    # fire internal watches as many times as necessary to to make sure all changes propagate from all child -> parent
-    # schema instances
-    while @internalChangeQueue.length
-      i++
-      # track iteration count and throw an error after some limit to prevent infinite loops
-      if Scheming.ITERATION_LIMIT > 0 && i > Scheming.ITERATION_LIMIT
-        throw new Error "Aborting change propagation after #{Scheming.ITERATION_LIMIT} cycles. If you have very deeply nested schemas you may consider raising the ITERATION_LIMIT configuration."
-      # A single id may have been pushed to the change queue many times, to take a unique list of ids.
-      internalChanges = _.unique @internalChangeQueue
-      # Immediately reset the state of the change queue
-      @internalChangeQueue = []
+    # A single id may have been pushed to the change queue many times, to take a unique list of ids.
+    internalChanges = _.unique @internalChangeQueue
+    # Immediately reset the state of the change queue
+    @internalChangeQueue = []
 
-      # Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
-      # any parent schemas, whose changes will populate `@internalChangeQueue`
-      for id in internalChanges
-        {changedProps, fireWatchers} = @changes[id]
-        fireWatchers changedProps, 'internal'
+    # Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
+    # any parent schemas, whose changes will populate `@internalChangeQueue`
+    for id in internalChanges
+      {changedProps, fireWatchers} = @changes[id]
+      fireWatchers changedProps, 'internal'
+    # if any new internal changes were registered, recursively call resolve to continue propagation
+    if @internalChangeQueue.length
+      @resolve()
 
     # Once internal watches have fired without causing a change on a parent schema instance, there are no more changes
     # to propagate. At this point all changes on each instance have been aggregated into a single change set. Now
     # fire all external watchers on each instance.
-    for id of @changes
-      {changedProps, fireWatchers} = @changes[id]
+    changes = @changes
+    # Immediately reset the change set
+    @changes = {}
 
+    # Fire all external watchers
+    for id of changes
+      {changedProps, fireWatchers} = changes[id]
       fireWatchers changedProps, 'external'
 
-    # Finally reset state to begin capturing next set of changes
+    # If any external watches caused new changes to be queued, re-run resolve to ensure propagation
+    if _.size(@changes) > 0
+      @resolve()
+
+    # If we get here, all changes have been fully propagated. Reset change manager state to pristine just for explicitnessgit st
     @reset()
 
 # set up global change manager that will be consumed by all schema instances
@@ -552,13 +569,14 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # - If a setter is defined, run the value through setter
       if setter
         val = setter val
-      # - Assign to the data hash
-      data[propName] = val
-      # - If the value being assigned is of type schema, we need to listen for changes to propagate
-      watchForPropagation propName, val
 
-      # - Finally, check if the value has changed and queue up for instance watches
+      # - Check if the value has changed; if so...
       if !type.equals prevVal, val
+        # - Assign to the data hash
+        data[propName] = val
+        # - If the value being assigned is of type schema, we need to listen for changes to propagate
+        watchForPropagation propName, val
+        # - Queue up a change to fire
         cm.queueChanges id, propName, prevVal, fireWatchers
 
   # ### Property Getter
@@ -644,9 +662,11 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # reset the unwatchers array
       unwatchers[propName] = []
       # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
-      for schema in val
+      _.each val, (schema, i) ->
         unwatchers[propName].push schema.watch (newVal, oldVal)->
-          cm.queueChanges id, propName, oldVal, fireWatchers
+          oldArray = _.cloneDeep instance[propName]
+          oldArray[i] = oldVal
+          cm.queueChanges id, propName, oldArray, fireWatchers
         , internal : true
 
   # Given a change set, fires all watchers that are watching one or more of the changed properties
@@ -681,7 +701,11 @@ instanceFactory = (instance, normalizedSchema, opts)->
           newVals = newVals[propName]
           oldVals = oldVals[propName]
 
-        watcher.cb newVals, oldVals
+        try
+          watcher.cb newVals, oldVals
+        catch e
+          # TODO: browser support?
+          console.error e.stack || e
 
   # ### watch
   # Watches an instance for changes to one or more properties

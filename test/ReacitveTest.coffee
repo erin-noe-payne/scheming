@@ -148,6 +148,23 @@ describe 'Schema watch', ->
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith [1,2,3,4,5], undefined
 
+    it 'should fire a watch when an array value changes to empty', ->
+      lisa.favoriteNumbers = [1, 2, 3]
+      lisa.watch 'favoriteNumbers', watcher
+
+      Scheming._flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith [1,2,3], undefined
+      watcher.reset()
+
+      lisa.favoriteNumbers = []
+
+      Scheming._flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith [], [1,2,3]
+
     it 'should fire a watch only once per synchronous block of changes, with the most recent value, and the original previous value', ->
       lisa.watch 'name', watcher
 
@@ -159,6 +176,28 @@ describe 'Schema watch', ->
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith 'LISA!', undefined
+
+    it 'should fire a watch if a new watch is set in the same block as a watched property changes', ->
+      unwatch = lisa.watch 'name', watcher
+      lisa.name = 'lisa'
+
+      Scheming._flush()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith 'lisa', undefined
+      watcher.reset()
+
+      otherWatcher = sinon.spy()
+
+      lisa.name = 'LISA'
+      unwatch()
+      lisa.watch 'name', otherWatcher
+
+      Scheming._flush()
+
+#      expect(watcher).to.have.been.calledOnce
+#      expect(watcher).to.have.been.calledWith 'LISA', 'lisa'
+      expect(otherWatcher).to.have.beenCalled
 
   describe 'watching multiple properties', ->
     it 'should accept multiple properties in an array', ->
@@ -397,16 +436,33 @@ describe 'Schema watch', ->
       lisa.name = 'lisa'
       lisa.mother = marge
 
-    it 'should propagate changes on a nested schema in an array to the parent schema', ->
+    it 'should fire a watch on setup of a nested schema in an array to the parent schema', ->
       lisa.watch 'friends', watcher
       lisa.friends = [marge, bart, homer]
-
-      marge.name = 'marge'
 
       Scheming._flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith [marge, bart, homer], undefined
+
+    it 'should propagate changes on a nested schema in an array to the parent schema', ->
+      lisa.watch 'friends', watcher
+      lisa.friends = [marge, bart, homer]
+
+      Scheming._flush()
+      watcher.reset()
+
+      clones = [
+        _.clone marge
+        _.clone bart
+        _.clone homer
+      ]
+
+      marge.name = 'marge'
+      Scheming._flush()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith [marge, bart, homer], clones
 
     it 'should not cause an infinite loop if a change fires on a circular reference', (done) ->
       lisa.friends = [bart]
@@ -441,3 +497,60 @@ describe 'Schema watch', ->
       Scheming._flush()
       for spy, i in spies
         expect(spy).to.have.been.calledOnce
+
+    it 'should propagate without losing changes queued from external watches', ->
+      i = 0
+
+      lisa.watch 'name', ->
+        marge.name = i++
+      marge.watch 'name', watcher
+
+      Scheming._flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith '0', undefined
+
+      watcher.reset()
+
+      lisa.name = 'LISA!!'
+      Scheming._flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith '1', '0'
+
+    it 'should propagate inter-dependant internal and external watches', ->
+      i = 0;
+      # I want an external change that causes an internal change
+      bart.watch ->
+        marge.name = i++
+
+      lisa.mother = marge
+      lisa.watch watcher
+
+      Scheming._flush()
+      watcher.reset()
+
+      bart.name = 'BART'
+      Scheming._flush()
+
+      expect(watcher).to.have.been.called
+
+    it 'should throw an error if external watches create an infinite loop', ->
+      i = 0
+
+      lisa.watch 'name', ->
+        marge.name = i++
+
+      marge.watch 'name', ->
+        lisa.name = i++
+
+      expect(Scheming._flush).to.throw 'Aborting change propagation'
+
+    it 'should still work if a watcher throws an error', ->
+      lisa.watch 'name', ->
+        throw new Error('OH GOD')
+
+      lisa.watch 'name', watcher
+
+      Scheming._flush()
+      expect(watcher).to.have.been.called
