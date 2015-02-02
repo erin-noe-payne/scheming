@@ -633,6 +633,9 @@
     watchForPropagation = function(propName, val) {
       var type, unwatcher, _i, _len, _ref;
       type = normalizedSchema[propName].type;
+      if (val === void 0) {
+        return;
+      }
       if (type.string === NESTED_TYPES.Schema.string) {
         if (typeof unwatchers[propName] === "function") {
           unwatchers[propName]();
