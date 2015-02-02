@@ -8,7 +8,7 @@ isNode = <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">ex
   <span class="hljs-string">'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'</span>.replace <span class="hljs-regexp">/[xy]/g</span>, <span class="hljs-function"><span class="hljs-params">(c)</span> -&gt;</span>
     r = (now + Math.random() * <span class="hljs-number">16</span>) % <span class="hljs-number">16</span> | <span class="hljs-number">0</span>
     now = Math.floor now / <span class="hljs-number">16</span>
-    ((<span class="hljs-keyword">if</span> c <span class="hljs-keyword">is</span> <span class="hljs-string">"x"</span> <span class="hljs-keyword">then</span> r <span class="hljs-keyword">else</span> (r &amp; <span class="hljs-number">0x7</span> | <span class="hljs-number">0x8</span>))).toString <span class="hljs-number">16</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h2 id="scheming">Scheming</h2></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="default-options">DEFAULT_OPTIONS</h3>
+    ((<span class="hljs-keyword">if</span> c <span class="hljs-keyword">is</span> <span class="hljs-string">"x"</span> <span class="hljs-keyword">then</span> r <span class="hljs-keyword">else</span> (r &amp; <span class="hljs-number">0x3</span> | <span class="hljs-number">0x8</span>))).toString <span class="hljs-number">16</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h2 id="scheming">Scheming</h2></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="default-options">DEFAULT_OPTIONS</h3>
 <p>Default options for <code>Schema.create</code></p></div></div><div class="code"><div class="wrapper">DEFAULT_OPTIONS =
   seal   : <span class="hljs-literal">false</span>
   strict : <span class="hljs-literal">false</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="types">TYPES</h3>
@@ -322,9 +322,7 @@ if the seal option is enabled this will fail silently, otherwise it will allow f
       <span class="hljs-keyword">return</span> instance[propName] = val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>retrieve the type, getter, and setter from the normalized field config</p></div></div><div class="code"><div class="wrapper">    {type, setter} = normalizedSchema[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If a property is set to undefined, do not type cast or run through setter.
 You should always be able to clear a property.</li>
-</ul></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> val <span class="hljs-keyword">is</span> <span class="hljs-literal">undefined</span>
-      data[propName] = val
-    <span class="hljs-keyword">else</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+</ul></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> val != <span class="hljs-literal">undefined</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If value is not undefined, run through type identifier to determine if it is the correct type</li>
 </ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> !type.identifier(val)</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If not and strict mode is enabled, throw an error</li>
@@ -338,13 +336,13 @@ You should always be able to clear a property.</li>
 </ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> setter
         val = setter val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Check if the value has changed; if so...</li>
-</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> !type.equals prevVal, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+</ul></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> !type.equals prevVal, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Assign to the data hash</li>
-</ul></div></div><div class="code"><div class="wrapper">        data[propName] = val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+</ul></div></div><div class="code"><div class="wrapper">      data[propName] = val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If the value being assigned is of type schema, we need to listen for changes to propagate</li>
-</ul></div></div><div class="code"><div class="wrapper">        watchForPropagation propName, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+</ul></div></div><div class="code"><div class="wrapper">      watchForPropagation propName, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Queue up a change to fire</li>
-</ul></div></div><div class="code"><div class="wrapper">        cm.queueChanges id, propName, prevVal, fireWatchers</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="property-getter">Property Getter</h3></div></div></div><div class="segment"><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-title">get</span> = <span class="hljs-params">(propName)</span> -&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>retrieve the type, getter, and setter from the normalized field config</p></div></div><div class="code"><div class="wrapper">    {getter} = normalizedSchema[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+</ul></div></div><div class="code"><div class="wrapper">      cm.queueChanges id, propName, prevVal, fireWatchers</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="property-getter">Property Getter</h3></div></div></div><div class="segment"><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-title">get</span> = <span class="hljs-params">(propName)</span> -&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>retrieve the type, getter, and setter from the normalized field config</p></div></div><div class="code"><div class="wrapper">    {getter} = normalizedSchema[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Retrieve data value from the hash</li>
 </ul></div></div><div class="code"><div class="wrapper">    val = data[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If value is not defined, immediately return it.</li>
