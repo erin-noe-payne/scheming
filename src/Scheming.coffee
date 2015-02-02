@@ -641,6 +641,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
   watchForPropagation = (propName, val) ->
     {type} = normalizedSchema[propName]
 
+    # if val is undefined then bail
+    return if val == undefined
+
     # If the assigned property is of type schema, we need to listen for changes on the child instance to propagate
     # changes to this instance
     if type.string == NESTED_TYPES.Schema.string

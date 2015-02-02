@@ -19,3 +19,5 @@ gulp.task 'testRun', ->
 
 gulp.task 'test', ->
   gulp.watch ['src/**/*.coffee', 'test/**/*.coffee'] , ['testRun']
+
+gulp.task 'release', ->

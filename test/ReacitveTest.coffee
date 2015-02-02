@@ -209,6 +209,7 @@ describe 'Schema watch', ->
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith undefined, 'lisa'
 
+
   describe 'watching multiple properties', ->
     it 'should accept multiple properties in an array', ->
       unwatchers.push lisa.watch ['name', 'age'], (name, age) ->
@@ -564,3 +565,26 @@ describe 'Schema watch', ->
 
       Scheming._flush()
       expect(watcher).to.have.been.called
+
+
+    it 'should not throw an error if a nested schema value has undefined assigned', ->
+      lisa.watch 'mother', watcher
+      lisa.mother = marge
+
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.mother = undefined
+      Scheming._flush()
+      expect(watcher).to.have.been.calledOnce
+
+    it 'should not throw an error if an array of nested schema value has undefined assigned', ->
+      lisa.watch 'friends', watcher
+      lisa.friends = [marge]
+
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.friends = undefined
+      Scheming._flush()
+      expect(watcher).to.have.been.calledOnce
