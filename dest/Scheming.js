@@ -633,40 +633,39 @@
     watchForPropagation = function(propName, val) {
       var type, unwatcher, _i, _len, _ref;
       type = normalizedSchema[propName].type;
-      if (val === void 0) {
-        return;
-      }
       if (type.string === NESTED_TYPES.Schema.string) {
         if (typeof unwatchers[propName] === "function") {
           unwatchers[propName]();
         }
-        unwatchers[propName] = val.watch(function(newVal, oldVal) {
+        unwatchers[propName] = val != null ? val.watch(function(newVal, oldVal) {
           return cm.queueChanges(id, propName, oldVal, fireWatchers);
         }, {
           internal: true
-        });
+        }) : void 0;
       }
       if (type.string === NESTED_TYPES.Array.string && type.childType.string === NESTED_TYPES.Schema.string) {
         _ref = unwatchers[propName] || [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           unwatcher = _ref[_i];
-          unwatcher();
+          if (typeof unwatcher === "function") {
+            unwatcher();
+          }
         }
         unwatchers[propName] = [];
         return _.each(val, function(schema, i) {
-          return unwatchers[propName].push(schema.watch(function(newVal, oldVal) {
+          return unwatchers[propName].push(schema != null ? schema.watch(function(newVal, oldVal) {
             var oldArray;
             oldArray = _.cloneDeep(instance[propName]);
             oldArray[i] = oldVal;
             return cm.queueChanges(id, propName, oldArray, fireWatchers);
           }, {
             internal: true
-          }));
+          }) : void 0);
         });
       }
     };
     fireWatchers = function(queuedChanges, target) {
-      var e, getPrevVal, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _j, _len, _len1, _ref, _ref1, _results;
+      var e, getPrevVal, i, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _len, _ref, _results;
       if (target == null) {
         target = 'external';
       }
@@ -678,18 +677,18 @@
           return instance[propName];
         }
       };
-      _ref = watchers[target];
+      i = 0;
       _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        watcher = _ref[_i];
+      while ((watcher = watchers[target][i])) {
+        i++;
         shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0);
         watcher.first = false;
         if (shouldFire) {
           newVals = {};
           oldVals = {};
-          _ref1 = watcher.properties;
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            propName = _ref1[_j];
+          _ref = watcher.properties;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            propName = _ref[_i];
             newVals[propName] = instance[propName];
             oldVals[propName] = getPrevVal(propName);
           }

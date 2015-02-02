@@ -641,16 +641,13 @@ instanceFactory = (instance, normalizedSchema, opts)->
   watchForPropagation = (propName, val) ->
     {type} = normalizedSchema[propName]
 
-    # if val is undefined then bail
-    return if val == undefined
-
     # If the assigned property is of type schema, we need to listen for changes on the child instance to propagate
     # changes to this instance
     if type.string == NESTED_TYPES.Schema.string
       # If there was a watcher from the previously assigned value, stop listening.
       unwatchers[propName]?()
       # Watch the new value for changes and propagate this changes to this instance. Flag the watch as internal.
-      unwatchers[propName] = val.watch (newVal, oldVal)->
+      unwatchers[propName] = val?.watch (newVal, oldVal)->
         cm.queueChanges id, propName, oldVal, fireWatchers
 
       , internal : true
@@ -659,12 +656,12 @@ instanceFactory = (instance, normalizedSchema, opts)->
     if type.string == NESTED_TYPES.Array.string and type.childType.string == NESTED_TYPES.Schema.string
       # If there were watchers on the previous array members, clear those listeners.
       for unwatcher in (unwatchers[propName] || [])
-        unwatcher()
+        unwatcher?()
       # reset the unwatchers array
       unwatchers[propName] = []
       # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
       _.each val, (schema, i) ->
-        unwatchers[propName].push schema.watch (newVal, oldVal)->
+        unwatchers[propName].push schema?.watch (newVal, oldVal)->
           oldArray = _.cloneDeep instance[propName]
           oldArray[i] = oldVal
           cm.queueChanges id, propName, oldArray, fireWatchers
@@ -682,8 +679,11 @@ instanceFactory = (instance, normalizedSchema, opts)->
       else
         return instance[propName]
 
-    # for each registered watcher
-    for watcher in watchers[target]
+    # for each registered watcher - use a while loop since firing one watcher can cause other watchers to be added or
+    # removed
+    i = 0
+    while (watcher = watchers[target][i])
+      i++
       # That watcher should fire if it is new, or if it is watching one or more of the changed properties
       shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0)
       watcher.first = false
