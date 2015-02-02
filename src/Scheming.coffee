@@ -17,7 +17,7 @@ uuid = ->
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
     r = (now + Math.random() * 16) % 16 | 0
     now = Math.floor now / 16
-    ((if c is "x" then r else (r & 0x7 | 0x8))).toString 16
+    ((if c is "x" then r else (r & 0x3 | 0x8))).toString 16
 
 # ## Scheming
 
@@ -554,9 +554,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
     # - If a property is set to undefined, do not type cast or run through setter.
     # You should always be able to clear a property.
-    if val is undefined
-      data[propName] = val
-    else
+    if val != undefined
       # - If value is not undefined, run through type identifier to determine if it is the correct type
       if !type.identifier(val)
         #   - If not and strict mode is enabled, throw an error
@@ -570,14 +568,14 @@ instanceFactory = (instance, normalizedSchema, opts)->
       if setter
         val = setter val
 
-      # - Check if the value has changed; if so...
-      if !type.equals prevVal, val
-        # - Assign to the data hash
-        data[propName] = val
-        # - If the value being assigned is of type schema, we need to listen for changes to propagate
-        watchForPropagation propName, val
-        # - Queue up a change to fire
-        cm.queueChanges id, propName, prevVal, fireWatchers
+    # - Check if the value has changed; if so...
+    if !type.equals prevVal, val
+      # - Assign to the data hash
+      data[propName] = val
+      # - If the value being assigned is of type schema, we need to listen for changes to propagate
+      watchForPropagation propName, val
+      # - Queue up a change to fire
+      cm.queueChanges id, propName, prevVal, fireWatchers
 
   # ### Property Getter
   get = (propName) ->

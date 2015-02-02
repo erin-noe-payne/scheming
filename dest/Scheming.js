@@ -20,7 +20,7 @@
       var r;
       r = (now + Math.random() * 16) % 16 | 0;
       now = Math.floor(now / 16);
-      return (c === "x" ? r : r & 0x7 | 0x8).toString(16);
+      return (c === "x" ? r : r & 0x3 | 0x8).toString(16);
     });
   };
 
@@ -558,9 +558,7 @@
         return instance[propName] = val;
       }
       _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
-      if (val === void 0) {
-        return data[propName] = val;
-      } else {
+      if (val !== void 0) {
         if (!type.identifier(val)) {
           if (strict) {
             throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
@@ -573,11 +571,11 @@
         if (setter) {
           val = setter(val);
         }
-        if (!type.equals(prevVal, val)) {
-          data[propName] = val;
-          watchForPropagation(propName, val);
-          return cm.queueChanges(id, propName, prevVal, fireWatchers);
-        }
+      }
+      if (!type.equals(prevVal, val)) {
+        data[propName] = val;
+        watchForPropagation(propName, val);
+        return cm.queueChanges(id, propName, prevVal, fireWatchers);
       }
     };
     get = function(propName) {

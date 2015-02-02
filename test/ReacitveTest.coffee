@@ -195,9 +195,19 @@ describe 'Schema watch', ->
 
       Scheming._flush()
 
-#      expect(watcher).to.have.been.calledOnce
-#      expect(watcher).to.have.been.calledWith 'LISA', 'lisa'
       expect(otherWatcher).to.have.beenCalled
+
+    it 'should fire a watch if a value has undefined assigned', ->
+      lisa.watch 'name', watcher
+      lisa.name = 'lisa'
+
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.name = undefined
+      Scheming._flush()
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith undefined, 'lisa'
 
   describe 'watching multiple properties', ->
     it 'should accept multiple properties in an array', ->
