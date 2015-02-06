@@ -54,5 +54,5 @@ gulp.task 'release', ['build'], ->
   sh.exec "groc"
   sh.exec "git commit -am \"Version #{version}\""
   sh.exec "git tag v#{version}"
-  sh.exec "git push origin master"
+  sh.exec "git push origin master --tags"
   sh.exec "npm publish"
