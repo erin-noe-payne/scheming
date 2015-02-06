@@ -377,7 +377,8 @@ schemaFactory = (name, opts) ->
 
         # - If the field is required and not defined, push the error and be done
         if required && !val?
-          pushError key, "Field is required."
+          requiredMessage = if _.isString(required) then required else "Field is required."
+          pushError key, requiredMessage
         # - Only run validation on fields that are defined
         if val?
           {type} = normalizedSchema[key]
@@ -682,6 +683,8 @@ instanceFactory = (instance, normalizedSchema, opts)->
     # for each registered watcher - use a while loop since firing one watcher can cause other watchers to be added or
     # removed
     i = 0
+    # TODO: there is a possible error here where firing one watcher removes another watcher from
+    # the array - the index would be off by one and a watcher could be skipped
     while (watcher = watchers[target][i])
       i++
       # That watcher should fire if it is new, or if it is watching one or more of the changed properties
