@@ -558,7 +558,7 @@
         return instance[propName] = val;
       }
       _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
-      if (val !== void 0) {
+      if (val != null) {
         if (!type.identifier(val)) {
           if (strict) {
             throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);

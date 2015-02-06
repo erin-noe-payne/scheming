@@ -554,7 +554,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
     # - If a property is set to undefined, do not type cast or run through setter.
     # You should always be able to clear a property.
-    if val != undefined
+    if val?
       # - If value is not undefined, run through type identifier to determine if it is the correct type
       if !type.identifier(val)
         #   - If not and strict mode is enabled, throw an error

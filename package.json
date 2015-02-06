@@ -1,11 +1,10 @@
 {
   "name": "scheming",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "./dest/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
-    "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
-    "prepublish": "gulp build"
+    "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register"
   },
   "dependencies": {
     "lodash": "~2.4.1"
