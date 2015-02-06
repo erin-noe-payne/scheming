@@ -376,7 +376,7 @@
       };
 
       Schema.validate = function(instance) {
-        var childErrors, e, err, errors, i, k, key, member, pushError, required, type, v, val, validate, validator, value, _i, _j, _len, _len1;
+        var childErrors, e, err, errors, i, k, key, member, pushError, required, requiredMessage, type, v, val, validate, validator, value, _i, _j, _len, _len1;
         errors = {};
         if (instance._validating) {
           return null;
@@ -403,7 +403,8 @@
           validate = value.validate, required = value.required;
           val = instance[key];
           if (required && (val == null)) {
-            pushError(key, "Field is required.");
+            requiredMessage = required === true ? "Field is required." : required;
+            pushError(key, requiredMessage);
           }
           if (val != null) {
             type = normalizedSchema[key].type;
@@ -426,7 +427,7 @@
               childErrors = type.childType.validate.call(instance, val);
               for (k in childErrors) {
                 v = childErrors[k];
-                pushError("" + key + "." + k, v);
+                pushError(key + "." + k, v);
               }
             }
             if (type.string === 'array' && type.childType.string === 'schema') {
@@ -435,7 +436,7 @@
                 childErrors = type.childType.childType.validate.call(instance, member);
                 for (k in childErrors) {
                   v = childErrors[k];
-                  pushError("" + key + "[" + i + "]." + k, v);
+                  pushError(key + "[" + i + "]." + k, v);
                 }
               }
             }
