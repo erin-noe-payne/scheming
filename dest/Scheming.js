@@ -403,7 +403,7 @@
           validate = value.validate, required = value.required;
           val = instance[key];
           if (required && (val == null)) {
-            requiredMessage = required === true ? "Field is required." : required;
+            requiredMessage = _.isString(required) ? required : "Field is required.";
             pushError(key, requiredMessage);
           }
           if (val != null) {
@@ -427,7 +427,7 @@
               childErrors = type.childType.validate.call(instance, val);
               for (k in childErrors) {
                 v = childErrors[k];
-                pushError(key + "." + k, v);
+                pushError("" + key + "." + k, v);
               }
             }
             if (type.string === 'array' && type.childType.string === 'schema') {
@@ -436,7 +436,7 @@
                 childErrors = type.childType.childType.validate.call(instance, member);
                 for (k in childErrors) {
                   v = childErrors[k];
-                  pushError(key + "[" + i + "]." + k, v);
+                  pushError("" + key + "[" + i + "]." + k, v);
                 }
               }
             }
