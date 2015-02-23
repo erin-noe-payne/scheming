@@ -346,14 +346,14 @@ lisa = new Person()</code></pre>
   # will be called when the event queue clears
   newVal == undefined
   oldVal == undefined</code></pre>
-<p>Snchronous changes will be reflected when the watcher fires.</p>
+<p>Synchronous changes will be reflected when the watcher fires.</p>
 <pre><code>lisa.name = &#39;lisa&#39;
 lisa.watch &#39;name&#39;, (newVal, oldVal) -&gt;
   newVal == &#39;lisa&#39;
   oldVal == undefined</code></pre>
 <p>Multiple synchronous changes are rolled up</p>
 <pre><code>lisa.watch &#39;name&#39;, (newVal, oldVal) -&gt;
-  # this listner is called once
+  # this listener is called once
   newVal == &#39;lisa&#39;
   oldVal == undefined
 
@@ -361,4 +361,14 @@ lisa.name = &#39;a&#39;
 lisa.name = &#39;b&#39;
 lisa.name = &#39;lisa&#39;</code></pre>
 <p><strong>Watching multiple properties</strong></p>
-<pre><code>lisa.watch [&#39;name&#39;, &#39;age&#39;], (newVal, oldVal) -&gt;</code></pre></div></div></div></div></body></html>
+<pre><code>lisa.watch [&#39;name&#39;, &#39;age&#39;], (newVal, oldVal) -&gt;
+  # newVal == {name : &#39;lisa&#39;, age : 7}
+  # oldVal == {name : undefined, age : undefined}
+
+lisa.name = &#39;lisa&#39;
+lisa.age = 7</code></pre>
+<h1 id="changelog">Changelog</h1>
+<h2 id="v100">v1.0.0</h2>
+<ul>
+<li>Initial release</li>
+</ul></div></div></div></div></body></html>

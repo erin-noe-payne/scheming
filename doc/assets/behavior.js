@@ -258,6 +258,25 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               ]
             }
           ]
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "Changelog",
+            "slug": "changelog"
+          },
+          "depth": 1,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "v1.0.0",
+                "slug": "v100"
+              },
+              "depth": 2
+            }
+          ]
         }
       ]
     }, {
