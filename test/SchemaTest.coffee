@@ -27,6 +27,9 @@ describe 'Scheming', ->
 
       normalizePropertyConfig.restore()
 
+  describe 'getSchemaOf', ->
+    it 'should return the '
+
   describe 'Schema', ->
     describe 'defineProperty', ->
       it 'should invoke Scheming.normalizePropertyConfig', ->

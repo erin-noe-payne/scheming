@@ -452,7 +452,7 @@ lisa.watch 'name', (newVal, oldVal) ->
   oldVal == undefined
 ```
 
-Snchronous changes will be reflected when the watcher fires.
+Synchronous changes will be reflected when the watcher fires.
 ```
 lisa.name = 'lisa'
 lisa.watch 'name', (newVal, oldVal) ->
@@ -463,7 +463,7 @@ lisa.watch 'name', (newVal, oldVal) ->
 Multiple synchronous changes are rolled up
 ```
 lisa.watch 'name', (newVal, oldVal) ->
-  # this listner is called once
+  # this listener is called once
   newVal == 'lisa'
   oldVal == undefined
 
@@ -475,8 +475,18 @@ lisa.name = 'lisa'
 **Watching multiple properties**
 ```
 lisa.watch ['name', 'age'], (newVal, oldVal) ->
+  # newVal == {name : 'lisa', age : 7}
+  # oldVal == {name : undefined, age : undefined}
 
+lisa.name = 'lisa'
+lisa.age = 7
 ```
+
+# Changelog
+
+## v1.0.0
+
+  - Initial release
 
 
 

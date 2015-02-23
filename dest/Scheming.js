@@ -480,8 +480,9 @@
       return this.recursionCount = 0;
     };
 
-    ChangeManager.prototype.queueChanges = function(id, propName, oldVal, fireWatchers) {
-      var changedProps, _base;
+    ChangeManager.prototype.queueChanges = function(_arg, fireWatchers) {
+      var changedProps, equals, id, newVal, oldVal, propName, _base;
+      id = _arg.id, propName = _arg.propName, oldVal = _arg.oldVal, newVal = _arg.newVal, equals = _arg.equals;
       if (!_.has(this.changes, id)) {
         if ((_base = this.changes)[id] == null) {
           _base[id] = {
@@ -492,9 +493,12 @@
         this.internalChangeQueue.push(id);
       }
       changedProps = this.changes[id].changedProps;
-      if (propName && !_.has(changedProps, propName)) {
-        changedProps[propName] = oldVal;
-        this.internalChangeQueue.push(id);
+      if (propName) {
+        if (_.has(changedProps, propName) && equals(changedProps[propName], newVal)) {
+          delete changedProps[propName];
+        } else if (!_.has(changedProps, propName) && !equals(oldVal, newVal)) {
+          changedProps[propName] = oldVal;
+        }
       }
       return this.timeout != null ? this.timeout : this.timeout = setTimeout(this.resolve, 0);
     };
@@ -573,11 +577,15 @@
           val = setter(val);
         }
       }
-      if (!type.equals(prevVal, val)) {
-        data[propName] = val;
-        watchForPropagation(propName, val);
-        return cm.queueChanges(id, propName, prevVal, fireWatchers);
-      }
+      data[propName] = val;
+      watchForPropagation(propName, val);
+      return cm.queueChanges({
+        id: id,
+        propName: propName,
+        oldVal: prevVal,
+        newVal: val,
+        equals: type.equals
+      }, fireWatchers);
     };
     get = function(propName) {
       var getter, val;
@@ -623,7 +631,9 @@
         first: true
       };
       watchers[target].push(watcher);
-      cm.queueChanges(id, null, null, fireWatchers);
+      cm.queueChanges({
+        id: id
+      }, fireWatchers);
       return function() {
         return removeWatcher(watcher, target);
       };
@@ -639,7 +649,13 @@
           unwatchers[propName]();
         }
         unwatchers[propName] = val != null ? val.watch(function(newVal, oldVal) {
-          return cm.queueChanges(id, propName, oldVal, fireWatchers);
+          return cm.queueChanges({
+            id: id,
+            propName: propName,
+            oldVal: oldVal,
+            newVal: newVal,
+            equals: type.equals
+          }, fireWatchers);
         }, {
           internal: true
         }) : void 0;
@@ -655,10 +671,17 @@
         unwatchers[propName] = [];
         return _.each(val, function(schema, i) {
           return unwatchers[propName].push(schema != null ? schema.watch(function(newVal, oldVal) {
-            var oldArray;
-            oldArray = _.cloneDeep(instance[propName]);
+            var newArray, oldArray;
+            newArray = instance[propName];
+            oldArray = _.cloneDeep(newArray);
             oldArray[i] = oldVal;
-            return cm.queueChanges(id, propName, oldArray, fireWatchers);
+            return cm.queueChanges({
+              id: id,
+              propName: propName,
+              oldVal: oldArray,
+              newVal: newArray,
+              equals: type.equals
+            }, fireWatchers);
           }, {
             internal: true
           }) : void 0);

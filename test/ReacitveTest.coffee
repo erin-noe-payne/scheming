@@ -177,6 +177,18 @@ describe 'Schema watch', ->
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith 'LISA!', undefined
 
+    it 'should not fire a watch if a value is changed, then set back to its original state', ->
+      lisa.name = 'lisa'
+      unwatchers.push lisa.watch 'name', watcher
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.name = 'LISA'
+      lisa.name = 'lisa'
+      Scheming._flush()
+
+      expect(watcher).to.not.have.been.called
+
     it 'should fire a watch if a new watch is set in the same block as a watched property changes', ->
       unwatch = lisa.watch 'name', watcher
       lisa.name = 'lisa'
@@ -265,9 +277,37 @@ describe 'Schema watch', ->
 
     it 'should fire the watch when any property of the object changes', ->
       unwatchers.push lisa.watch watcher
+      Scheming._flush()
+      watcher.reset()
 
       lisa.name = 'lisa'
       lisa.age = 7
+      Scheming._flush()
+
+      expect(watcher).to.have.been.calledOnce
+
+    it 'should not fire the watch when any property is changed then changed back', ->
+      unwatchers.push lisa.watch watcher
+      lisa.name = 'lisa'
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.name = 'LISA'
+      lisa.name = 'lisa'
+      Scheming._flush()
+
+      expect(watcher).to.not.have.been.called
+
+    it 'should fire the watch when at least one property is changed', ->
+      unwatchers.push lisa.watch watcher
+      lisa.name = 'lisa'
+      lisa.age = 7
+      Scheming._flush()
+      watcher.reset()
+
+      lisa.name = 'LISA'
+      lisa.name = 'lisa'
+      lisa.age = 8
       Scheming._flush()
 
       expect(watcher).to.have.been.calledOnce
@@ -424,7 +464,7 @@ describe 'Schema watch', ->
         friends         : undefined
       }
 
-    it 'simple test case', (done) ->
+    it 'should call the watcher asynchronously', (done) ->
       marge.name = 'marge'
       marge.age = 45
       marge.favoriteNumbers = [1, 2, 3]
@@ -434,7 +474,6 @@ describe 'Schema watch', ->
 
       lisa.name = 'lisa'
       lisa.mother = marge
-
 
     it 'should not care about order', (done) ->
       lisa.watch ['mother'], ->

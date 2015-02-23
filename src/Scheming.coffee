@@ -448,17 +448,20 @@ class ChangeManager
     @recursionCount = 0
 
   # Registers changes that have occurred on an instance by instance id, holding a reference to the original value
-  queueChanges : (id, propName, oldVal, fireWatchers) ->
-    # if there are no changes yet queued for the insance, add to the changes hash by id
+  queueChanges : ({id, propName, oldVal, newVal, equals}, fireWatchers) ->
+    # if there are no changes yet queued for the instance, add to the changes hash by id
     if !_.has @changes, id
       @changes[id] ?= {changedProps : {}, fireWatchers}
       @internalChangeQueue.push id
     {changedProps} = @changes[id]
 
-    # for each changed property, track the original value of the property if it has not already been captured.
-    if propName && !_.has changedProps, propName
-      changedProps[propName] = oldVal
-      @internalChangeQueue.push id
+    if propName
+      # if we are already tracking this property, and it has been reset to its original value, clear it from changes
+      if _.has(changedProps, propName) && equals(changedProps[propName], newVal)
+        delete changedProps[propName]
+      # if we are not tracking this property, and it is being changed, add it to changes
+      else if !_.has(changedProps, propName) && !equals(oldVal, newVal)
+        changedProps[propName] = oldVal
 
     # set a timeout of zero to push the resolution step onto the event queue, once the thread has been released from
     # a synchronous block of changes
@@ -569,14 +572,12 @@ instanceFactory = (instance, normalizedSchema, opts)->
       if setter
         val = setter val
 
-    # - Check if the value has changed; if so...
-    if !type.equals prevVal, val
-      # - Assign to the data hash
-      data[propName] = val
-      # - If the value being assigned is of type schema, we need to listen for changes to propagate
-      watchForPropagation propName, val
-      # - Queue up a change to fire
-      cm.queueChanges id, propName, prevVal, fireWatchers
+    # - Assign to the data hash
+    data[propName] = val
+    # - If the value being assigned is of type schema, we need to listen for changes to propagate
+    watchForPropagation propName, val
+    # - Queue up a change to fire
+    cm.queueChanges {id, propName, oldVal : prevVal, newVal : val, equals : type.equals}, fireWatchers
 
   # ### Property Getter
   get = (propName) ->
@@ -628,7 +629,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
     watchers[target].push watcher
 
     # Queue a change event on the change manager.
-    cm.queueChanges id, null, null, fireWatchers
+    cm.queueChanges {id}, fireWatchers
 
     # return an unwatch function
     return ->
@@ -649,8 +650,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
       unwatchers[propName]?()
       # Watch the new value for changes and propagate this changes to this instance. Flag the watch as internal.
       unwatchers[propName] = val?.watch (newVal, oldVal)->
-        cm.queueChanges id, propName, oldVal, fireWatchers
-
+        cm.queueChanges {id, propName, oldVal, newVal, equals: type.equals}, fireWatchers
       , internal : true
 
     # If the assigned property is an array of type schema, set a watch on each array memeber.
@@ -663,9 +663,10 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
       _.each val, (schema, i) ->
         unwatchers[propName].push schema?.watch (newVal, oldVal)->
-          oldArray = _.cloneDeep instance[propName]
+          newArray = instance[propName]
+          oldArray = _.cloneDeep newArray
           oldArray[i] = oldVal
-          cm.queueChanges id, propName, oldArray, fireWatchers
+          cm.queueChanges {id, propName, oldVal : oldArray, newVal : newArray, equals : type.equals}, fireWatchers
         , internal : true
 
   # Given a change set, fires all watchers that are watching one or more of the changed properties

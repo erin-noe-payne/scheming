@@ -21,7 +21,7 @@ gulp.task 'testRun', ->
   gulp.src('**/*.coffee', {cwd : 'test', cwdbase: true})
     .pipe(plugins.mocha({reporter : 'spec'}))
 
-gulp.task 'test', ->
+gulp.task 'test', ['testRun'], ->
   gulp.watch ['src/**/*.coffee', 'test/**/*.coffee'] , ['testRun']
 
 gulp.task 'bump', ->
