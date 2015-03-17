@@ -524,6 +524,12 @@ Scheming.ITERATION_LIMIT = 100
 # Synchronously cause the change manager resolve. Should be used for testing ONLY, to avoid having to write
 # asynchronous tests.
 Scheming._flush = ->
+  console.warn "`_flush` is being deprecated in favor of `flush`. Please switch usage over to the public method as `_flush` will be removed in a future release."
+  cm.resolve()
+
+# Synchronously cause the change manager resolve. May be used for testing to avoid asynchronous tests,
+# or may be used to force change resolution within client code.
+Scheming.flush = ->
   cm.resolve()
 
 # ## Instance
@@ -570,7 +576,7 @@ instanceFactory = (instance, normalizedSchema, opts)->
         val = type.childParser val
       # - If a setter is defined, run the value through setter
       if setter
-        val = setter val
+        val = setter.call instance, val
 
     # - Assign to the data hash
     data[propName] = val
@@ -586,12 +592,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
 
     # - Retrieve data value from the hash
     val = data[propName]
-    # - If value is not defined, immediately return it.
-    if val is undefined
-      return val
     # - If getter is defined, run value through getter
     if getter
-      val = getter val
+      val = getter.call instance, val
     # - Finally, return the value
     return val
 
@@ -623,9 +626,10 @@ instanceFactory = (instance, normalizedSchema, opts)->
       if !_.has normalizedSchema, propName
         throw new Error "Cannot set watch on #{propName}, property is not defined in schema."
 
-    # Register the watcher on the correct internal or external watchers array. Flag new watchers with `first` so that
-    # they will get called on the first change loop, regardless of whether the watch properties have changed.
-    watcher = {properties, cb, first : true}
+    # Register the watcher on the correct internal or external watchers array. Flag new external watchers with `first`
+    # so that they will get called on the first change loop, regardless of whether the watch properties have changed.
+    # Internal watchers do not need to be invoked on first watch.
+    watcher = {properties, cb, first : !opts.internal}
     watchers[target].push watcher
 
     # Queue a change event on the change manager.

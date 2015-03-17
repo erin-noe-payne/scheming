@@ -182,7 +182,7 @@ describe 'Validation', ->
 
     expect(errors.name).to.eql ['Validation error occurred.', 'Validation error occurred.', 'Validation error occurred.']
 
-  it 'should invoke validator functions with a this context of the instance', ->
+  it 'should invoke validator functions with a `this` context of the instance', ->
     DateRange = Scheming.create
       startDate :
         type : Number

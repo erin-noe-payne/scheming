@@ -22,7 +22,7 @@ describe 'Schema watch', ->
     watcher = sinon.spy()
 
   afterEach ->
-    Scheming._flush()
+    Scheming.flush()
     Scheming.reset()
 
     unwatch() for unwatch in unwatchers
@@ -43,7 +43,7 @@ describe 'Schema watch', ->
       unwatchers.push lisa.watch 'name', watcher
       a = 5
 
-    it 'should allow the use of _flush to mock async calls', ->
+    it 'should allow the use of flush to mock async calls', ->
       a = null
       watcher = (newVal, oldVal)->
         expect(a).to.equal 5
@@ -54,27 +54,27 @@ describe 'Schema watch', ->
       unwatchers.push lisa.watch 'name', watcher
       a = 5
 
-      Scheming._flush()
+      Scheming.flush()
 
     it 'should immediately invoke the watch callback with the current value', ->
       lisa.name = 'lisa'
 
       unwatchers.push lisa.watch 'name', watcher
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith 'lisa'
 
     it 'should immediately invoke a callback from a watch even if no changes are queued', ->
       lisa.watch 'name', watcher
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
 
     it 'should reflect the construction as a change', ->
       lisa = new Person name : 'lisa'
       lisa.watch 'name', watcher
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith 'lisa', undefined
@@ -86,7 +86,7 @@ describe 'Schema watch', ->
 
       lisa.name = 'LISA!'
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith 'LISA!'
@@ -94,11 +94,11 @@ describe 'Schema watch', ->
     it 'should not fire the watch if the value is set but is not changed', ->
       lisa.name = 'lisa'
       unwatchers.push lisa.watch 'name', watcher
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.not.have.been.called
 
@@ -115,7 +115,7 @@ describe 'Schema watch', ->
 
       unwatch = lisa.watch 'name', watcher
       unwatchers.push unwatch
-      Scheming._flush()
+      Scheming.flush()
       expect(watcher).to.have.been.called
       watcher.reset()
 
@@ -123,7 +123,7 @@ describe 'Schema watch', ->
       unwatch()
 
       lisa.name = 'LISA!'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).not.to.have.been.called
 
@@ -132,7 +132,7 @@ describe 'Schema watch', ->
 
       unwatch = lisa.watch 'name', watcher
       unwatchers.push unwatch
-      Scheming._flush()
+      Scheming.flush()
 
       unwatch()
       expect(unwatch).to.not.throw 'Error'
@@ -143,7 +143,7 @@ describe 'Schema watch', ->
 
       lisa.favoriteNumbers = lisa.favoriteNumbers.concat [4, 5]
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith [1,2,3,4,5], undefined
@@ -152,7 +152,7 @@ describe 'Schema watch', ->
       lisa.favoriteNumbers = [1, 2, 3]
       lisa.watch 'favoriteNumbers', watcher
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith [1,2,3], undefined
@@ -160,7 +160,7 @@ describe 'Schema watch', ->
 
       lisa.favoriteNumbers = []
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith [], [1,2,3]
@@ -172,7 +172,7 @@ describe 'Schema watch', ->
       lisa.name = 'LiSa'
       lisa.name = 'LISA!'
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith 'LISA!', undefined
@@ -180,12 +180,12 @@ describe 'Schema watch', ->
     it 'should not fire a watch if a value is changed, then set back to its original state', ->
       lisa.name = 'lisa'
       unwatchers.push lisa.watch 'name', watcher
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'LISA'
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.not.have.been.called
 
@@ -193,7 +193,7 @@ describe 'Schema watch', ->
       unwatch = lisa.watch 'name', watcher
       lisa.name = 'lisa'
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith 'lisa', undefined
@@ -205,7 +205,7 @@ describe 'Schema watch', ->
       unwatch()
       lisa.watch 'name', otherWatcher
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(otherWatcher).to.have.beenCalled
 
@@ -213,11 +213,11 @@ describe 'Schema watch', ->
       lisa.watch 'name', watcher
       lisa.name = 'lisa'
 
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = undefined
-      Scheming._flush()
+      Scheming.flush()
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith undefined, 'lisa'
 
@@ -232,7 +232,7 @@ describe 'Schema watch', ->
 
       unwatchers.push lisa.watch ['name', 'age'], watcher
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith {name : 'lisa', age : 7}, {name : undefined, age : undefined}
@@ -244,7 +244,7 @@ describe 'Schema watch', ->
 
       lisa.name = 'LISA!'
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith {name : 'LISA!', age : 7}, {name : undefined, age : undefined}
@@ -252,7 +252,7 @@ describe 'Schema watch', ->
       watcher.reset()
 
       lisa.age = 8
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith {name : 'LISA!', age : 8}, {name : 'LISA!', age : 7}
@@ -262,12 +262,12 @@ describe 'Schema watch', ->
       lisa.age = 7
 
       unwatchers.push lisa.watch ['name', 'age'], watcher
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'lisa'
       lisa.age = 7
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.not.have.been.called
 
@@ -277,24 +277,24 @@ describe 'Schema watch', ->
 
     it 'should fire the watch when any property of the object changes', ->
       unwatchers.push lisa.watch watcher
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'lisa'
       lisa.age = 7
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
 
     it 'should not fire the watch when any property is changed then changed back', ->
       unwatchers.push lisa.watch watcher
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'LISA'
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.not.have.been.called
 
@@ -302,20 +302,20 @@ describe 'Schema watch', ->
       unwatchers.push lisa.watch watcher
       lisa.name = 'lisa'
       lisa.age = 7
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.name = 'LISA'
       lisa.name = 'lisa'
       lisa.age = 8
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
 
     it 'should return all properties of object on a watch', ->
       unwatchers.push lisa.watch watcher
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledWith {
         age             : undefined
@@ -341,13 +341,13 @@ describe 'Schema watch', ->
       unwatchers.push lisa.watch ['age'], w2
       unwatchers.push lisa.watch w3
 
-      Scheming._flush()
+      Scheming.flush()
       w1.reset()
       w2.reset()
       w3.reset()
 
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(w1).to.have.been.calledOnce
       expect(w1).to.have.been.calledWith 'lisa', undefined
@@ -377,7 +377,7 @@ describe 'Schema watch', ->
       uw3 = lisa.watch w3
       unwatchers.push uw3
 
-      Scheming._flush()
+      Scheming.flush()
       w1.reset()
       w2.reset()
       w3.reset()
@@ -385,7 +385,7 @@ describe 'Schema watch', ->
       uw3()
 
       lisa.name = 'lisa'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(w1).to.have.been.calledOnce
       expect(w1).to.have.been.calledWith 'lisa', undefined
@@ -429,7 +429,7 @@ describe 'Schema watch', ->
       lisa.watch ['mother'], watcher
 
       lisa.mother = marge
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith marge, undefined
@@ -443,7 +443,7 @@ describe 'Schema watch', ->
 
       marge.name = 'marge'
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith marge, undefined
@@ -453,7 +453,7 @@ describe 'Schema watch', ->
       marge.age = 45
       marge.favoriteNumbers = [1, 2, 3]
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith marge, {
@@ -490,7 +490,7 @@ describe 'Schema watch', ->
       lisa.watch 'friends', watcher
       lisa.friends = [marge, bart, homer]
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith [marge, bart, homer], undefined
@@ -499,7 +499,7 @@ describe 'Schema watch', ->
       lisa.watch 'friends', watcher
       lisa.friends = [marge, bart, homer]
 
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       clones = [
@@ -509,7 +509,7 @@ describe 'Schema watch', ->
       ]
 
       marge.name = 'marge'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith [marge, bart, homer], clones
@@ -538,13 +538,13 @@ describe 'Schema watch', ->
       marge.mother = homer
       homer.mother = bart
 
-      Scheming._flush()
+      Scheming.flush()
       for spy, i in spies
         expect(spy).to.have.been.calledOnce
         spy.reset()
 
       bart.name = 'bart'
-      Scheming._flush()
+      Scheming.flush()
       for spy, i in spies
         expect(spy).to.have.been.calledOnce
 
@@ -555,7 +555,7 @@ describe 'Schema watch', ->
         marge.name = i++
       marge.watch 'name', watcher
 
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith '0', undefined
@@ -563,7 +563,7 @@ describe 'Schema watch', ->
       watcher.reset()
 
       lisa.name = 'LISA!!'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith '1', '0'
@@ -577,11 +577,11 @@ describe 'Schema watch', ->
       lisa.mother = marge
       lisa.watch watcher
 
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       bart.name = 'BART'
-      Scheming._flush()
+      Scheming.flush()
 
       expect(watcher).to.have.been.called
 
@@ -594,7 +594,7 @@ describe 'Schema watch', ->
       marge.watch 'name', ->
         lisa.name = i++
 
-      expect(Scheming._flush).to.throw 'Aborting change propagation'
+      expect(Scheming.flush).to.throw 'Aborting change propagation'
 
     it 'should still work if a watcher throws an error', ->
       lisa.watch 'name', ->
@@ -602,7 +602,7 @@ describe 'Schema watch', ->
 
       lisa.watch 'name', watcher
 
-      Scheming._flush()
+      Scheming.flush()
       expect(watcher).to.have.been.called
 
 
@@ -610,20 +610,20 @@ describe 'Schema watch', ->
       lisa.watch 'mother', watcher
       lisa.mother = marge
 
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.mother = undefined
-      Scheming._flush()
+      Scheming.flush()
       expect(watcher).to.have.been.calledOnce
 
     it 'should not throw an error if an array of nested schema value has undefined assigned', ->
       lisa.watch 'friends', watcher
       lisa.friends = [marge]
 
-      Scheming._flush()
+      Scheming.flush()
       watcher.reset()
 
       lisa.friends = undefined
-      Scheming._flush()
+      Scheming.flush()
       expect(watcher).to.have.been.calledOnce

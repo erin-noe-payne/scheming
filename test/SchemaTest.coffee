@@ -315,6 +315,43 @@ describe 'Scheming', ->
 
             expect(a.age).to.equal 8
 
+          it 'should invoke getters with the `this` context of the instance', ->
+            Schema = Scheming.create
+              firstName : String
+              lastName : String
+              fullName :
+                type : String
+                getter : ->
+                  return "#{@firstName} #{@lastName}"
+
+            a = new Schema {firstName : "Erin", lastName : "Noe-Payne"}
+
+            expect(a.fullName).to.equal "Erin Noe-Payne"
+
+          it 'should invoke setters with the `this` context of the instance', ->
+            Schema = Scheming.create
+              minHeight : 'integer'
+              maxHeight : 'integer'
+              height :
+                type : Number
+                setter : (val) ->
+                  if val < @minHeight
+                    val = @minHeight
+                  if val > @maxHeight
+                    val = @maxHeight
+                  return val
+
+            a = new Schema {minHeight : 100, maxHeight : 500}
+
+            a.height = 80
+            expect(a.height).to.equal 100
+
+            a.height = 225
+            expect(a.height).to.equal 225
+
+            a.height = 739
+            expect(a.height).to.equal 500
+
           it 'should return a reference in the case of nested schemas', ->
             Car = Scheming.create
               make : String
@@ -399,7 +436,7 @@ describe 'Scheming', ->
             setter : (val) ->
               return val.concat [4]
             getter : (val) ->
-              return ([1]).concat val
+              if val then return ([1]).concat val
             required : true
             validate : (val) ->
               return if val.length >= 5 then true else 'Not long enough'
