@@ -543,6 +543,11 @@
   Scheming.ITERATION_LIMIT = 100;
 
   Scheming._flush = function() {
+    console.warn("`_flush` is being deprecated in favor of `flush`. Please switch usage over to the public method as `_flush` will be removed in a future release.");
+    return cm.resolve();
+  };
+
+  Scheming.flush = function() {
     return cm.resolve();
   };
 
@@ -574,7 +579,7 @@
           val = type.childParser(val);
         }
         if (setter) {
-          val = setter(val);
+          val = setter.call(instance, val);
         }
       }
       data[propName] = val;
@@ -591,11 +596,8 @@
       var getter, val;
       getter = normalizedSchema[propName].getter;
       val = data[propName];
-      if (val === void 0) {
-        return val;
-      }
       if (getter) {
-        val = getter(val);
+        val = getter.call(instance, val);
       }
       return val;
     };
@@ -628,7 +630,7 @@
       watcher = {
         properties: properties,
         cb: cb,
-        first: true
+        first: !opts.internal
       };
       watchers[target].push(watcher);
       cm.queueChanges({

@@ -327,9 +327,9 @@ Schema.create
 
 - type **TYPE** A valid type reference as outlined in [Schema.TYPES](#schematypes)
 - default **value** or **function** Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.
-- getter **function** A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval.
-- setter **function** A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type.
-- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not `true` or a string, validation will fail with a generic error message. See [Schema.validate](#schemavalidate) for details on how validation works.
+- getter **function** A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval. Getter functions are invoked with the `this` context of the instance, and can be used to define virtual fields.
+- setter **function** A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type. Parsers are not invoked again after the setter is invoked - so if your setter returns a value that breaks the typing, that's on you. Setter functions are not invoked if the value assigned is null or undefined. Setter functions are invoked with the `this` context of the instance.
+- validate **function** or **Array of functions** Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not `true` or a string, validation will fail with a generic error message. See [Schema.validate](#schemavalidate) for details on how validation works. Validation functions are invoked with the `this` context of the instance.
 - required **boolean** A special validator that indicates whether the field is required.
 
 ### Schema.defineProperties(properties)
@@ -337,7 +337,6 @@ Schema.create
 A convenience method for defining Schema properties in bulk.
 
 - properties **object** An object whose key value pairs are passed to [Schema.defineProperty](#sschemadefineproperty)
-
 
 ### Schema.validate(instance)
 
