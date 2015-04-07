@@ -53,6 +53,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
+                    "title": "Scheming.THROTTLE",
+                    "slug": "schemingthrottle"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
                     "title": "Scheming.TYPES",
                     "slug": "schemingtypes"
                   },
@@ -117,6 +125,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                     "level": 3,
                     "title": "Scheming.DEFAULT_OPTIONS",
                     "slug": "schemingdefault-options"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.setThrottle(strategy)",
+                    "slug": "schemingsetthrottlestrategy"
                   },
                   "depth": 3
                 }, {
@@ -216,14 +232,6 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                       "depth": 4
                     }
                   ]
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "Schema.extend()",
-                    "slug": "schemaextend"
-                  },
-                  "depth": 3
                 }
               ]
             }, {
@@ -268,6 +276,22 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "depth": 1,
           "children": [
             {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "v1.2.0",
+                "slug": "v120"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "v1.1.0",
+                "slug": "v110"
+              },
+              "depth": 2
+            }, {
               "type": "heading",
               "data": {
                 "level": 2,
@@ -338,6 +362,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                     "level": 3,
                     "title": "NESTED_TYPES",
                     "slug": "nested-types"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "setThrottle",
+                    "slug": "setthrottle"
                   },
                   "depth": 3
                 }, {
@@ -538,6 +570,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                 "level": 3,
                 "title": "NESTED_TYPES",
                 "slug": "nested-types"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "setThrottle",
+                "slug": "setthrottle"
               },
               "depth": 3
             }, {

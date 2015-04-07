@@ -78,7 +78,14 @@ isNode = <span class="hljs-keyword">typeof</span> <span class="hljs-built_in">ex
     identifier : <span class="hljs-literal">null</span>
     parser     : <span class="hljs-literal">null</span>
     childType  : <span class="hljs-literal">null</span>
-    equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a == b</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Used internally to resolve a type declaration to its primitive type.
+    equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a == b
+
+THROTTLE =
+  TIMEOUT : <span class="hljs-string">'timeout'</span>
+  IMMEDIATE : <span class="hljs-string">'immediate'</span>
+  ANIMATION_FRAME : <span class="hljs-string">'animationFrame'</span>
+
+_throttle = THROTTLE.TIMEOUT</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Used internally to resolve a type declaration to its primitive type.
 Matches a primitive type if it is...</p>
 <ul>
 <li>a reference to the object straight from the <code>Schema.TYPES</code> object</li>
@@ -92,7 +99,26 @@ Matches a primitive type if it is...</p>
 
       <span class="hljs-keyword">return</span> TYPE
 
-  <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Expose TYPES and DEFAULT_OPTIONS for extension and overriding</p></div></div><div class="code"><div class="wrapper">Scheming = {uuid, TYPES, NESTED_TYPES, DEFAULT_OPTIONS}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="resolvetype">resolveType</h3>
+  <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Expose TYPES and DEFAULT_OPTIONS for extension and overriding</p></div></div><div class="code"><div class="wrapper">Scheming = {uuid, TYPES, NESTED_TYPES, DEFAULT_OPTIONS, THROTTLE}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="setthrottle">setThrottle</h3>
+<p>Sets the throttling strategy that Scheming uses for resolving queued changes.</p></div></div><div class="code"><div class="wrapper">Scheming.<span class="hljs-function"><span class="hljs-title">setThrottle</span> = <span class="hljs-params">(throttle)</span> -&gt;</span>
+  <span class="hljs-keyword">if</span> !_.contains THROTTLE, throttle
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Throttle option must be set to one of the strategies specified on Scheming.THROTTLE"</span>
+
+  <span class="hljs-keyword">switch</span> throttle
+    <span class="hljs-keyword">when</span> THROTTLE.TIMEOUT
+      _throttle = THROTTLE.TIMEOUT
+
+    <span class="hljs-keyword">when</span> THROTTLE.IMMEDIATE
+      <span class="hljs-keyword">if</span> setImmediate? &amp;&amp; clearImmediate?
+        _throttle = THROTTLE.IMMEDIATE
+      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">console</span>.warn <span class="hljs-string">"Cannot use strategy IMMEDIATE: `setImmediate` or `clearImmediate` are not available in the current environment."</span>
+
+    <span class="hljs-keyword">when</span> THROTTLE.ANIMATION_FRAME
+      <span class="hljs-keyword">if</span> requestAnimationFrame? &amp;&amp; cancelAnimationFrame?
+        _throttle = THROTTLE.ANIMATION_FRAME
+      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">console</span>.warn <span class="hljs-string">"Cannot use strategy ANIMATION_FRAME: `requestAnimationFrame` or `cancelAnimationFrame` are not available in the current environment."</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="resolvetype">resolveType</h3>
 <p>Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.</p></div></div><div class="code"><div class="wrapper">Scheming.<span class="hljs-function"><span class="hljs-title">resolveType</span> = <span class="hljs-params">(typeDef)</span> -&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Attempt to resolve the type declaration to a primitive type</li>
 </ul></div></div><div class="code"><div class="wrapper">  type = getPrimitiveTypeOf typeDef
@@ -296,13 +322,25 @@ created anonymously, and we need to give it a uuid for registration.</p></div></
 
     <span class="hljs-keyword">if</span> propName</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>if we are already tracking this property, and it has been reset to its original value, clear it from changes</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> _.has(changedProps, propName) &amp;&amp; equals(changedProps[propName], newVal)
         <span class="hljs-keyword">delete</span> changedProps[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>if we are not tracking this property, and it is being changed, add it to changes</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> !_.has(changedProps, propName) &amp;&amp; !equals(oldVal, newVal)
-        changedProps[propName] = oldVal</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>set a timeout of zero to push the resolution step onto the event queue, once the thread has been released from
-a synchronous block of changes</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-property">@timeout</span> ?= setTimeout <span class="hljs-property">@resolve</span>, <span class="hljs-number">0</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>resolves queued changes, firing watchers on instances that have changed</p></div></div><div class="code"><div class="wrapper">  resolve :<span class="hljs-function"> =&gt;</span>
+        changedProps[propName] = oldVal</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Push the resolution step onto the event queue, once the thread has been released from
+a synchronous block of changes</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">switch</span> _throttle
+      <span class="hljs-keyword">when</span> THROTTLE.TIMEOUT
+        <span class="hljs-property">@timeout</span> ?= setTimeout <span class="hljs-property">@resolve</span>, <span class="hljs-number">0</span>
+      <span class="hljs-keyword">when</span> THROTTLE.IMMEDIATE
+        <span class="hljs-property">@timeout</span> ?= setImmediate <span class="hljs-property">@resolve</span>
+      <span class="hljs-keyword">when</span> THROTTLE.ANIMATION_FRAME
+        <span class="hljs-property">@timeout</span> ?= requestAnimationFrame <span class="hljs-property">@resolve</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Keep a reference to the throttling strategy used so that flush will work if the strategy is changed</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-property">@_throttle</span> = _throttle</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>resolves queued changes, firing watchers on instances that have changed</p></div></div><div class="code"><div class="wrapper">  resolve :<span class="hljs-function"> =&gt;</span>
     <span class="hljs-property">@recursionCount</span>++</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>track iteration count and throw an error after some limit to prevent infinite loops</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> Scheming.ITERATION_LIMIT &gt; <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-property">@recursionCount</span> &gt; Scheming.ITERATION_LIMIT
       changes = <span class="hljs-property">@changes</span>
       <span class="hljs-property">@reset</span>()</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>TODO: try to make a more meaningful error message from the instances (schema type, properties, etc)</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"""Aborting change propagation after <span class="hljs-subst">#{Scheming.ITERATION_LIMIT}</span> cycles.
         This is probably indicative of a circular watch. Check the following watches for clues:
-        <span class="hljs-subst">#{JSON.stringify(changes)}</span>"""</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>clear timeout to guarantee resolve is not called more than once.</p></div></div><div class="code"><div class="wrapper">    clearTimeout <span class="hljs-property">@timeout</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>A single id may have been pushed to the change queue many times, to take a unique list of ids.</p></div></div><div class="code"><div class="wrapper">    internalChanges = _.unique <span class="hljs-property">@internalChangeQueue</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Immediately reset the state of the change queue</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-property">@internalChangeQueue</span> = []</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
+        <span class="hljs-subst">#{JSON.stringify(changes)}</span>"""</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>clear timeout to guarantee resolve is not called more than once.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">switch</span> <span class="hljs-property">@_throttle</span>
+      <span class="hljs-keyword">when</span> THROTTLE.TIMEOUT
+        clearTimeout <span class="hljs-property">@timeout</span>
+      <span class="hljs-keyword">when</span> THROTTLE.IMMEDIATE
+        clearImmediate <span class="hljs-property">@timeout</span>
+      <span class="hljs-keyword">when</span> THROTTLE.ANIMATION_FRAME
+        cancelAnimationFrame <span class="hljs-property">@timeout</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>A single id may have been pushed to the change queue many times, to take a unique list of ids.</p></div></div><div class="code"><div class="wrapper">    internalChanges = _.unique <span class="hljs-property">@internalChangeQueue</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Immediately reset the state of the change queue</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-property">@internalChangeQueue</span> = []</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Fire internal watchers on all instances that have changed. This will cause the change event to propagate to
 any parent schemas, whose changes will populate <code>@internalChangeQueue</code></p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">for</span> id <span class="hljs-keyword">in</span> internalChanges
       {changedProps, fireWatchers} = <span class="hljs-property">@changes</span>[id]
       fireWatchers changedProps, <span class="hljs-string">'internal'</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>if any new internal changes were registered, recursively call resolve to continue propagation</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> <span class="hljs-property">@internalChangeQueue</span>.length

@@ -1,5 +1,5 @@
 (function() {
-  var ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _,
+  var ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, THROTTLE, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _, _throttle,
     __slice = [].slice,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -140,6 +140,14 @@
     }
   };
 
+  THROTTLE = {
+    TIMEOUT: 'timeout',
+    IMMEDIATE: 'immediate',
+    ANIMATION_FRAME: 'animationFrame'
+  };
+
+  _throttle = THROTTLE.TIMEOUT;
+
   getPrimitiveTypeOf = function(type) {
     var TYPE, k;
     for (k in TYPES) {
@@ -155,7 +163,31 @@
     uuid: uuid,
     TYPES: TYPES,
     NESTED_TYPES: NESTED_TYPES,
-    DEFAULT_OPTIONS: DEFAULT_OPTIONS
+    DEFAULT_OPTIONS: DEFAULT_OPTIONS,
+    THROTTLE: THROTTLE
+  };
+
+  Scheming.setThrottle = function(throttle) {
+    if (!_.contains(THROTTLE, throttle)) {
+      throw new Error("Throttle option must be set to one of the strategies specified on Scheming.THROTTLE");
+    }
+    switch (throttle) {
+      case THROTTLE.TIMEOUT:
+        return _throttle = THROTTLE.TIMEOUT;
+      case THROTTLE.IMMEDIATE:
+        if ((typeof setImmediate !== "undefined" && setImmediate !== null) && (typeof clearImmediate !== "undefined" && clearImmediate !== null)) {
+          return _throttle = THROTTLE.IMMEDIATE;
+        } else {
+          return console.warn("Cannot use strategy IMMEDIATE: `setImmediate` or `clearImmediate` are not available in the current environment.");
+        }
+        break;
+      case THROTTLE.ANIMATION_FRAME:
+        if ((typeof requestAnimationFrame !== "undefined" && requestAnimationFrame !== null) && (typeof cancelAnimationFrame !== "undefined" && cancelAnimationFrame !== null)) {
+          return _throttle = THROTTLE.ANIMATION_FRAME;
+        } else {
+          return console.warn("Cannot use strategy ANIMATION_FRAME: `requestAnimationFrame` or `cancelAnimationFrame` are not available in the current environment.");
+        }
+    }
   };
 
   Scheming.resolveType = function(typeDef) {
@@ -500,7 +532,23 @@
           changedProps[propName] = oldVal;
         }
       }
-      return this.timeout != null ? this.timeout : this.timeout = setTimeout(this.resolve, 0);
+      switch (_throttle) {
+        case THROTTLE.TIMEOUT:
+          if (this.timeout == null) {
+            this.timeout = setTimeout(this.resolve, 0);
+          }
+          break;
+        case THROTTLE.IMMEDIATE:
+          if (this.timeout == null) {
+            this.timeout = setImmediate(this.resolve);
+          }
+          break;
+        case THROTTLE.ANIMATION_FRAME:
+          if (this.timeout == null) {
+            this.timeout = requestAnimationFrame(this.resolve);
+          }
+      }
+      return this._throttle = _throttle;
     };
 
     ChangeManager.prototype.resolve = function() {
@@ -511,7 +559,16 @@
         this.reset();
         throw new Error("Aborting change propagation after " + Scheming.ITERATION_LIMIT + " cycles.\nThis is probably indicative of a circular watch. Check the following watches for clues:\n" + (JSON.stringify(changes)));
       }
-      clearTimeout(this.timeout);
+      switch (this._throttle) {
+        case THROTTLE.TIMEOUT:
+          clearTimeout(this.timeout);
+          break;
+        case THROTTLE.IMMEDIATE:
+          clearImmediate(this.timeout);
+          break;
+        case THROTTLE.ANIMATION_FRAME:
+          cancelAnimationFrame(this.timeout);
+      }
       internalChanges = _.unique(this.internalChangeQueue);
       this.internalChangeQueue = [];
       for (_i = 0, _len = internalChanges.length; _i < _len; _i++) {

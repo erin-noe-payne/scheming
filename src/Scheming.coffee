@@ -102,6 +102,12 @@ NESTED_TYPES =
     childType  : null
     equals     : (a, b) -> a == b
 
+THROTTLE =
+  TIMEOUT : 'timeout'
+  IMMEDIATE : 'immediate'
+  ANIMATION_FRAME : 'animationFrame'
+
+_throttle = THROTTLE.TIMEOUT
 
 # Used internally to resolve a type declaration to its primitive type.
 # Matches a primitive type if it is...
@@ -119,7 +125,30 @@ getPrimitiveTypeOf = (type) ->
   return null
 
 # Expose TYPES and DEFAULT_OPTIONS for extension and overriding
-Scheming = {uuid, TYPES, NESTED_TYPES, DEFAULT_OPTIONS}
+Scheming = {uuid, TYPES, NESTED_TYPES, DEFAULT_OPTIONS, THROTTLE}
+
+# ### setThrottle
+# Sets the throttling strategy that Scheming uses for resolving queued changes.
+Scheming.setThrottle = (throttle) ->
+  if !_.contains THROTTLE, throttle
+    throw new Error "Throttle option must be set to one of the strategies specified on Scheming.THROTTLE"
+
+  switch throttle
+    when THROTTLE.TIMEOUT
+      _throttle = THROTTLE.TIMEOUT
+
+    when THROTTLE.IMMEDIATE
+      if setImmediate? && clearImmediate?
+        _throttle = THROTTLE.IMMEDIATE
+      else
+        console.warn "Cannot use strategy IMMEDIATE: `setImmediate` or `clearImmediate` are not available in the current environment."
+
+    when THROTTLE.ANIMATION_FRAME
+      if requestAnimationFrame? && cancelAnimationFrame?
+        _throttle = THROTTLE.ANIMATION_FRAME
+      else
+        console.warn "Cannot use strategy ANIMATION_FRAME: `requestAnimationFrame` or `cancelAnimationFrame` are not available in the current environment."
+
 
 # ### resolveType
 # Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.
@@ -463,9 +492,18 @@ class ChangeManager
       else if !_.has(changedProps, propName) && !equals(oldVal, newVal)
         changedProps[propName] = oldVal
 
-    # set a timeout of zero to push the resolution step onto the event queue, once the thread has been released from
+    # Push the resolution step onto the event queue, once the thread has been released from
     # a synchronous block of changes
-    @timeout ?= setTimeout @resolve, 0
+    switch _throttle
+      when THROTTLE.TIMEOUT
+        @timeout ?= setTimeout @resolve, 0
+      when THROTTLE.IMMEDIATE
+        @timeout ?= setImmediate @resolve
+      when THROTTLE.ANIMATION_FRAME
+        @timeout ?= requestAnimationFrame @resolve
+
+    # Keep a reference to the throttling strategy used so that flush will work if the strategy is changed
+    @_throttle = _throttle
 
   # resolves queued changes, firing watchers on instances that have changed
   resolve : =>
@@ -480,7 +518,13 @@ class ChangeManager
         #{JSON.stringify(changes)}"""
 
     # clear timeout to guarantee resolve is not called more than once.
-    clearTimeout @timeout
+    switch @_throttle
+      when THROTTLE.TIMEOUT
+        clearTimeout @timeout
+      when THROTTLE.IMMEDIATE
+        clearImmediate @timeout
+      when THROTTLE.ANIMATION_FRAME
+        cancelAnimationFrame @timeout
 
     # A single id may have been pushed to the change queue many times, to take a unique list of ids.
     internalChanges = _.unique @internalChangeQueue

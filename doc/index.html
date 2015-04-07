@@ -41,6 +41,13 @@ console.log Person.validate jane
 # null</code></pre>
 <h1 id="api-docs">API Docs</h1>
 <h2 id="scheming">Scheming</h2>
+<h3 id="schemingthrottle">Scheming.THROTTLE</h3>
+<p>Defines throttling strategies for resolution of changes to scheming models. If the selected option is not supported in the current environment, a console.warn will be issued and no change is made. Options are:</p>
+<ul>
+<li><code>TIMEOUT</code> sets a timeout of 0</li>
+<li><code>IMMEDIATE</code> uses setImmediate</li>
+<li><code>ANIMATION_FRAME</code> uses requestAnimationFrame</li>
+</ul>
 <h3 id="schemingtypes">Scheming.TYPES</h3>
 <p>Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see <a href="http://autoric.github.io/scheming/Scheming.html#types">the TYPE definitions in source</a>. Note the Mixed type, which is effectively untyped, and will allow for any value to be assigned.</p>
 <p>Below are the default types and the ways that you can reference them when defining a schema:</p>
@@ -186,6 +193,8 @@ Blog = Scheming.create
     type : String</code></pre>
 <h3 id="schemingdefault-options">Scheming.DEFAULT_OPTIONS</h3>
 <p>The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options. See the options on <a href="#schemingcreate">Scheming.create</a> for details.</p>
+<h3 id="schemingsetthrottlestrategy">Scheming.setThrottle(strategy)</h3>
+<p>Sets the throttling strategy for resolving changes. Valid options are defined by <a href="schemingthrottle">Scheming.THROTTLE</a>.</p>
 <h3 id="scheminggetname">Scheming.get(name)</h3>
 <p>Retrieves a schema that has been built using <a href="#schemingcreate">Scheming.create</a>.</p>
 <ul>
@@ -313,8 +322,6 @@ bill = new Person()
 
 errors = Person.validate bill
 # {name : [&quot;Field is required.&quot;]}</code></pre>
-<h3 id="schemaextend">Schema.extend()</h3>
-<p> TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...</p>
 <h2 id="instance">Instance</h2>
 <p>The object instance returned by newing up a <a href="#schema">Schema</a> constructor. </p>
 <h3 id="instancewatchproperties-listener">Instance.watch([properties], listener)</h3>
@@ -368,6 +375,16 @@ lisa.name = &#39;lisa&#39;</code></pre>
 lisa.name = &#39;lisa&#39;
 lisa.age = 7</code></pre>
 <h1 id="changelog">Changelog</h1>
+<h2 id="v120">v1.2.0</h2>
+<ul>
+<li>Added <code>setThrottle</code> method to allow for different throttling strategies for change resolution on scheming models.</li>
+</ul>
+<h2 id="v110">v1.1.0</h2>
+<ul>
+<li>Update addWatcher so that internal watchers do not queue an immediate fire for performance improvements</li>
+<li>Setters and getters are now invoked with the <code>this</code> context of the calling instance</li>
+<li>Add <code>flush</code> to the public API, add deprecated warning for <code>_flush</code></li>
+</ul>
 <h2 id="v100">v1.0.0</h2>
 <ul>
 <li>Initial release</li>

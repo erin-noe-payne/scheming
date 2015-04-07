@@ -50,6 +50,14 @@ console.log Person.validate jane
 
 ## Scheming
 
+### Scheming.THROTTLE
+
+Defines throttling strategies for resolution of changes to scheming models. If the selected option is not supported in the current environment, a console.warn will be issued and no change is made. Options are:
+
+- `TIMEOUT` sets a timeout of 0
+- `IMMEDIATE` uses setImmediate
+- `ANIMATION_FRAME` uses requestAnimationFrame
+
 ### Scheming.TYPES
 
 Defines the primitive types that can be assigned to a field in a schema definition. Each type defines a string name, an identifier, and a parser. A type may also optionally provide a constructor reference. For detailed reference, see [the TYPE definitions in source](http://autoric.github.io/scheming/Scheming.html#types). Note the Mixed type, which is effectively untyped, and will allow for any value to be assigned.
@@ -243,6 +251,10 @@ Blog = Scheming.create
 
 The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options. See the options on [Scheming.create](#schemingcreate) for details.
 
+### Scheming.setThrottle(strategy)
+
+Sets the throttling strategy for resolving changes. Valid options are defined by [Scheming.THROTTLE](schemingthrottle).
+
 ### Scheming.get(name)
 
 Retrieves a schema that has been built using [Scheming.create](#schemingcreate).
@@ -406,9 +418,6 @@ errors = Person.validate bill
 
 ```
 
-### Schema.extend()
- TODO! The goal is to support extensible Schema functions so you can implement custom persistence methods. Something like that...
-
 ## Instance
 
 The object instance returned by newing up a [Schema](#schema) constructor. 
@@ -482,6 +491,10 @@ lisa.age = 7
 ```
 
 # Changelog
+
+## v1.2.0
+
+ - Added `setThrottle` method to allow for different throttling strategies for change resolution on scheming models.
 
 ## v1.1.0
 

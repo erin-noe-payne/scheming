@@ -27,6 +27,111 @@ describe 'Schema watch', ->
 
     unwatch() for unwatch in unwatchers
 
+  describe 'throttling strategies', ->
+    beforeEach ->
+      sinon.spy console, 'warn'
+
+    afterEach ->
+      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
+      console.warn.restore()
+
+    it 'should throw an error if you set an invalid throttle', ->
+      badThrottle = ->
+        Scheming.setThrottle 'asdf'
+
+      expect(badThrottle).to.throw 'Throttle option must be set to one of the strategies specified'
+
+    _.each Scheming.THROTTLE, (throttle) ->
+      it "should accept THROTTLE.#{throttle}", ->
+        Scheming.setThrottle throttle
+
+    it 'should warn if the IMMEDIATE strategy is not available', ->
+      {setImmediate, clearImmediate} = global
+      global.setImmediate = undefined
+      global.clearImmediate = undefined
+
+      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
+
+      expect(console.warn).to.have.been.called
+
+      global.setImmediate = setImmediate
+      global.clearImmediate = clearImmediate
+
+      console.log setImmediate
+
+
+    it 'should warn if the ANIMATION_FRAME strategy is not available', ->
+      Scheming.setThrottle Scheming.THROTTLE.ANIMATION_FRAME
+
+      expect(console.warn).to.have.been.called
+
+    it 'should clear timeout when flushing with the TIMEOUT strategy', ->
+      sinon.spy global, 'setTimeout'
+      sinon.spy global, 'clearTimeout'
+
+      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
+
+      lisa.watch 'name', ->
+
+      expect(global.setTimeout).to.have.been.called
+
+      Scheming.flush()
+
+      expect(global.clearTimeout).to.have.been.called
+
+      global.setTimeout.restore()
+      global.clearTimeout.restore()
+
+    it 'should clear immediate when flushing with the IMMEDIATE strategy', ->
+      sinon.spy global, 'setImmediate'
+      sinon.spy global, 'clearImmediate'
+
+      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
+
+      lisa.watch 'name', ->
+
+      expect(global.setImmediate).to.have.been.called
+
+      Scheming.flush()
+
+      expect(global.clearImmediate).to.have.been.called
+
+      global.setImmediate.restore()
+      global.clearImmediate.restore()
+
+    it 'should cancel animation frame when flushing with the ANIMATION_FRAME strategy', ->
+      global.requestAnimationFrame = sinon.spy()
+      global.cancelAnimationFrame = sinon.spy()
+
+      Scheming.setThrottle Scheming.THROTTLE.ANIMATION_FRAME
+
+      lisa.watch 'name', ->
+
+      expect(global.requestAnimationFrame).to.have.been.called
+
+      Scheming.flush()
+
+      expect(global.cancelAnimationFrame).to.have.been.called
+
+    it 'should flush using the correct cancelation method even if the strategy is changed', ->
+      sinon.spy global, 'setImmediate'
+      sinon.spy global, 'clearImmediate'
+
+      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
+
+      lisa.watch 'name', ->
+
+      expect(global.setImmediate).to.have.been.called
+      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
+
+      Scheming.flush()
+
+      expect(global.clearImmediate).to.have.been.called
+
+      global.setImmediate.restore()
+      global.clearImmediate.restore()
+
+
   describe 'watching single properties', ->
     it 'should take a property name, an instance, and a watch callback', ->
       unwatchers.push lisa.watch 'name', (name) ->

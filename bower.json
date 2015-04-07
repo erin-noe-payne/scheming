@@ -1,6 +1,6 @@
 {
   "name": "scheming",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "dest/Scheming.js",
   "dependencies": {
     "lodash": "~2.4.1"
