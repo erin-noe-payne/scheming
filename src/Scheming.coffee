@@ -109,6 +109,9 @@ THROTTLE =
 
 _throttle = THROTTLE.TIMEOUT
 
+# As listed by https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#Mutator_methods
+ARRAY_MUTATORS = ['copyWithin', 'fill', 'push', 'pop', 'reverse', 'shift', 'sort', 'splice', 'unshift']
+
 # Used internally to resolve a type declaration to its primitive type.
 # Matches a primitive type if it is...
 # - a reference to the object straight from the `Schema.TYPES` object
@@ -448,14 +451,10 @@ schemaFactory = (name, opts) ->
 
     # ### constructor
     # Constructor that builds instances of the Schema
-    constructor       : (model) ->
+    constructor       : (initialState) ->
 
       # turn `this` into a Schema instance
-      instanceFactory(@, normalizedSchema, opts)
-
-      # Finally, initialize the instance with the model passed to the constructor
-      for propName, value of model
-        @[propName] = value
+      instanceFactory(@, normalizedSchema, initialState, opts)
 
 # ### Change Manager
 # Internal Change Manager class, responsible for queueing and resolving change event propagation for watches
@@ -578,7 +577,9 @@ Scheming.flush = ->
 
 # ## Instance
 # Factory method that builds accepts an object and turns it into a Schema instance
-instanceFactory = (instance, normalizedSchema, opts)->
+instanceFactory = (instance, normalizedSchema, initialState, opts)->
+  # flag to indicate initializing state of instance
+  _initializing = true
   # data hash wrapped in closure, keeps actual data members private
   data = {}
   # private watchers array. External watches - those set by consuming client code - are tracked separately from
@@ -618,6 +619,17 @@ instanceFactory = (instance, normalizedSchema, opts)->
       # - If the property type is of array, perform parsing on child members.
       if type.string == NESTED_TYPES.Array.string
         val = type.childParser val
+        # Overwrite mutator functions on this array to clone and assign instead of mutate. This guarantees
+        # that otherwise mutating changes are run through the setters and changes are captured.
+        _.each ARRAY_MUTATORS, (method) ->
+          if Array.prototype[method]?
+            Object.defineProperty val, method,
+              configurable : true
+              value : ->
+                clone = _.clone @
+                Array.prototype[method].call clone, arguments...
+                instance[propName] = clone
+
       # - If a setter is defined, run the value through setter
       if setter
         val = setter.call instance, val
@@ -626,8 +638,9 @@ instanceFactory = (instance, normalizedSchema, opts)->
     data[propName] = val
     # - If the value being assigned is of type schema, we need to listen for changes to propagate
     watchForPropagation propName, val
-    # - Queue up a change to fire
-    cm.queueChanges {id, propName, oldVal : prevVal, newVal : val, equals : type.equals}, fireWatchers
+    # - Queue up a change to fire, unless you are setting the initial state of the instance
+    if !_initializing
+      cm.queueChanges {id, propName, oldVal : prevVal, newVal : val, equals : type.equals}, fireWatchers
 
   # ### Property Getter
   get = (propName) ->
@@ -708,11 +721,12 @@ instanceFactory = (instance, normalizedSchema, opts)->
         unwatcher?()
       # reset the unwatchers array
       unwatchers[propName] = []
-      # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
+      # capture the old state of the array by cloning deep at time of assignment
+      oldArray = _.cloneDeep val
       _.each val, (schema, i) ->
+        # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
         unwatchers[propName].push schema?.watch (newVal, oldVal)->
           newArray = instance[propName]
-          oldArray = _.cloneDeep newArray
           oldArray[i] = oldVal
           cm.queueChanges {id, propName, oldVal : oldArray, newVal : newArray, equals : type.equals}, fireWatchers
         , internal : true
@@ -799,6 +813,12 @@ instanceFactory = (instance, normalizedSchema, opts)->
   # defined by the Schema
   if seal
     Object.seal instance
+
+  # set the initial state of the instance, then clear the initializing flag
+  for propName, val of initialState
+    instance[propName] = val
+
+  _initializing = false
 
 # All done. Export onto the correct root.
 if isNode

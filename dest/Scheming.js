@@ -1,5 +1,5 @@
 (function() {
-  var ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, THROTTLE, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _, _throttle,
+  var ARRAY_MUTATORS, ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, THROTTLE, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _, _throttle,
     __slice = [].slice,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -147,6 +147,8 @@
   };
 
   _throttle = THROTTLE.TIMEOUT;
+
+  ARRAY_MUTATORS = ['copyWithin', 'fill', 'push', 'pop', 'reverse', 'shift', 'sort', 'splice', 'unshift'];
 
   getPrimitiveTypeOf = function(type) {
     var TYPE, k;
@@ -482,13 +484,8 @@
         }
       };
 
-      function Schema(model) {
-        var propName, value;
-        instanceFactory(this, normalizedSchema, opts);
-        for (propName in model) {
-          value = model[propName];
-          this[propName] = value;
-        }
+      function Schema(initialState) {
+        instanceFactory(this, normalizedSchema, initialState, opts);
       }
 
       return Schema;
@@ -608,8 +605,9 @@
     return cm.resolve();
   };
 
-  instanceFactory = function(instance, normalizedSchema, opts) {
-    var addWatcher, data, fireWatchers, get, id, propConfig, propName, removeWatcher, seal, set, strict, unwatchers, watchForPropagation, watchers, _fn;
+  instanceFactory = function(instance, normalizedSchema, initialState, opts) {
+    var addWatcher, data, fireWatchers, get, id, propConfig, propName, removeWatcher, seal, set, strict, unwatchers, val, watchForPropagation, watchers, _fn, _initializing;
+    _initializing = true;
     data = {};
     watchers = {
       internal: [],
@@ -634,6 +632,19 @@
         }
         if (type.string === NESTED_TYPES.Array.string) {
           val = type.childParser(val);
+          _.each(ARRAY_MUTATORS, function(method) {
+            if (Array.prototype[method] != null) {
+              return Object.defineProperty(val, method, {
+                configurable: true,
+                value: function() {
+                  var clone, _ref1;
+                  clone = _.clone(this);
+                  (_ref1 = Array.prototype[method]).call.apply(_ref1, [clone].concat(__slice.call(arguments)));
+                  return instance[propName] = clone;
+                }
+              });
+            }
+          });
         }
         if (setter) {
           val = setter.call(instance, val);
@@ -641,13 +652,15 @@
       }
       data[propName] = val;
       watchForPropagation(propName, val);
-      return cm.queueChanges({
-        id: id,
-        propName: propName,
-        oldVal: prevVal,
-        newVal: val,
-        equals: type.equals
-      }, fireWatchers);
+      if (!_initializing) {
+        return cm.queueChanges({
+          id: id,
+          propName: propName,
+          oldVal: prevVal,
+          newVal: val,
+          equals: type.equals
+        }, fireWatchers);
+      }
     };
     get = function(propName) {
       var getter, val;
@@ -701,7 +714,7 @@
       return _.remove(watchers[target], watcher);
     };
     watchForPropagation = function(propName, val) {
-      var type, unwatcher, _i, _len, _ref;
+      var oldArray, type, unwatcher, _i, _len, _ref;
       type = normalizedSchema[propName].type;
       if (type.string === NESTED_TYPES.Schema.string) {
         if (typeof unwatchers[propName] === "function") {
@@ -728,11 +741,11 @@
           }
         }
         unwatchers[propName] = [];
+        oldArray = _.cloneDeep(val);
         return _.each(val, function(schema, i) {
           return unwatchers[propName].push(schema != null ? schema.watch(function(newVal, oldVal) {
-            var newArray, oldArray;
+            var newArray;
             newArray = instance[propName];
-            oldArray = _.cloneDeep(newArray);
             oldArray[i] = oldVal;
             return cm.queueChanges({
               id: id,
@@ -830,8 +843,13 @@
       _fn(propName, propConfig);
     }
     if (seal) {
-      return Object.seal(instance);
+      Object.seal(instance);
     }
+    for (propName in initialState) {
+      val = initialState[propName];
+      instance[propName] = val;
+    }
+    return _initializing = false;
   };
 
   if (isNode) {

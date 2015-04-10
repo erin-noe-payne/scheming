@@ -57,13 +57,17 @@ describe 'Schema watch', ->
       global.setImmediate = setImmediate
       global.clearImmediate = clearImmediate
 
-      console.log setImmediate
-
-
     it 'should warn if the ANIMATION_FRAME strategy is not available', ->
+      {requestAnimationFrame, cancelAnimationFrame} = global
+      global.requestAnimationFrame = undefined
+      global.cancelAnimationFrame = undefined
+
       Scheming.setThrottle Scheming.THROTTLE.ANIMATION_FRAME
 
       expect(console.warn).to.have.been.called
+
+      global.requestAnimationFrame = requestAnimationFrame
+      global.cancelAnimationFrame = cancelAnimationFrame
 
     it 'should clear timeout when flushing with the TIMEOUT strategy', ->
       sinon.spy global, 'setTimeout'
@@ -176,13 +180,13 @@ describe 'Schema watch', ->
 
       expect(watcher).to.have.been.called
 
-    it 'should reflect the construction as a change', ->
+    it 'should not reflect the construction as a change', ->
       lisa = new Person name : 'lisa'
       lisa.watch 'name', watcher
       Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce
-      expect(watcher).to.have.been.calledWith 'lisa', undefined
+      expect(watcher).to.have.been.calledWith 'lisa', 'lisa'
 
     it 'should fire the watch each time the value changes', ->
       lisa.name = 'lisa'
@@ -242,16 +246,22 @@ describe 'Schema watch', ->
       unwatch()
       expect(unwatch).to.not.throw 'Error'
 
-    it 'should fire a watch on changes to arrays', ->
+    it 'should fire a watch on non-mutating changes to arrays', ->
       lisa.favoriteNumbers = [1, 2, 3]
       lisa.watch 'favoriteNumbers', watcher
+      Scheming.flush()
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith [1,2,3], undefined
+
+      watcher.reset()
 
       lisa.favoriteNumbers = lisa.favoriteNumbers.concat [4, 5]
+#      lisa.favoriteNumbers.splice 3, 0, 4, 5
 
       Scheming.flush()
 
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [1,2,3,4,5], undefined
+      expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
 
     it 'should fire a watch when an array value changes to empty', ->
       lisa.favoriteNumbers = [1, 2, 3]
@@ -325,7 +335,6 @@ describe 'Schema watch', ->
       Scheming.flush()
       expect(watcher).to.have.been.calledOnce
       expect(watcher).to.have.been.calledWith undefined, 'lisa'
-
 
   describe 'watching multiple properties', ->
     it 'should accept multiple properties in an array', ->
@@ -435,6 +444,59 @@ describe 'Schema watch', ->
         mother          : undefined
         name            : undefined
       }
+
+  describe 'watching arrays', ->
+     describe 'mutating changes', ->
+
+       beforeEach ->
+         lisa.favoriteNumbers = [1, 2, 3]
+         lisa.watch 'favoriteNumbers', watcher
+         Scheming.flush()
+         watcher.reset()
+
+       it 'should fire a watch on splicing to arrays', ->
+         lisa.favoriteNumbers.splice 3, 0, 4, 5
+
+         Scheming.flush()
+
+         expect(watcher).to.have.been.called
+         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+
+       it 'should fire a watch on a single push to arrays', ->
+         lisa.favoriteNumbers.push 4, 5
+
+         Scheming.flush()
+
+         expect(watcher).to.have.been.called
+         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+
+       it 'should fire a watch on multiple pushes to arrays', ->
+         lisa.favoriteNumbers.push 4
+         lisa.favoriteNumbers.push 5
+
+         Scheming.flush()
+
+         expect(watcher).to.have.been.called
+         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+
+       it 'should fire a watch on pop to arrays', ->
+         lisa.favoriteNumbers.pop()
+
+         Scheming.flush()
+
+         expect(watcher).to.have.been.called
+         expect(watcher).to.have.been.calledWith [1,2], [1,2,3]
+
+       it 'should fire a watch on multiple pops to arrays', ->
+         lisa.favoriteNumbers.pop()
+         lisa.favoriteNumbers.pop()
+         lisa.favoriteNumbers.pop()
+         lisa.favoriteNumbers.pop()
+
+         Scheming.flush()
+
+         expect(watcher).to.have.been.called
+         expect(watcher).to.have.been.calledWith [], [1,2,3]
 
   describe 'multiple watches', ->
     it 'should fire only relevant watches when a property changes', ->
@@ -614,6 +676,40 @@ describe 'Schema watch', ->
       ]
 
       marge.name = 'marge'
+      Scheming.flush()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith [marge, bart, homer], clones
+
+    it 'should propagate changes to multiple different nested schemas in an array to the parent schema', ->
+      lisa.watch 'friends', watcher
+      lisa.friends = [marge, bart, homer]
+
+      Scheming.flush()
+      watcher.reset()
+
+      clones = [
+        _.clone marge
+        _.clone bart
+        _.clone homer
+      ]
+
+      marge.name = 'marge'
+      bart.name = 'bart'
+      Scheming.flush()
+
+      expect(watcher).to.have.been.calledOnce
+      expect(watcher).to.have.been.calledWith [marge, bart, homer], clones
+      watcher.reset()
+
+      clones = [
+        _.clone marge
+        _.clone bart
+        _.clone homer
+      ]
+
+      marge.age = 35
+      bart.age = 8
       Scheming.flush()
 
       expect(watcher).to.have.been.calledOnce

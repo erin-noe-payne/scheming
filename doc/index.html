@@ -375,6 +375,12 @@ lisa.name = &#39;lisa&#39;</code></pre>
 lisa.name = &#39;lisa&#39;
 lisa.age = 7</code></pre>
 <h1 id="changelog">Changelog</h1>
+<h2 id="v130">v1.3.0</h2>
+<ul>
+<li>Flag construction of schema instances as initialization, so that initializing a scheming model does not count as changes that will propagate on internal watches.</li>
+<li>Fix a bug where multiple changes to an array of nested schemas was not correctly capturing the change state.</li>
+<li>Polyfill array mutating functions that forces a clone and re-assignment so that otherwise mutating changes are captured.</li>
+</ul>
 <h2 id="v120">v1.2.0</h2>
 <ul>
 <li>Added <code>setThrottle</code> method to allow for different throttling strategies for change resolution on scheming models.</li>

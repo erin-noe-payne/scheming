@@ -492,6 +492,12 @@ lisa.age = 7
 
 # Changelog
 
+## v1.3.0
+
+ - Flag construction of schema instances as initialization, so that initializing a scheming model does not count as changes that will propagate on internal watches.
+ - Fix a bug where multiple changes to an array of nested schemas was not correctly capturing the change state.
+ - Polyfill array mutating functions that forces a clone and re-assignment so that otherwise mutating changes are captured.
+
 ## v1.2.0
 
  - Added `setThrottle` method to allow for different throttling strategies for change resolution on scheming models.
