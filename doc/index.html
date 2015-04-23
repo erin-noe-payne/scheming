@@ -1,4 +1,5 @@
 <!DOCTYPE html><html lang="en"><head><title>Scheming</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="index"><meta name="groc-project-path" content="README.md"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">README.md</div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="scheming">Scheming!</h1>
+<p><a href="https://travis-ci.org/autoric/scheming"><img src="https://travis-ci.org/autoric/scheming.svg?branch=master" alt="Build Status"></a></p>
 <p>Define powerful object schemas in javascript. Includes default values, getters, setters, validators, type checking or coercion. Builds reactive objects which you can watch for changes. Written to be extensible and customizable. Works on the browser or the server.</p>
 <p>So what does it look like?</p>
 <pre><code>Scheming = require(&#39;Scheming&#39;)
@@ -195,6 +196,21 @@ Blog = Scheming.create
 <p>The default options used when Scheming.create is invoked. If you prefer for all schemas to be created with the seal or strict options set to true, you can modify the default options. See the options on <a href="#schemingcreate">Scheming.create</a> for details.</p>
 <h3 id="schemingsetthrottlestrategy">Scheming.setThrottle(strategy)</h3>
 <p>Sets the throttling strategy for resolving changes. Valid options are defined by <a href="schemingthrottle">Scheming.THROTTLE</a>.</p>
+<h3 id="schemingregisterqueuecallbackcallback">Scheming.registerQueueCallback(callback)</h3>
+<p>Registers a callback for when the first change is queued. This callback is guaranteed to be called only once before changes are resolved. This is useful for testing.</p>
+<h3 id="schemingunregisterqueuecallbackcallback">Scheming.unregisterQueueCallback(callback)</h3>
+<p>Unregisters the callback registered with <code>Scheming.registerQueueCallback</code></p>
+<h3 id="schemingregisterresolvecallbackcallback">Scheming.registerResolveCallback(callback)</h3>
+<p>Registers a callback to be called when a change is resolved. This callback is guaranteed to be called only once after a queued change and won&#39;t be called again until new queued changes are resolved. This is useful for testing.</p>
+<pre><code>it &#39;should update my DOM&#39;, (done) -&gt;
+  Scheming.registerResolveCallback -&gt;
+    expect($(&#39;.bill&#39;)[0]).to.have.text &#39;bill&#39;
+  bill.name = &#39;bill&#39;</code></pre>
+<p>This can also be used for test runners like <a href="https://github.com/angular/protractor">Protractor</a> to hook into Angular:</p>
+<pre><code>Scheming.registerQueueCallback $browser.$$incOutstandingRequestCount
+Scheming.registerResolveCallback -&gt; $browser.$$completeOutstandingRequest(angular.noop)</code></pre>
+<h3 id="schemingunregisterresolvecallback">Scheming.unregisterResolveCallback</h3>
+<p>Unregisters the callback registered with <code>Scheming.registerResolveCallback</code></p>
 <h3 id="scheminggetname">Scheming.get(name)</h3>
 <p>Retrieves a schema that has been built using <a href="#schemingcreate">Scheming.create</a>.</p>
 <ul>
@@ -375,6 +391,12 @@ lisa.name = &#39;lisa&#39;</code></pre>
 lisa.name = &#39;lisa&#39;
 lisa.age = 7</code></pre>
 <h1 id="changelog">Changelog</h1>
+<h2 id="v140">v1.4.0</h2>
+<ul>
+<li>TravisCI!</li>
+<li>Adds <code>registerQueueCallback</code>, <code>registerResolveCallback</code>, <code>unregisterQueueCallback</code>, and <code>unregisterResolveCallback</code> functions, exposing hooks into Scheming&#39;s change management events.  </li>
+<li>Fixed issues with watching of arrays and propagating of changes in arrays of nested schemas, dodging the need to ever cloneDeep. Performance improvement!</li>
+</ul>
 <h2 id="v130">v1.3.0</h2>
 <ul>
 <li>Flag construction of schema instances as initialization, so that initializing a scheming model does not count as changes that will propagate on internal watches.</li>

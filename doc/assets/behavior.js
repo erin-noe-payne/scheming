@@ -139,6 +139,38 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                   "type": "heading",
                   "data": {
                     "level": 3,
+                    "title": "Scheming.registerQueueCallback(callback)",
+                    "slug": "schemingregisterqueuecallbackcallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.unregisterQueueCallback(callback)",
+                    "slug": "schemingunregisterqueuecallbackcallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.registerResolveCallback(callback)",
+                    "slug": "schemingregisterresolvecallbackcallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Scheming.unregisterResolveCallback",
+                    "slug": "schemingunregisterresolvecallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
                     "title": "Scheming.get(name)",
                     "slug": "scheminggetname"
                   },
@@ -279,6 +311,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
+                "title": "v1.4.0",
+                "slug": "v140"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
                 "title": "v1.3.0",
                 "slug": "v130"
               },
@@ -378,6 +418,38 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                     "level": 3,
                     "title": "setThrottle",
                     "slug": "setthrottle"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "registerQueueCallback",
+                    "slug": "registerqueuecallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "unregisterQueueCallback",
+                    "slug": "unregisterqueuecallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "registerResolveCallback",
+                    "slug": "registerresolvecallback"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "unregisterResolveCallback",
+                    "slug": "unregisterresolvecallback"
                   },
                   "depth": 3
                 }, {
@@ -586,6 +658,38 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                 "level": 3,
                 "title": "setThrottle",
                 "slug": "setthrottle"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "registerQueueCallback",
+                "slug": "registerqueuecallback"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "unregisterQueueCallback",
+                "slug": "unregisterqueuecallback"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "registerResolveCallback",
+                "slug": "registerresolvecallback"
+              },
+              "depth": 3
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 3,
+                "title": "unregisterResolveCallback",
+                "slug": "unregisterresolvecallback"
               },
               "depth": 3
             }, {

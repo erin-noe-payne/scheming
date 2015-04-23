@@ -9,11 +9,11 @@ describe 'Schema watch', ->
 
   beforeEach ->
     Person = Scheming.create 'Person',
-      name            : String
-      age             : Number
+      name : String
+      age : Number
       favoriteNumbers : [Number]
-      mother          : 'Schema:Person'
-      friends         : ['Schema:Person']
+      mother : 'Schema:Person'
+      friends : ['Schema:Person']
 
     lisa = new Person()
 
@@ -311,17 +311,17 @@ describe 'Schema watch', ->
       lisa.watch 'favoriteNumbers', watcher
       Scheming.flush()
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [1,2,3], undefined
+      expect(watcher).to.have.been.calledWith [1, 2, 3], undefined
 
       watcher.reset()
 
       lisa.favoriteNumbers = lisa.favoriteNumbers.concat [4, 5]
-#      lisa.favoriteNumbers.splice 3, 0, 4, 5
+      #      lisa.favoriteNumbers.splice 3, 0, 4, 5
 
       Scheming.flush()
 
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+      expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
 
     it 'should fire a watch when an array value changes to empty', ->
       lisa.favoriteNumbers = [1, 2, 3]
@@ -330,7 +330,7 @@ describe 'Schema watch', ->
       Scheming.flush()
 
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [1,2,3], undefined
+      expect(watcher).to.have.been.calledWith [1, 2, 3], undefined
       watcher.reset()
 
       lisa.favoriteNumbers = []
@@ -338,7 +338,7 @@ describe 'Schema watch', ->
       Scheming.flush()
 
       expect(watcher).to.have.been.called
-      expect(watcher).to.have.been.calledWith [], [1,2,3]
+      expect(watcher).to.have.been.calledWith [], [1, 2, 3]
 
     it 'should fire a watch only once per synchronous block of changes, with the most recent value, and the original previous value', ->
       lisa.watch 'name', watcher
@@ -492,71 +492,70 @@ describe 'Schema watch', ->
       Scheming.flush()
 
       expect(watcher).to.have.been.calledWith {
-        age             : undefined
+        age : undefined
         favoriteNumbers : undefined
-        friends         : undefined
-        mother          : undefined
-        name            : "lisa"
+        friends : undefined
+        mother : undefined
+        name : "lisa"
       }, {
-        age             : undefined
+        age : undefined
         favoriteNumbers : undefined
-        friends         : undefined
-        mother          : undefined
-        name            : undefined
+        friends : undefined
+        mother : undefined
+        name : undefined
       }
 
   describe 'watching arrays', ->
-     describe 'mutating changes', ->
+    describe 'mutating changes', ->
+      beforeEach ->
+        lisa.favoriteNumbers = [1, 2, 3]
+        lisa.watch 'favoriteNumbers', watcher
+        Scheming.flush()
+        watcher.reset()
 
-       beforeEach ->
-         lisa.favoriteNumbers = [1, 2, 3]
-         lisa.watch 'favoriteNumbers', watcher
-         Scheming.flush()
-         watcher.reset()
+      it 'should fire a watch on splicing to arrays', ->
+        lisa.favoriteNumbers.splice 3, 0, 4, 5
 
-       it 'should fire a watch on splicing to arrays', ->
-         lisa.favoriteNumbers.splice 3, 0, 4, 5
+        Scheming.flush()
 
-         Scheming.flush()
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
 
-         expect(watcher).to.have.been.called
-         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+      it 'should fire a watch on a single push to arrays', ->
+        lisa.favoriteNumbers.push 4, 5
 
-       it 'should fire a watch on a single push to arrays', ->
-         lisa.favoriteNumbers.push 4, 5
+        Scheming.flush()
 
-         Scheming.flush()
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
 
-         expect(watcher).to.have.been.called
-         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+      it 'should fire a watch on multiple pushes to arrays', ->
+        lisa.favoriteNumbers.push 4
+        lisa.favoriteNumbers.push 5
 
-       it 'should fire a watch on multiple pushes to arrays', ->
-         lisa.favoriteNumbers.push 4
-         lisa.favoriteNumbers.push 5
+        Scheming.flush()
 
-         Scheming.flush()
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
 
-         expect(watcher).to.have.been.called
-         expect(watcher).to.have.been.calledWith [1,2,3,4,5], [1,2,3]
+      it 'should fire a watch on pop to arrays', ->
+        lisa.favoriteNumbers.pop()
 
-       it 'should fire a watch on pop to arrays', ->
-         lisa.favoriteNumbers.pop()
+        Scheming.flush()
 
-         Scheming.flush()
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2], [1, 2, 3]
 
-         expect(watcher).to.have.been.called
-         expect(watcher).to.have.been.calledWith [1,2], [1,2,3]
+      it 'should fire a watch on multiple pops to arrays', ->
+        lisa.favoriteNumbers.pop()
+        lisa.favoriteNumbers.pop()
+        lisa.favoriteNumbers.pop()
+        lisa.favoriteNumbers.pop()
 
-       it 'should fire a watch on multiple pops to arrays', ->
-         lisa.favoriteNumbers.pop()
-         lisa.favoriteNumbers.pop()
-         lisa.favoriteNumbers.pop()
-         lisa.favoriteNumbers.pop()
+        Scheming.flush()
 
-         Scheming.flush()
-
-         expect(watcher).to.have.been.called
-         expect(watcher).to.have.been.calledWith [], [1,2,3]
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [], [1, 2, 3]
 
   describe 'multiple watches', ->
     it 'should fire only relevant watches when a property changes', ->
@@ -581,17 +580,17 @@ describe 'Schema watch', ->
       expect(w2).to.not.have.been.called
       expect(w3).to.have.been.calledOnce
       expect(w3).to.have.been.calledWith {
-        age             : undefined
+        age : undefined
         favoriteNumbers : undefined
-        friends         : undefined
-        mother          : undefined
-        name            : "lisa"
+        friends : undefined
+        mother : undefined
+        name : "lisa"
       }, {
-        age             : undefined
+        age : undefined
         favoriteNumbers : undefined
-        friends         : undefined
-        mother          : undefined
-        name            : undefined
+        friends : undefined
+        mother : undefined
+        name : undefined
       }
 
     it 'should continue to fire other watches when one watch is unlistened', ->
@@ -684,11 +683,11 @@ describe 'Schema watch', ->
 
       expect(watcher).to.have.been.called
       expect(watcher).to.have.been.calledWith marge, {
-        name            : 'marge'
-        age             : undefined
+        name : 'marge'
+        age : undefined
         favoriteNumbers : undefined
-        mother          : undefined
-        friends         : undefined
+        mother : undefined
+        friends : undefined
       }
 
     it 'should call the watcher asynchronously', (done) ->
@@ -729,11 +728,7 @@ describe 'Schema watch', ->
       Scheming.flush()
       watcher.reset()
 
-      clones = [
-        _.clone marge
-        _.clone bart
-        _.clone homer
-      ]
+      clones = _.cloneDeep lisa.friends
 
       marge.name = 'marge'
       Scheming.flush()
@@ -845,6 +840,51 @@ describe 'Schema watch', ->
       Scheming.flush()
 
       expect(watcher).to.have.been.called
+
+
+    it 'should correctly capture old and new state of arrays', ->
+      lisa.friends = [marge, bart, homer]
+      marge.name = 'marge'
+      bart.name = 'bart'
+      homer.name = 'homer'
+
+      lisa.watch 'friends', watcher
+
+      cloned = _.cloneDeep lisa.friends
+
+      Scheming.flush()
+      watcher.reset()
+
+      marge.name = 'MARGE'
+      bart.name = 'BART'
+      Scheming.flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith [marge, bart, homer], cloned
+
+    # TODO: this currently fails due to order of operations
+    it.skip 'should correctly capture old and new state of arrays if there is a re-assignment', ->
+      marge.name = 'marge'
+      bart.name = 'bart'
+      homer.name = 'homer'
+
+      lisa.friends = [marge, bart]
+
+      lisa.watch 'friends', watcher
+
+      cloned = _.cloneDeep lisa.friends
+
+      Scheming.flush()
+      watcher.reset()
+
+      marge.name = 'MARGE'
+      bart.name = 'BART'
+      lisa.friends = [homer]
+      homer.name = 'HOMER'
+      Scheming.flush()
+
+      expect(watcher).to.have.been.called
+      expect(watcher).to.have.been.calledWith [homer], cloned
 
     it 'should throw an error if external watches create an infinite loop', ->
       i = 0

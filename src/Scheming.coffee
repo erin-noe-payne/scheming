@@ -505,7 +505,7 @@ class ChangeManager
     @recursionCount = 0
 
   # Registers changes that have occurred on an instance by instance id, holding a reference to the original value
-  queueChanges : ({id, propName, oldVal, newVal, equals}, fireWatchers) ->
+  queueChanges : ({id, propName, oldVal, newVal, equals, force}, fireWatchers) ->
     # if there are no changes yet queued for the instance, add to the changes hash by id
     if !_.has @changes, id
       @changes[id] ?= {changedProps : {}, fireWatchers}
@@ -516,8 +516,8 @@ class ChangeManager
       # if we are already tracking this property, and it has been reset to its original value, clear it from changes
       if _.has(changedProps, propName) && equals(changedProps[propName], newVal)
         delete changedProps[propName]
-      # if we are not tracking this property, and it is being changed, add it to changes
-      else if !_.has(changedProps, propName) && !equals(oldVal, newVal)
+      # if we are not tracking this property and it is being changed, or if force is flagged true, add it to changes
+      else if force || (!_.has(changedProps, propName) && !equals(oldVal, newVal))
         changedProps[propName] = oldVal
 
     # Call the queue callback if a timeout hasn't been defined yet
@@ -536,6 +536,10 @@ class ChangeManager
 
     # Keep a reference to the throttling strategy used so that flush will work if the strategy is changed
     @_throttle = _throttle
+
+  # gets the previous state of a queued change
+  getQueuedChanges : ({id, propName}) ->
+    return @changes[id]?.changedProps[propName]
 
   # resolves queued changes, firing watchers on instances that have changed
   resolve : =>
@@ -588,7 +592,7 @@ class ChangeManager
     if _.size(@changes) > 0
       return @resolve()
 
-    # If we get here, all changes have been fully propagated. Reset change manager state to pristine just for explicitnessgit st
+    # If we get here, all changes have been fully propagated. Reset change manager state to pristine just for explicitness
     @reset()
 
 # set up global change manager that will be consumed by all schema instances
@@ -652,6 +656,10 @@ instanceFactory = (instance, normalizedSchema, initialState, opts)->
       # - If the property type is of array, perform parsing on child members.
       if type.string == NESTED_TYPES.Array.string
         val = type.childParser val
+        # Add a unique arrayId to scheming arrays to identify the source of changes
+        Object.defineProperty val, '_arrayId',
+          configurable : true
+          value : uuid()
         # Overwrite mutator functions on this array to clone and assign instead of mutate. This guarantees
         # that otherwise mutating changes are run through the setters and changes are captured.
         _.each ARRAY_MUTATORS, (method) ->
@@ -754,14 +762,22 @@ instanceFactory = (instance, normalizedSchema, initialState, opts)->
         unwatcher?()
       # reset the unwatchers array
       unwatchers[propName] = []
-      # capture the old state of the array by cloning deep at time of assignment
-      oldArray = _.cloneDeep val
       _.each val, (schema, i) ->
         # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
         unwatchers[propName].push schema?.watch (newVal, oldVal)->
           newArray = instance[propName]
-          oldArray[i] = oldVal
-          cm.queueChanges {id, propName, oldVal : oldArray, newVal : newArray, equals : type.equals}, fireWatchers
+          # check if there is already a queued change for this array
+          oldArray = cm.getQueuedChanges {id, propName}
+          # if there is not, clone the current state of the array, including the arrayId
+          if !oldArray?
+            oldArray ?= _.clone newArray
+            Object.defineProperty oldArray, '_arrayId',
+              configurable : true
+              value : newArray._arrayId
+          # if the source of this chnage is the same as the already queued array, propagate the change
+          if oldArray._arrayId == newArray._arrayId
+            oldArray[i] = oldVal
+            cm.queueChanges {id, propName, oldVal : oldArray, newVal : newArray, equals : type.equals, force: true}, fireWatchers
         , internal : true
 
   # Given a change set, fires all watchers that are watching one or more of the changed properties

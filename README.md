@@ -1,5 +1,7 @@
 # Scheming!
 
+[![Build Status](https://travis-ci.org/autoric/scheming.svg?branch=master)](https://travis-ci.org/autoric/scheming)
+
 Define powerful object schemas in javascript. Includes default values, getters, setters, validators, type checking or coercion. Builds reactive objects which you can watch for changes. Written to be extensible and customizable. Works on the browser or the server.
 
 So what does it look like?
@@ -521,6 +523,12 @@ lisa.age = 7
 ```
 
 # Changelog
+
+## v1.4.0
+
+ - TravisCI!
+ - Adds `registerQueueCallback`, `registerResolveCallback`, `unregisterQueueCallback`, and `unregisterResolveCallback` functions, exposing hooks into Scheming's change management events.  
+ - Fixed issues with watching of arrays and propagating of changes in arrays of nested schemas, dodging the need to ever cloneDeep. Performance improvement!
 
 ## v1.3.0
 
