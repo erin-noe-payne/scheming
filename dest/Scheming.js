@@ -1,7 +1,7 @@
 (function() {
-  var ARRAY_MUTATORS, ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, THROTTLE, TYPES, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid, _, _throttle,
-    __slice = [].slice,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var ARRAY_MUTATORS, ChangeManager, DEFAULT_OPTIONS, NESTED_TYPES, Scheming, THROTTLE, TYPES, _, _queueCallback, _resolveCallback, _throttle, addToRegistry, cm, getPrimitiveTypeOf, instanceFactory, isNode, registry, root, schemaFactory, uuid,
+    slice = [].slice,
+    bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   root = this;
 
@@ -148,6 +148,10 @@
 
   _throttle = THROTTLE.TIMEOUT;
 
+  _queueCallback = null;
+
+  _resolveCallback = null;
+
   ARRAY_MUTATORS = ['copyWithin', 'fill', 'push', 'pop', 'reverse', 'shift', 'sort', 'splice', 'unshift'];
 
   getPrimitiveTypeOf = function(type) {
@@ -192,8 +196,30 @@
     }
   };
 
+  Scheming.registerQueueCallback = function(callback) {
+    if (!_.isFunction(callback)) {
+      throw new Error("Callback must be a funtion");
+    }
+    return _queueCallback = callback;
+  };
+
+  Scheming.unregisterQueueCallback = function(callback) {
+    return _queueCallback = null;
+  };
+
+  Scheming.registerResolveCallback = function(callback) {
+    if (!_.isFunction(callback)) {
+      throw new Error("Callback must be a funtion");
+    }
+    return _resolveCallback = callback;
+  };
+
+  Scheming.unregisterResolveCallback = function(callback) {
+    return _resolveCallback = null;
+  };
+
   Scheming.resolveType = function(typeDef) {
-    var childType, fn, resolveSchemaType, type, _fn, _i, _len, _ref;
+    var childType, fn, fn1, j, len, ref, resolveSchemaType, type;
     type = getPrimitiveTypeOf(typeDef);
     if (type == null) {
       if (_.isArray(typeDef)) {
@@ -261,8 +287,8 @@
       if (_.isString(typeDef) && typeDef.slice(0, 7) === 'Schema:') {
         type = _.cloneDeep(NESTED_TYPES.Schema);
         childType = typeDef.slice(7);
-        _ref = ['identifier', 'parser'];
-        _fn = function(fn) {
+        ref = ['identifier', 'parser'];
+        fn1 = function(fn) {
           return type[fn] = function(val) {
             childType = Scheming.get(childType);
             if (!childType) {
@@ -272,9 +298,9 @@
             return type[fn](val);
           };
         };
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          fn = _ref[_i];
-          _fn(fn);
+        for (j = 0, len = ref.length; j < len; j++) {
+          fn = ref[j];
+          fn1(fn);
         }
       }
     }
@@ -288,7 +314,7 @@
    */
 
   Scheming.normalizePropertyConfig = function(propConfig, propName) {
-    var definition, fn, getter, required, setter, type, validate, _i, _len;
+    var definition, fn, getter, j, len, required, setter, type, validate;
     if (propName == null) {
       propName = 'field';
     }
@@ -321,8 +347,8 @@
     if (!_.isArray(validate)) {
       validate = [validate];
     }
-    for (_i = 0, _len = validate.length; _i < _len; _i++) {
-      fn = validate[_i];
+    for (j = 0, len = validate.length; j < len; j++) {
+      fn = validate[j];
       if (!_.isFunction(fn)) {
         throw new Error("Error resolving " + propName + ". Schema validate must be a function or array of functions.");
       }
@@ -354,12 +380,14 @@
   };
 
   Scheming.reset = function() {
-    return registry = {};
+    registry = {};
+    _queueCallback = null;
+    return _resolveCallback = null;
   };
 
   Scheming.create = function() {
     var Schema, args, name, opts, schemaConfig;
-    args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
     if (!_.isString(args[0])) {
       args.unshift(uuid());
     }
@@ -382,13 +410,13 @@
       };
 
       Schema.defineProperties = function(config) {
-        var k, v, _results;
-        _results = [];
+        var k, results, v;
+        results = [];
         for (k in config) {
           v = config[k];
-          _results.push(this.defineProperty(k, v));
+          results.push(this.defineProperty(k, v));
         }
-        return _results;
+        return results;
       };
 
       Schema.getProperties = function() {
@@ -400,27 +428,27 @@
       };
 
       Schema.eachProperty = function(cb) {
-        var propConfig, propName, _results;
-        _results = [];
+        var propConfig, propName, results;
+        results = [];
         for (propName in normalizedSchema) {
           propConfig = normalizedSchema[propName];
-          _results.push(cb(propName, _.cloneDeep(propConfig)));
+          results.push(cb(propName, _.cloneDeep(propConfig)));
         }
-        return _results;
+        return results;
       };
 
       Schema.validate = function(instance) {
-        var childErrors, e, err, errors, i, k, key, member, pushError, required, requiredMessage, type, v, val, validate, validator, value, _i, _j, _len, _len1;
+        var childErrors, e, err, errors, i, j, k, key, l, len, len1, member, pushError, required, requiredMessage, type, v, val, validate, validator, value;
         errors = {};
         if (instance._validating) {
           return null;
         }
         instance._validating = true;
         pushError = function(key, err) {
-          var e, _i, _len;
+          var e, j, len;
           if (_.isArray(err)) {
-            for (_i = 0, _len = err.length; _i < _len; _i++) {
-              e = err[_i];
+            for (j = 0, len = err.length; j < len; j++) {
+              e = err[j];
               return pushError(key, e);
             }
           }
@@ -442,8 +470,8 @@
           }
           if (val != null) {
             type = normalizedSchema[key].type;
-            for (_i = 0, _len = validate.length; _i < _len; _i++) {
-              validator = validate[_i];
+            for (j = 0, len = validate.length; j < len; j++) {
+              validator = validate[j];
               err = true;
               try {
                 err = validator.call(instance, val);
@@ -461,16 +489,16 @@
               childErrors = type.childType.validate.call(instance, val);
               for (k in childErrors) {
                 v = childErrors[k];
-                pushError("" + key + "." + k, v);
+                pushError(key + "." + k, v);
               }
             }
             if (type.string === 'array' && type.childType.string === 'schema') {
-              for (i = _j = 0, _len1 = val.length; _j < _len1; i = ++_j) {
+              for (i = l = 0, len1 = val.length; l < len1; i = ++l) {
                 member = val[i];
                 childErrors = type.childType.childType.validate.call(instance, member);
                 for (k in childErrors) {
                   v = childErrors[k];
-                  pushError("" + key + "[" + i + "]." + k, v);
+                  pushError(key + "[" + i + "]." + k, v);
                 }
               }
             }
@@ -495,7 +523,7 @@
 
   ChangeManager = (function() {
     function ChangeManager() {
-      this.resolve = __bind(this.resolve, this);
+      this.resolve = bind(this.resolve, this);
       this.changes = {};
       this.internalChangeQueue = [];
       this.timeout = null;
@@ -505,16 +533,21 @@
     ChangeManager.prototype.reset = function() {
       this.changes = {};
       this.internalChangeQueue = [];
+      if (this.timeout != null) {
+        if (typeof _resolveCallback === "function") {
+          _resolveCallback();
+        }
+      }
       this.timeout = null;
       return this.recursionCount = 0;
     };
 
-    ChangeManager.prototype.queueChanges = function(_arg, fireWatchers) {
-      var changedProps, equals, id, newVal, oldVal, propName, _base;
-      id = _arg.id, propName = _arg.propName, oldVal = _arg.oldVal, newVal = _arg.newVal, equals = _arg.equals;
+    ChangeManager.prototype.queueChanges = function(arg, fireWatchers) {
+      var base, changedProps, equals, id, newVal, oldVal, propName;
+      id = arg.id, propName = arg.propName, oldVal = arg.oldVal, newVal = arg.newVal, equals = arg.equals;
       if (!_.has(this.changes, id)) {
-        if ((_base = this.changes)[id] == null) {
-          _base[id] = {
+        if ((base = this.changes)[id] == null) {
+          base[id] = {
             changedProps: {},
             fireWatchers: fireWatchers
           };
@@ -527,6 +560,11 @@
           delete changedProps[propName];
         } else if (!_.has(changedProps, propName) && !equals(oldVal, newVal)) {
           changedProps[propName] = oldVal;
+        }
+      }
+      if (this.timeout == null) {
+        if (typeof _queueCallback === "function") {
+          _queueCallback();
         }
       }
       switch (_throttle) {
@@ -549,7 +587,7 @@
     };
 
     ChangeManager.prototype.resolve = function() {
-      var changedProps, changes, fireWatchers, id, internalChanges, _i, _len, _ref, _ref1;
+      var changedProps, changes, fireWatchers, id, internalChanges, j, len, ref, ref1;
       this.recursionCount++;
       if (Scheming.ITERATION_LIMIT > 0 && this.recursionCount > Scheming.ITERATION_LIMIT) {
         changes = this.changes;
@@ -568,22 +606,22 @@
       }
       internalChanges = _.unique(this.internalChangeQueue);
       this.internalChangeQueue = [];
-      for (_i = 0, _len = internalChanges.length; _i < _len; _i++) {
-        id = internalChanges[_i];
-        _ref = this.changes[id], changedProps = _ref.changedProps, fireWatchers = _ref.fireWatchers;
+      for (j = 0, len = internalChanges.length; j < len; j++) {
+        id = internalChanges[j];
+        ref = this.changes[id], changedProps = ref.changedProps, fireWatchers = ref.fireWatchers;
         fireWatchers(changedProps, 'internal');
       }
       if (this.internalChangeQueue.length) {
-        this.resolve();
+        return this.resolve();
       }
       changes = this.changes;
       this.changes = {};
       for (id in changes) {
-        _ref1 = changes[id], changedProps = _ref1.changedProps, fireWatchers = _ref1.fireWatchers;
+        ref1 = changes[id], changedProps = ref1.changedProps, fireWatchers = ref1.fireWatchers;
         fireWatchers(changedProps, 'external');
       }
       if (_.size(this.changes) > 0) {
-        this.resolve();
+        return this.resolve();
       }
       return this.reset();
     };
@@ -606,7 +644,7 @@
   };
 
   instanceFactory = function(instance, normalizedSchema, initialState, opts) {
-    var addWatcher, data, fireWatchers, get, id, propConfig, propName, removeWatcher, seal, set, strict, unwatchers, val, watchForPropagation, watchers, _fn, _initializing;
+    var _initializing, addWatcher, data, fireWatchers, fn1, get, id, propConfig, propName, removeWatcher, seal, set, strict, unwatchers, val, watchForPropagation, watchers;
     _initializing = true;
     data = {};
     watchers = {
@@ -617,12 +655,12 @@
     id = uuid();
     strict = opts.strict, seal = opts.seal;
     set = function(propName, val) {
-      var prevVal, setter, type, _ref;
+      var prevVal, ref, setter, type;
       prevVal = data[propName];
       if (!normalizedSchema[propName]) {
         return instance[propName] = val;
       }
-      _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
+      ref = normalizedSchema[propName], type = ref.type, setter = ref.setter;
       if (val != null) {
         if (!type.identifier(val)) {
           if (strict) {
@@ -637,9 +675,9 @@
               return Object.defineProperty(val, method, {
                 configurable: true,
                 value: function() {
-                  var clone, _ref1;
+                  var clone, ref1;
                   clone = _.clone(this);
-                  (_ref1 = Array.prototype[method]).call.apply(_ref1, [clone].concat(__slice.call(arguments)));
+                  (ref1 = Array.prototype[method]).call.apply(ref1, [clone].concat(slice.call(arguments)));
                   return instance[propName] = clone;
                 }
               });
@@ -672,7 +710,7 @@
       return val;
     };
     addWatcher = function(properties, cb, opts) {
-      var propName, target, watcher, _i, _len;
+      var j, len, propName, target, watcher;
       if (_.isFunction(properties)) {
         opts = cb;
         cb = properties;
@@ -691,8 +729,8 @@
       if (properties && !_.isArray(properties)) {
         properties = [properties];
       }
-      for (_i = 0, _len = properties.length; _i < _len; _i++) {
-        propName = properties[_i];
+      for (j = 0, len = properties.length; j < len; j++) {
+        propName = properties[j];
         if (!_.has(normalizedSchema, propName)) {
           throw new Error("Cannot set watch on " + propName + ", property is not defined in schema.");
         }
@@ -714,7 +752,7 @@
       return _.remove(watchers[target], watcher);
     };
     watchForPropagation = function(propName, val) {
-      var oldArray, type, unwatcher, _i, _len, _ref;
+      var j, len, oldArray, ref, type, unwatcher;
       type = normalizedSchema[propName].type;
       if (type.string === NESTED_TYPES.Schema.string) {
         if (typeof unwatchers[propName] === "function") {
@@ -733,9 +771,9 @@
         }) : void 0;
       }
       if (type.string === NESTED_TYPES.Array.string && type.childType.string === NESTED_TYPES.Schema.string) {
-        _ref = unwatchers[propName] || [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          unwatcher = _ref[_i];
+        ref = unwatchers[propName] || [];
+        for (j = 0, len = ref.length; j < len; j++) {
+          unwatcher = ref[j];
           if (typeof unwatcher === "function") {
             unwatcher();
           }
@@ -761,7 +799,7 @@
       }
     };
     fireWatchers = function(queuedChanges, target) {
-      var e, getPrevVal, i, newVals, oldVals, propName, shouldFire, triggeringProperties, watcher, _i, _len, _ref, _results;
+      var e, getPrevVal, i, j, len, newVals, oldVals, propName, ref, results, shouldFire, triggeringProperties, watcher;
       if (target == null) {
         target = 'external';
       }
@@ -774,7 +812,7 @@
         }
       };
       i = 0;
-      _results = [];
+      results = [];
       while ((watcher = watchers[target][i])) {
         i++;
         shouldFire = watcher.first || (_.intersection(triggeringProperties, watcher.properties).length > 0);
@@ -782,9 +820,9 @@
         if (shouldFire) {
           newVals = {};
           oldVals = {};
-          _ref = watcher.properties;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            propName = _ref[_i];
+          ref = watcher.properties;
+          for (j = 0, len = ref.length; j < len; j++) {
+            propName = ref[j];
             newVals[propName] = instance[propName];
             oldVals[propName] = getPrevVal(propName);
           }
@@ -794,16 +832,16 @@
             oldVals = oldVals[propName];
           }
           try {
-            _results.push(watcher.cb(newVals, oldVals));
+            results.push(watcher.cb(newVals, oldVals));
           } catch (_error) {
             e = _error;
-            _results.push(console.error(e.stack || e));
+            results.push(console.error(e.stack || e));
           }
         } else {
-          _results.push(void 0);
+          results.push(void 0);
         }
       }
-      return _results;
+      return results;
     };
     Object.defineProperty(instance, 'watch', {
       configurable: false,
@@ -819,7 +857,7 @@
       writable: true,
       value: false
     });
-    _fn = (function(_this) {
+    fn1 = (function(_this) {
       return function(propName, propConfig) {
         var val;
         Object.defineProperty(instance, propName, {
@@ -840,7 +878,7 @@
     })(this);
     for (propName in normalizedSchema) {
       propConfig = normalizedSchema[propName];
-      _fn(propName, propConfig);
+      fn1(propName, propConfig);
     }
     if (seal) {
       Object.seal(instance);

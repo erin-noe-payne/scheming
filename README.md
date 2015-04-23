@@ -255,6 +255,36 @@ The default options used when Scheming.create is invoked. If you prefer for all 
 
 Sets the throttling strategy for resolving changes. Valid options are defined by [Scheming.THROTTLE](schemingthrottle).
 
+### Scheming.registerQueueCallback(callback)
+
+Registers a callback for when the first change is queued. This callback is guaranteed to be called only once before changes are resolved. This is useful for testing.
+
+### Scheming.unregisterQueueCallback(callback)
+
+Unregisters the callback registered with `Scheming.registerQueueCallback`
+
+### Scheming.registerResolveCallback(callback)
+
+Registers a callback to be called when a change is resolved. This callback is guaranteed to be called only once after a queued change and won't be called again until new queued changes are resolved. This is useful for testing.
+
+```
+it 'should update my DOM', (done) ->
+  Scheming.registerResolveCallback ->
+    expect($('.bill')[0]).to.have.text 'bill'
+  bill.name = 'bill'
+```
+
+This can also be used for test runners like [Protractor](https://github.com/angular/protractor) to hook into Angular:
+
+```
+Scheming.registerQueueCallback $browser.$$incOutstandingRequestCount
+Scheming.registerResolveCallback -> $browser.$$completeOutstandingRequest(angular.noop)
+```
+
+### Scheming.unregisterResolveCallback
+
+Unregisters the callback registered with `Scheming.registerResolveCallback`
+
 ### Scheming.get(name)
 
 Retrieves a schema that has been built using [Scheming.create](#schemingcreate).

@@ -108,6 +108,8 @@ THROTTLE =
   ANIMATION_FRAME : 'animationFrame'
 
 _throttle = THROTTLE.TIMEOUT
+_queueCallback = null
+_resolveCallback = null
 
 # As listed by https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#Mutator_methods
 ARRAY_MUTATORS = ['copyWithin', 'fill', 'push', 'pop', 'reverse', 'shift', 'sort', 'splice', 'unshift']
@@ -152,6 +154,29 @@ Scheming.setThrottle = (throttle) ->
       else
         console.warn "Cannot use strategy ANIMATION_FRAME: `requestAnimationFrame` or `cancelAnimationFrame` are not available in the current environment."
 
+# ### registerQueueCallback
+# registers a callback when the first Scheming change is queued with the change manager. This is useful for tests
+Scheming.registerQueueCallback = (callback) ->
+  if !_.isFunction callback
+    throw new Error "Callback must be a funtion"
+  _queueCallback = callback
+
+# ### unregisterQueueCallback
+# unregisters a callback when the first Scheming change is queued with the change manager.
+Scheming.unregisterQueueCallback = (callback) ->
+  _queueCallback = null
+
+# ### registerResolveCallback
+# registers a callback when the change manager is finished resolving changes
+Scheming.registerResolveCallback = (callback) ->
+  if !_.isFunction callback
+    throw new Error "Callback must be a funtion"
+  _resolveCallback = callback
+
+# ### unregisterResolveCallback
+# unregisters a callback when the change manager is finished resolving changes
+Scheming.unregisterResolveCallback = (callback) ->
+  _resolveCallback = null
 
 # ### resolveType
 # Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.
@@ -318,6 +343,8 @@ Scheming.get = (name) ->
 # Resets the state of the Schema registry. Mainly exposed for testing, but could have use in production.
 Scheming.reset = ->
   registry = {}
+  _queueCallback = null
+  _resolveCallback = null
 
 # ### create
 # Creates a new Schema constructor
@@ -471,6 +498,8 @@ class ChangeManager
   reset : ->
     @changes = {}
     @internalChangeQueue = []
+    if @timeout?
+      _resolveCallback?()
     @timeout = null
 
     @recursionCount = 0
@@ -490,6 +519,10 @@ class ChangeManager
       # if we are not tracking this property, and it is being changed, add it to changes
       else if !_.has(changedProps, propName) && !equals(oldVal, newVal)
         changedProps[propName] = oldVal
+
+    # Call the queue callback if a timeout hasn't been defined yet
+    if !@timeout?
+      _queueCallback?()
 
     # Push the resolution step onto the event queue, once the thread has been released from
     # a synchronous block of changes
@@ -537,7 +570,7 @@ class ChangeManager
       fireWatchers changedProps, 'internal'
     # if any new internal changes were registered, recursively call resolve to continue propagation
     if @internalChangeQueue.length
-      @resolve()
+      return @resolve()
 
     # Once internal watches have fired without causing a change on a parent schema instance, there are no more changes
     # to propagate. At this point all changes on each instance have been aggregated into a single change set. Now
@@ -553,7 +586,7 @@ class ChangeManager
 
     # If any external watches caused new changes to be queued, re-run resolve to ensure propagation
     if _.size(@changes) > 0
-      @resolve()
+      return @resolve()
 
     # If we get here, all changes have been fully propagated. Reset change manager state to pristine just for explicitnessgit st
     @reset()

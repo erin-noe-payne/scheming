@@ -136,6 +136,66 @@ describe 'Schema watch', ->
       global.clearImmediate.restore()
 
 
+  describe 'queueing and resolve callbacks', ->
+    queueCallback = null
+    resolveCallback = null
+
+    beforeEach ->
+      queueCallback = sinon.stub()
+      Scheming.registerQueueCallback queueCallback
+
+    it 'should not call queue callback before data changes', ->
+      expect(queueCallback).to.not.have.been.called
+
+    it 'should not call resolve callback before data changes', ->
+      resolveCallback = sinon.stub()
+      Scheming.registerResolveCallback resolveCallback
+      expect(resolveCallback).to.not.have.been.called
+
+    it 'should call queue callback when data changes', ->
+      lisa.name = 'lisa'
+      expect(queueCallback).to.have.been.calledOnce
+
+    it 'should call queue callback only once', ->
+      lisa.name = 'lisa'
+      lisa.name = 'Lisa'
+      expect(queueCallback).to.have.been.calledOnce
+
+    it 'should call queue callback only once with cascading changes', ->
+      lisa.watch 'name', ->
+        lisa.age = 20
+      lisa.name = 'lisa'
+      expect(queueCallback).to.have.been.calledOnce
+
+    it 'should call the resolve callback when data changes', (done) ->
+      Scheming.registerResolveCallback done
+      lisa.name = 'lisa'
+
+    it 'should call the resolve callback only once', (done) ->
+      Scheming.registerResolveCallback done
+      lisa.name = 'lisa'
+      lisa.name = 'Lisa'
+
+    it 'should call the resolve callback only once with cascading changes', (done) ->
+      Scheming.registerResolveCallback done
+      lisa.watch 'name', ->
+        lisa.age = 20
+      lisa.name = 'lisa'
+
+    it 'should allow for deregistering of queue callback', ->
+      Scheming.unregisterQueueCallback queueCallback
+      lisa.name = 'lisa'
+      expect(queueCallback).to.not.have.been.called
+
+    it 'should allow for deregistering of resolve callback', ->
+      resolveCallback = sinon.stub()
+      Scheming.registerResolveCallback resolveCallback
+      Scheming.unregisterResolveCallback resolveCallback
+      lisa.name = 'lisa'
+      Scheming.flush()
+      expect(resolveCallback).to.not.have.been.called
+
+
   describe 'watching single properties', ->
     it 'should take a property name, an instance, and a watch callback', ->
       unwatchers.push lisa.watch 'name', (name) ->
