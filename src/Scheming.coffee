@@ -647,6 +647,9 @@ instanceFactory = (instance, normalizedSchema, initialState, opts)->
     # - If a property is set to undefined, do not type cast or run through setter.
     # You should always be able to clear a property.
     if val?
+      # - If a setter is defined, run the value through setter
+      if setter
+        val = setter.call instance, val
       # - If value is not undefined, run through type identifier to determine if it is the correct type
       if !type.identifier(val)
         #   - If not and strict mode is enabled, throw an error
@@ -670,10 +673,6 @@ instanceFactory = (instance, normalizedSchema, initialState, opts)->
                 clone = _.clone @
                 Array.prototype[method].call clone, arguments...
                 instance[propName] = clone
-
-      # - If a setter is defined, run the value through setter
-      if setter
-        val = setter.call instance, val
 
     # - Assign to the data hash
     data[propName] = val

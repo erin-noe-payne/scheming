@@ -279,7 +279,7 @@ lisa = new Person
 <li>type <strong>TYPE</strong> A valid type reference as outlined in <a href="#schematypes">Schema.TYPES</a></li>
 <li>default <strong>value</strong> or <strong>function</strong> Specifies the default value a field should take if it is not defined in the constructor. If a function, the function is executed and the return value is set as the default.</li>
 <li>getter <strong>function</strong> A getter function that is invoked on the data value before retrieval. Takes the original value as input, the returned value is returned on retrieval. Getter functions are invoked with the <code>this</code> context of the instance, and can be used to define virtual fields.</li>
-<li>setter <strong>function</strong> A setter function that is invoked on the data before assignment. Setters are executed AFTER type checking and parsing, so the value your setter receive is guaranteed to be of the correct type. Parsers are not invoked again after the setter is invoked - so if your setter returns a value that breaks the typing, that&#39;s on you. Setter functions are not invoked if the value assigned is null or undefined. Setter functions are invoked with the <code>this</code> context of the instance.</li>
+<li>setter <strong>function</strong> A setter function that is invoked on the data before assignment. Setters are executed BEFORE type checking and parsing. The result of your setter function will still be run through type parsing to guarantee type integrity. Setter functions are not invoked if the value assigned is null or undefined. Setter functions are invoked with the <code>this</code> context of the instance.</li>
 <li>validate <strong>function</strong> or <strong>Array of functions</strong> Validator functions, which are invoked when you run validation on a schema instance. Validators take the value as an input, and should return true if validation passes. They should return a string or throw an error indicating the error if validation occurs. If a validator returns any value that is not <code>true</code> or a string, validation will fail with a generic error message. See <a href="#schemavalidate">Schema.validate</a> for details on how validation works. Validation functions are invoked with the <code>this</code> context of the instance.</li>
 <li>required <strong>boolean</strong> A special validator that indicates whether the field is required.</li>
 </ul>
@@ -391,6 +391,10 @@ lisa.name = &#39;lisa&#39;</code></pre>
 lisa.name = &#39;lisa&#39;
 lisa.age = 7</code></pre>
 <h1 id="changelog">Changelog</h1>
+<h2 id="v200">v2.0.0</h2>
+<ul>
+<li>Reverse order of setter and parser functions. It makes more sense for parsers to be invoked AFTER setter function to guarantee typing, and to allow for custom parsing in setters.</li>
+</ul>
 <h2 id="v140">v1.4.0</h2>
 <ul>
 <li>TravisCI!</li>

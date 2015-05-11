@@ -155,7 +155,7 @@ describe 'Scheming', ->
             expect(Scheming.TYPES.Integer.parser).to.have.been.called
             expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
 
-          it 'should pass results from parser into setter', ->
+          it 'should pass results from setter into parser', ->
             Scheming.TYPES.Integer.identifier.returns false
             Scheming.TYPES.Integer.parser.returns 5
 
@@ -167,12 +167,12 @@ describe 'Scheming', ->
             a = new Schema()
             a.age = 5.5
 
-            expect(Scheming.TYPES.Integer.parser).to.have.been.called
-            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
-            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
-
             expect(setter).to.have.been.called
-            expect(setter).to.have.been.calledWith 5
+            expect(setter).to.have.been.calledWith 5.5
+
+            expect(Scheming.TYPES.Integer.parser).to.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5
+            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
 
           it 'should treat assignment at time of construction the same as assignment', ->
             Scheming.TYPES.Integer.identifier.returns false
@@ -184,12 +184,12 @@ describe 'Scheming', ->
 
             a = new Schema({age : 5.5})
 
-            expect(Scheming.TYPES.Integer.parser).to.have.been.called
-            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5.5
-            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
-
             expect(setter).to.have.been.called
-            expect(setter).to.have.been.calledWith 5
+            expect(setter).to.have.been.calledWith 5.5
+
+            expect(Scheming.TYPES.Integer.parser).to.have.been.called
+            expect(Scheming.TYPES.Integer.parser).to.have.been.calledWith 5
+            expect(Scheming.TYPES.Integer.parser).to.have.returned 5
 
         describe 'of nested Schemas', ->
           Person = null
@@ -302,7 +302,7 @@ describe 'Scheming', ->
 
             a = new Schema {age : 5.5}
 
-            expect(a.age).to.equal 10
+            expect(a.age).to.equal 11
 
           it 'should return the assigned value, accounting for the getter', ->
             Schema = Scheming.create
@@ -313,7 +313,7 @@ describe 'Scheming', ->
 
             a = new Schema {age : 5.5}
 
-            expect(a.age).to.equal 8
+            expect(a.age).to.equal 9
 
           it 'should invoke getters with the `this` context of the instance', ->
             Schema = Scheming.create

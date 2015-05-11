@@ -386,6 +386,9 @@ if the seal option is enabled this will fail silently, otherwise it will allow f
 <li>If a property is set to undefined, do not type cast or run through setter.
 You should always be able to clear a property.</li>
 </ul></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> val?</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>If a setter is defined, run the value through setter</li>
+</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> setter
+        val = setter.call instance, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If value is not undefined, run through type identifier to determine if it is the correct type</li>
 </ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> !type.identifier(val)</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If not and strict mode is enabled, throw an error</li>
@@ -405,9 +408,6 @@ that otherwise mutating changes are run through the setters and changes are capt
                 clone = _.clone @
                 Array.prototype[method].call clone, arguments...
                 instance[propName] = clone</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
-<li>If a setter is defined, run the value through setter</li>
-</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> setter
-        val = setter.call instance, val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Assign to the data hash</li>
 </ul></div></div><div class="code"><div class="wrapper">    data[propName] = val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If the value being assigned is of type schema, we need to listen for changes to propagate</li>

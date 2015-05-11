@@ -668,6 +668,9 @@
       }
       _ref = normalizedSchema[propName], type = _ref.type, setter = _ref.setter;
       if (val != null) {
+        if (setter) {
+          val = setter.call(instance, val);
+        }
         if (!type.identifier(val)) {
           if (strict) {
             throw new Error("Error assigning " + val + " to " + propName + ". Value is not of type " + type.string);
@@ -693,9 +696,6 @@
               });
             }
           });
-        }
-        if (setter) {
-          val = setter.call(instance, val);
         }
       }
       data[propName] = val;
