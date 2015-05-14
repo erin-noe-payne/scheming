@@ -409,6 +409,50 @@ describe 'Scheming', ->
 
         expect(instance.bool).to.equal false
 
+      describe 'knowing defaults', ->
+        now      = new Date 1999, 11, 31, 23, 59
+        arr      = [1, 'foo', { foo: 'bar' }]
+        instance = null
+
+        beforeEach ->
+          Schema = Scheming.create
+            createdOn :
+              type : Date
+              default : now
+            str :
+              type : String
+              default : 'foo'
+            arr :
+              type : ['*']
+              default: arr
+
+          instance = new Schema()
+
+        it 'should know if a simple value is a default', ->
+          instance.str = 'foo'
+          expect(instance.isDefault 'str').to.be.ok
+
+        it 'should know if a simple value is not a default', ->
+          instance.str = 'bar'
+          expect(instance.isDefault 'str').to.not.be.ok
+
+        it 'should know if a date is a default', ->
+          instance.createdOn = new Date(now.valueOf())
+          expect(instance.isDefault 'createdOn').to.be.ok
+
+        it 'should know if a date is not a default', ->
+          instance.createdOn = new Date()
+          expect(instance.isDefault 'createdOn').to.not.be.ok
+
+        it 'should know if an array is equal to the default', ->
+          instance.arr = _.clone arr
+          expect(instance.isDefault 'arr').to.be.ok
+
+        it 'should know if an array is different from the default', ->
+          instance.arr = ['foo']
+          expect(instance.isDefault 'arr').to.not.be.ok
+
+
     describe 'complex array definitions', ->
       it 'should support arrays with defaults, setters, getters', ->
         Contrived = Scheming.create
