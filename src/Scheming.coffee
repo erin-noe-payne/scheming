@@ -837,6 +837,14 @@ instanceFactory = (instance, normalizedSchema, initialState, opts)->
     writable : true
     value : false
 
+  Object.defineProperty instance, 'isDefault',
+    configurable : false
+    enumerable : false
+    writable : false
+    value: (key) ->
+      prop = this.constructor.getProperty key
+      prop && prop.default && prop.type.equals prop.default, this[key]
+
   # ### constructor
   # for each property of the normalized schema
   for propName, propConfig of normalizedSchema
