@@ -6,7 +6,6 @@ describe 'Schema watch', ->
   unwatchers = null
   watcher = null
 
-
   beforeEach ->
     Person = Scheming.create 'Person',
       name : String
@@ -26,175 +25,6 @@ describe 'Schema watch', ->
     Scheming.reset()
 
     unwatch() for unwatch in unwatchers
-
-  describe 'throttling strategies', ->
-    beforeEach ->
-      sinon.spy console, 'warn'
-
-    afterEach ->
-      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
-      console.warn.restore()
-
-    it 'should throw an error if you set an invalid throttle', ->
-      badThrottle = ->
-        Scheming.setThrottle 'asdf'
-
-      expect(badThrottle).to.throw 'Throttle option must be set to one of the strategies specified'
-
-    _.each Scheming.THROTTLE, (throttle) ->
-      it "should accept THROTTLE.#{throttle}", ->
-        Scheming.setThrottle throttle
-
-    it 'should warn if the IMMEDIATE strategy is not available', ->
-      {setImmediate, clearImmediate} = global
-      global.setImmediate = undefined
-      global.clearImmediate = undefined
-
-      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
-
-      expect(console.warn).to.have.been.called
-
-      global.setImmediate = setImmediate
-      global.clearImmediate = clearImmediate
-
-    it 'should warn if the ANIMATION_FRAME strategy is not available', ->
-      {requestAnimationFrame, cancelAnimationFrame} = global
-      global.requestAnimationFrame = undefined
-      global.cancelAnimationFrame = undefined
-
-      Scheming.setThrottle Scheming.THROTTLE.ANIMATION_FRAME
-
-      expect(console.warn).to.have.been.called
-
-      global.requestAnimationFrame = requestAnimationFrame
-      global.cancelAnimationFrame = cancelAnimationFrame
-
-    it 'should clear timeout when flushing with the TIMEOUT strategy', ->
-      sinon.spy global, 'setTimeout'
-      sinon.spy global, 'clearTimeout'
-
-      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
-
-      lisa.watch 'name', ->
-
-      expect(global.setTimeout).to.have.been.called
-
-      Scheming.flush()
-
-      expect(global.clearTimeout).to.have.been.called
-
-      global.setTimeout.restore()
-      global.clearTimeout.restore()
-
-    it 'should clear immediate when flushing with the IMMEDIATE strategy', ->
-      sinon.spy global, 'setImmediate'
-      sinon.spy global, 'clearImmediate'
-
-      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
-
-      lisa.watch 'name', ->
-
-      expect(global.setImmediate).to.have.been.called
-
-      Scheming.flush()
-
-      expect(global.clearImmediate).to.have.been.called
-
-      global.setImmediate.restore()
-      global.clearImmediate.restore()
-
-    it 'should cancel animation frame when flushing with the ANIMATION_FRAME strategy', ->
-      global.requestAnimationFrame = sinon.spy()
-      global.cancelAnimationFrame = sinon.spy()
-
-      Scheming.setThrottle Scheming.THROTTLE.ANIMATION_FRAME
-
-      lisa.watch 'name', ->
-
-      expect(global.requestAnimationFrame).to.have.been.called
-
-      Scheming.flush()
-
-      expect(global.cancelAnimationFrame).to.have.been.called
-
-    it 'should flush using the correct cancelation method even if the strategy is changed', ->
-      sinon.spy global, 'setImmediate'
-      sinon.spy global, 'clearImmediate'
-
-      Scheming.setThrottle Scheming.THROTTLE.IMMEDIATE
-
-      lisa.watch 'name', ->
-
-      expect(global.setImmediate).to.have.been.called
-      Scheming.setThrottle Scheming.THROTTLE.TIMEOUT
-
-      Scheming.flush()
-
-      expect(global.clearImmediate).to.have.been.called
-
-      global.setImmediate.restore()
-      global.clearImmediate.restore()
-
-
-  describe 'queueing and resolve callbacks', ->
-    queueCallback = null
-    resolveCallback = null
-
-    beforeEach ->
-      queueCallback = sinon.stub()
-      Scheming.registerQueueCallback queueCallback
-
-    it 'should not call queue callback before data changes', ->
-      expect(queueCallback).to.not.have.been.called
-
-    it 'should not call resolve callback before data changes', ->
-      resolveCallback = sinon.stub()
-      Scheming.registerResolveCallback resolveCallback
-      expect(resolveCallback).to.not.have.been.called
-
-    it 'should call queue callback when data changes', ->
-      lisa.name = 'lisa'
-      expect(queueCallback).to.have.been.calledOnce
-
-    it 'should call queue callback only once', ->
-      lisa.name = 'lisa'
-      lisa.name = 'Lisa'
-      expect(queueCallback).to.have.been.calledOnce
-
-    it 'should call queue callback only once with cascading changes', ->
-      lisa.watch 'name', ->
-        lisa.age = 20
-      lisa.name = 'lisa'
-      expect(queueCallback).to.have.been.calledOnce
-
-    it 'should call the resolve callback when data changes', (done) ->
-      Scheming.registerResolveCallback done
-      lisa.name = 'lisa'
-
-    it 'should call the resolve callback only once', (done) ->
-      Scheming.registerResolveCallback done
-      lisa.name = 'lisa'
-      lisa.name = 'Lisa'
-
-    it 'should call the resolve callback only once with cascading changes', (done) ->
-      Scheming.registerResolveCallback done
-      lisa.watch 'name', ->
-        lisa.age = 20
-      lisa.name = 'lisa'
-
-    it 'should allow for deregistering of queue callback', ->
-      Scheming.unregisterQueueCallback queueCallback
-      lisa.name = 'lisa'
-      expect(queueCallback).to.not.have.been.called
-
-    it 'should allow for deregistering of resolve callback', ->
-      resolveCallback = sinon.stub()
-      Scheming.registerResolveCallback resolveCallback
-      Scheming.unregisterResolveCallback resolveCallback
-      lisa.name = 'lisa'
-      Scheming.flush()
-      expect(resolveCallback).to.not.have.been.called
-
 
   describe 'watching single properties', ->
     it 'should take a property name, an instance, and a watch callback', ->
@@ -529,6 +359,9 @@ describe 'Schema watch', ->
         expect(watcher).to.have.been.called
         expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
 
+        expect(lisa.favoriteNumbers).to.eql [1, 2, 3, 4, 5]
+
+
       it 'should fire a watch on multiple pushes to arrays', ->
         lisa.favoriteNumbers.push 4
         lisa.favoriteNumbers.push 5
@@ -537,6 +370,8 @@ describe 'Schema watch', ->
 
         expect(watcher).to.have.been.called
         expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
+
+        expect(lisa.favoriteNumbers).to.eql [1, 2, 3, 4, 5]
 
       it 'should fire a watch on pop to arrays', ->
         lisa.favoriteNumbers.pop()
@@ -556,6 +391,50 @@ describe 'Schema watch', ->
 
         expect(watcher).to.have.been.called
         expect(watcher).to.have.been.calledWith [], [1, 2, 3]
+
+      it 'should fire watches and maintain state if manipulating a reference to the array', ->
+        arr = [1, 2, 3]
+        lisa.favoriteNumbers = arr
+
+        arr.push 4, 5
+
+        Scheming.flush()
+
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5], [1, 2, 3]
+
+        expect(lisa.favoriteNumbers).to.eql [1, 2, 3, 4, 5]
+        expect(arr).to.eql [1, 2, 3, 4, 5]
+        watcher.reset()
+
+        arr.push 6, 7
+
+        Scheming.flush()
+
+        expect(watcher).to.have.been.called
+        expect(watcher).to.have.been.calledWith [1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5]
+
+        expect(lisa.favoriteNumbers).to.eql [1, 2, 3, 4, 5, 6, 7]
+        expect(arr).to.eql [1, 2, 3, 4, 5, 6, 7]
+
+      it 'should not be affected by an array once it is unassigned', ->
+        arr = [1, 2, 3]
+        lisa.favoriteNumbers = arr
+
+        lisa.favoriteNumbers = []
+        Scheming.flush()
+        watcher.reset()
+
+        expect(lisa.favoriteNumbers).to.eql []
+
+        arr.push(4, 5)
+        expect(lisa.favoriteNumbers).to.eql []
+
+        Scheming.flush()
+        expect(watcher).to.not.have.been.called
+
+
+
 
   describe 'multiple watches', ->
     it 'should fire only relevant watches when a property changes', ->
@@ -897,7 +776,8 @@ describe 'Schema watch', ->
 
       expect(Scheming.flush).to.throw 'Aborting change propagation'
 
-    it 'should still work if a watcher throws an error', ->
+    it 'should should not fail if a watcher throws an error', ->
+      sinon.stub console, 'error'
       lisa.watch 'name', ->
         throw new Error('OH GOD')
 
@@ -905,7 +785,9 @@ describe 'Schema watch', ->
 
       Scheming.flush()
       expect(watcher).to.have.been.called
+      expect(console.error).to.have.been.calledOnce
 
+      console.error.restore()
 
     it 'should not throw an error if a nested schema value has undefined assigned', ->
       lisa.watch 'mother', watcher
@@ -928,3 +810,5 @@ describe 'Schema watch', ->
       lisa.friends = undefined
       Scheming.flush()
       expect(watcher).to.have.been.calledOnce
+
+# TODO: timing tests

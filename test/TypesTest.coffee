@@ -1,464 +1,379 @@
+_ = require 'lodash'
 {expect} = chai
 
-describe 'TYPES', ->
-  describe 'identifiers', -> #TODO
-    identifierIo =
-      String  : [
-        {input : 'asdf', output : true}
-        {input : '1', output : true}
-        {input : 1, output : false}
-        {input : 1.5, output : false}
-        {input : new Date('9/14/86'), output : false}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Number  : [
-        {input : 'asdf', output : false}
-        {input : '1', output : false}
-        {input : 1, output : true}
-        {input : 1.5, output : true}
-        {input : new Date('9/14/86'), output : false}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Integer : [
-        {input : 'asdf', output : false}
-        {input : '1', output : false}
-        {input : 1, output : true}
-        {input : 1.5, output : false}
-        {input : new Date('9/14/86'), output : false}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Date    : [
-        {input : 'asdf', output : false}
-        {input : '1', output : false}
-        {input : 1, output : false}
-        {input : 1.5, output : false}
-        {input : new Date('9/14/86'), output : true}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Boolean : [
-        {input : 'asdf', output : false}
-        {input : '1', output : false}
-        {input : 1, output : false}
-        {input : 1.5, output : false}
-        {input : new Date('9/14/86'), output : false}
-        {input : false, output : true}
-        {input : true, output : true}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Mixed   : [
-        {input : 'asdf', output : true}
-        {input : '1', output : true}
-        {input : 1, output : true}
-        {input : 1.5, output : true}
-        {input : new Date('9/14/86'), output : true}
-        {input : false, output : true}
-        {input : null, output : true}
-        {input : undefined, output : true}
-      ]
+Registry = ModelFactory = Types = null
 
-    for type, ioArgs of identifierIo
-      describe "#{type}", ->
-        for io, index in ioArgs
+describe 'Types', ->
+  beforeEach ->
+    Registry = sinon.stub require '../src/Registry'
+    ModelFactory = sinon.stub require '../src/ModelFactory'
+    Types = proxyquire '../src/Types', {Registry, ModelFactory}
+
+  afterEach ->
+    sinon.restore(Registry)
+    sinon.restore(ModelFactory)
+
+  describe 'TYPES', ->
+    describe 'identifiers', ->
+      identifierIo =
+        String  : [
+          {input : 'asdf', output : true}
+          {input : '1', output : true}
+          {input : 1, output : false}
+          {input : 1.5, output : false}
+          {input : new Date('9/14/86'), output : false}
+          {input : false, output : false}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Number  : [
+          {input : 'asdf', output : false}
+          {input : '1', output : false}
+          {input : 1, output : true}
+          {input : 1.5, output : true}
+          {input : new Date('9/14/86'), output : false}
+          {input : false, output : false}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Integer : [
+          {input : 'asdf', output : false}
+          {input : '1', output : false}
+          {input : 1, output : true}
+          {input : 1.5, output : false}
+          {input : new Date('9/14/86'), output : false}
+          {input : false, output : false}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Date    : [
+          {input : 'asdf', output : false}
+          {input : '1', output : false}
+          {input : 1, output : false}
+          {input : 1.5, output : false}
+          {input : new Date('9/14/86'), output : true}
+          {input : false, output : false}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Boolean : [
+          {input : 'asdf', output : false}
+          {input : '1', output : false}
+          {input : 1, output : false}
+          {input : 1.5, output : false}
+          {input : new Date('9/14/86'), output : false}
+          {input : false, output : true}
+          {input : true, output : true}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Mixed   : [
+          {input : 'asdf', output : true}
+          {input : '1', output : true}
+          {input : 1, output : true}
+          {input : 1.5, output : true}
+          {input : new Date('9/14/86'), output : true}
+          {input : false, output : true}
+          {input : null, output : true}
+          {input : undefined, output : true}
+        ]
+
+      for type, ioArgs of identifierIo
+        describe "#{type}", ->
+          for io, index in ioArgs
             {input, output} = io
             do (type, input, output) ->
               it "should correctly identify #{input}", ->
-                {identifier} = Scheming.TYPES[type]
+                {identifier} = Types.TYPES[type]
 
                 expect(identifier(input)).to.eql output
 
-  describe 'parsers', ->
-    parserIo =
-      String  : [
-        {input : 'asdf', output : 'asdf'}
-        {input : 1, output : '1'}
-        {input : 1.5, output : '1.5'}
-        {input : new Date('9/14/86'), output : (new Date('9/14/86')).toString()}
-        {input : false, output : 'false'}
-        {input : null, output : 'null'}
-        {input : undefined, output : 'undefined'}
-      ]
-      Number  : [
-        {input : 'asdf', output : NaN}
-        {input : 1, output : 1}
-        {input : 1.5, output : 1.5}
-        {input : new Date('9/14/86'), output : NaN}
-        {input : false, output : NaN}
-        {input : null, output : NaN}
-        {input : undefined, output : NaN}
-      ]
-      Integer : [
-        {input : 'asdf', output : NaN}
-        {input : 1, output : 1}
-        {input : 1.5, output : 1}
-        {input : new Date('9/14/86'), output : NaN}
-        {input : false, output : NaN}
-        {input : null, output : NaN}
-        {input : undefined, output : NaN}
-      ]
-      Date    : [
-        {input : 'asdf', output : new Date('asdf')}
-        {input : 0, output : new Date(0)}
-        {input : 1, output : new Date(1)}
-        {input : 1.5, output : new Date(1.5)}
-        {input : new Date('9/14/86'), output : new Date('9/14/86')}
-        {input : false, output : new Date(false)}
-        {input : null, output : new Date(null)}
-        {input : undefined, output : new Date(undefined)}
-      ]
-      Boolean : [
-        {input : 'asdf', output : true}
-        {input : 0, output : false}
-        {input : 1, output : true}
-        {input : 1.5, output : true}
-        {input : new Date('9/14/86'), output : true}
-        {input : false, output : false}
-        {input : null, output : false}
-        {input : undefined, output : false}
-      ]
-      Mixed   : [
-        {input : 'asdf', output : 'asdf'}
-        {input : 0, output : 0}
-        {input : 1, output : 1}
-        {input : 1.5, output : 1.5}
-        {input : new Date('9/14/86'), output : new Date('9/14/86')}
-        {input : false, output : false}
-        {input : null, output : null}
-        {input : undefined, output : undefined}
-      ]
+    describe 'parsers', ->
+      parserIo =
+        String  : [
+          {input : 'asdf', output : 'asdf'}
+          {input : 1, output : '1'}
+          {input : 1.5, output : '1.5'}
+          {input : new Date('9/14/86'), output : (new Date('9/14/86')).toString()}
+          {input : false, output : 'false'}
+          {input : null, output : 'null'}
+          {input : undefined, output : 'undefined'}
+        ]
+        Number  : [
+          {input : 'asdf', output : NaN}
+          {input : 1, output : 1}
+          {input : 1.5, output : 1.5}
+          {input : new Date('9/14/86'), output : NaN}
+          {input : false, output : NaN}
+          {input : null, output : NaN}
+          {input : undefined, output : NaN}
+        ]
+        Integer : [
+          {input : 'asdf', output : NaN}
+          {input : 1, output : 1}
+          {input : 1.5, output : 1}
+          {input : new Date('9/14/86'), output : NaN}
+          {input : false, output : NaN}
+          {input : null, output : NaN}
+          {input : undefined, output : NaN}
+        ]
+        Date    : [
+          {input : 'asdf', output : new Date('asdf')}
+          {input : 0, output : new Date(0)}
+          {input : 1, output : new Date(1)}
+          {input : 1.5, output : new Date(1.5)}
+          {input : new Date('9/14/86'), output : new Date('9/14/86')}
+          {input : false, output : new Date(false)}
+          {input : null, output : new Date(null)}
+          {input : undefined, output : new Date(undefined)}
+        ]
+        Boolean : [
+          {input : 'asdf', output : true}
+          {input : 0, output : false}
+          {input : 1, output : true}
+          {input : 1.5, output : true}
+          {input : new Date('9/14/86'), output : true}
+          {input : false, output : false}
+          {input : null, output : false}
+          {input : undefined, output : false}
+        ]
+        Mixed   : [
+          {input : 'asdf', output : 'asdf'}
+          {input : 0, output : 0}
+          {input : 1, output : 1}
+          {input : 1.5, output : 1.5}
+          {input : new Date('9/14/86'), output : new Date('9/14/86')}
+          {input : false, output : false}
+          {input : null, output : null}
+          {input : undefined, output : undefined}
+        ]
 
-    for type, ioArgs of parserIo
-      describe "#{type}", ->
-        for io, index in ioArgs
+      for type, ioArgs of parserIo
+        describe "#{type}", ->
+          for io, index in ioArgs
             {input, output} = io
             do (type, input, output) ->
               it "should parse #{input}", ->
-                {parser} = Scheming.TYPES[type]
+                {parser} = Types.TYPES[type]
 
                 expect(parser(input)).to.eql output
 
-    describe 'Arrays', ->
-      ArrayIo = [
-        {input : [], output : []}
-        {input : [1, '2', null], output : [1, '2', null]}
-        {input : 1, output : []}
-        {input : new Date(), output : []}
-        {input : {}, output : []}
-        {input : null, output : []}
-        {input : false, output : []}
-        {input : undefined, output : []}
-        {input : NaN, output : []}
-      ]
+      describe 'Arrays', ->
+        ArrayIo = [
+          {input : [], output : []}
+          {input : [1, '2', null], output : [1, '2', null]}
+          {input : 1, output : []}
+          {input : new Date(), output : []}
+          {input : {}, output : []}
+          {input : null, output : []}
+          {input : false, output : []}
+          {input : undefined, output : []}
+          {input : NaN, output : []}
+        ]
 
-      for io, index in ArrayIo
+        for io, index in ArrayIo
           {input, output} = io
           do (input, output) ->
             it "should parse #{input}", ->
-              {parser} = Scheming.NESTED_TYPES.Array
+              {parser} = Types.NESTED_TYPES.Array
 
               expect(parser(input)).to.eql output
 
-describe 'resolveType', ->
-  afterEach ->
-    Scheming.reset()
-
-  describe 'resolution', ->
+  describe 'resolveType', ->
     describe 'with primitive types', ->
-      for k, type of Scheming.TYPES
-        do (k, type) ->
-          it "should resolve #{type.string} TYPES reference", ->
-            expect(Scheming.resolveType type).to.equal type
+      for k in ['String', 'Number', 'Integer', 'Date', 'Boolean', 'Mixed']
+        do (k) ->
+          it "should resolve #{k} TYPES reference", ->
+            type = Types.TYPES[k]
+            expect(Types.resolveType type).to.equal type
 
-          if type.ctor
-            it "should resolve #{type.string} ctor", ->
-              expect(Scheming.resolveType type.ctor).to.equal type
 
-          it "should resolve #{type.string} string", ->
-            expect(Scheming.resolveType type.string).to.equal type
+          it "should resolve #{k} ctor", ->
+            type = Types.TYPES[k]
+            if type.ctor
+              expect(Types.resolveType type.ctor).to.equal type
+
+          it "should resolve #{k} string", ->
+            type = Types.TYPES[k]
+            expect(Types.resolveType type.string).to.equal type
 
       it 'should return null for an undefined TYPE reference', ->
-        expect(Scheming.resolveType Scheming.TYPES.Custom).to.be.null
+        expect(Types.resolveType Types.TYPES.Custom).to.be.null
 
       it 'should return null for unrecognized type string', ->
-        expect(Scheming.resolveType 'notReal').to.be.null
+        expect(Types.resolveType 'notReal').to.be.null
 
       it 'should return null for unrecognized type constructor', ->
         ctor = ->
 
-        expect(Scheming.resolveType ctor).to.be.null
+        expect(Types.resolveType ctor).to.be.null
 
       it 'should return null for undefined value', ->
-        expect(Scheming.resolveType undefined).to.be.null
+        expect(Types.resolveType undefined).to.be.null
 
     describe 'with arrays', ->
-      for k, type of Scheming.TYPES
-        do (k, type) ->
-          it "should resolve #{type.string} TYPES reference", ->
+      for k in ['String', 'Number', 'Integer', 'Date', 'Boolean', 'Mixed']
+        do (k) ->
+          it "should resolve #{k} TYPES reference", ->
+            type = Types.TYPES[k]
             array = [type]
-            resolved = Scheming.resolveType array
+            resolved = Types.resolveType array
             expect(resolved.string).to.equal 'array'
             expect(resolved.childType).to.equal type
 
-          if type.ctor
-            it "should resolve #{type.string} ctor", ->
+
+          it "should resolve #{k} ctor", ->
+            type = Types.TYPES[k]
+            if type.ctor
               array = [type.ctor]
-              resolved = Scheming.resolveType array
+              resolved = Types.resolveType array
               expect(resolved.string).to.equal 'array'
               expect(resolved.childType).to.equal type
 
-          it "should resolve #{type.string} string", ->
+          it "should resolve #{k} string", ->
+            type = Types.TYPES[k]
             array = [type.string]
-            resolved = Scheming.resolveType array
+            resolved = Types.resolveType array
             expect(resolved.string).to.equal 'array'
             expect(resolved.childType).to.equal type
 
       it 'should throw an error if the array does not have a type', ->
-        doResolve = -> Scheming.resolveType []
+        doResolve = -> Types.resolveType []
 
         expect(doResolve).to.throw 'Error resolving type'
 
-    describe 'with Schemas', ->
-      it 'should pass an object type to Scheming.create', ->
-        createSpy = sinon.stub Scheming, 'create'
-        mockctor = ->
 
-        createSpy.returns mockctor
+    describe 'with Schemas', ->
+      mockModel = null
+
+      beforeEach ->
+        mockModel = ->
+        mockModel.__schemaId = 1
+
+      it 'should pass an object type to ModelFactory.create', ->
+        ModelFactory.create.returns mockModel
 
         obj = {}
 
-        resolved = Scheming.resolveType(obj)
-        expect(createSpy).to.have.been.called
-        expect(createSpy).to.have.been.calledWith obj
+        resolved = Types.resolveType(obj)
+        expect(ModelFactory.create).to.have.been.called
+        expect(ModelFactory.create).to.have.been.calledWith obj
 
-        expect(resolved.childType).to.equal mockctor
-
-        createSpy.restore()
+        expect(resolved.childType).to.equal mockModel
 
       it 'should use a Schema instance as its childType', ->
-        ctr = Scheming.create()
+        resolved = Types.resolveType mockModel
 
-        resolved = Scheming.resolveType ctr
-
-        expect(resolved.childType).to.equal ctr
+        expect(resolved.childType).to.equal mockModel
 
       it 'should treat Schema: string as a lazy-load schema', ->
-        resolved = Scheming.resolveType 'Schema:Car'
+        resolved = Types.resolveType 'Schema:Car'
 
         expect(resolved.childType).not.to.exist
 
       it 'should resolve a lazy-load schema the first time identifier is invoked', ->
-        sinon.stub Scheming, 'get'
-        Car = Scheming.create()
-        Scheming.get.returns Car
+        Registry.get.returns mockModel
 
-        resolved = Scheming.resolveType 'Schema:Car'
+        resolved = Types.resolveType 'Schema:Car'
 
         resolved.identifier({})
 
-        expect(Scheming.get).to.have.been.called
-        expect(Scheming.get).to.have.been.calledWith 'Car'
+        expect(Registry.get).to.have.been.called
+        expect(Registry.get).to.have.been.calledWith 'Car'
 
-        expect(resolved.childType).to.equal Car
-
-        Scheming.get.restore()
+        expect(resolved.childType).to.equal mockModel
 
       it 'should resolve a lazy-load schema the first time parser is invoked', ->
-        sinon.stub Scheming, 'get'
-        Car = Scheming.create()
-        Scheming.get.returns Car
+        Registry.get.returns mockModel
 
-        resolved = Scheming.resolveType 'Schema:Car'
+        resolved = Types.resolveType 'Schema:Car'
 
         resolved.parser({})
 
-        expect(Scheming.get).to.have.been.called
-        expect(Scheming.get).to.have.been.calledWith 'Car'
+        expect(Registry.get).to.have.been.called
+        expect(Registry.get).to.have.been.calledWith 'Car'
 
-        expect(resolved.childType).to.equal Car
-
-        Scheming.get.restore()
+        expect(resolved.childType).to.equal mockModel
 
       it 'should throw an error if the specified Schema does not exist at time of lazy resolution', ->
-        sinon.stub Scheming, 'get'
-        Scheming.get.returns null
+        Registry.get.returns null
 
-        resolved = Scheming.resolveType 'Schema:Car'
+        resolved = Types.resolveType 'Schema:Car'
 
         expect(resolved.parser).to.throw 'Error resolving Schema:Car'
 
-        Scheming.get.restore()
-
       it 'should correctly return true from identifier function on first invocation', ->
-        resolved = Scheming.resolveType 'Schema:Car'
+        Registry.get.returns mockModel
 
-        Car = Scheming.create 'Car'
-        car = new Car()
+        resolved = Types.resolveType 'Schema:Car'
 
-        expect(resolved.identifier(car)).to.be.true
+        instance = new mockModel()
+
+        expect(resolved.identifier(instance)).to.be.true
 
       it 'should correctly return false from identifier function on first invocation', ->
-        resolved = Scheming.resolveType 'Schema:Car'
+        Registry.get.returns mockModel
 
-        Car = Scheming.create 'Car'
+        resolved = Types.resolveType 'Schema:Car'
 
         expect(resolved.identifier({})).to.be.false
 
       it 'should correctly apply parser on first invocation', ->
-        resolved = Scheming.resolveType 'Schema:Car'
+        Registry.get.returns mockModel
 
-        Car = Scheming.create 'Car'
+        resolved = Types.resolveType 'Schema:Car'
 
-        expect(resolved.parser({})).to.be.instanceOf Car
+        expect(resolved.parser({})).to.be.instanceOf mockModel
 
     describe 'extensibility', ->
-
       describe 'custom types', ->
         customClass = null
 
         beforeEach ->
           customClass = class Custom
 
-          Scheming.TYPES.Custom =
-            ctor : customClass
-            string : 'custom'
+          Types.TYPES.Custom =
+            ctor       : customClass
+            string     : 'custom'
             identifier : ->
-            parser : ->
+            parser     : ->
 
-          sinon.stub Scheming.TYPES.Custom, 'identifier'
-          sinon.stub Scheming.TYPES.Custom, 'parser'
+          sinon.stub Types.TYPES.Custom, 'identifier'
+          sinon.stub Types.TYPES.Custom, 'parser'
 
 
         afterEach ->
-          delete Scheming.TYPES.Custom
+          delete Types.TYPES.Custom
 
         it 'should allow a custom type by reference', ->
-          expect(Scheming.resolveType Scheming.TYPES.Custom).to.equal Scheming.TYPES.Custom
+          expect(Types.resolveType Types.TYPES.Custom).to.equal Types.TYPES.Custom
 
         it 'should allow a custom type by constructor', ->
-          expect(Scheming.resolveType customClass).to.equal Scheming.TYPES.Custom
+          expect(Types.resolveType customClass).to.equal Types.TYPES.Custom
 
         it 'should allow a custom type by string', ->
-          expect(Scheming.resolveType 'custom').to.equal Scheming.TYPES.Custom
+          expect(Types.resolveType 'custom').to.equal Types.TYPES.Custom
 
       describe 'overriding', ->
-
         it 'should support overriding of TYPE identifiers', ->
-          {identifier} = Scheming.TYPES.String
+          {identifier} = Types.TYPES.String
           newIdentifier = -> true
-          Scheming.TYPES.String.identifier = newIdentifier
+          Types.TYPES.String.identifier = newIdentifier
 
-          resolvedType = Scheming.resolveType 'string'
+          resolvedType = Types.resolveType 'string'
 
           expect(resolvedType.identifier).to.equal newIdentifier
 
-          Scheming.TYPES.String.identifier = identifier
+          Types.TYPES.String.identifier = identifier
 
         it 'should support overriding of TYPE parsers', ->
-          {parser} = Scheming.TYPES.String
+          {parser} = Types.TYPES.String
           newParser = -> true
-          Scheming.TYPES.String.parser = newParser
+          Types.TYPES.String.parser = newParser
 
-          resolvedType = Scheming.resolveType 'string'
+          resolvedType = Types.resolveType 'string'
 
           expect(resolvedType.parser).to.equal newParser
 
-          Scheming.TYPES.String.parser = parser
+          Types.TYPES.String.parser = parser
 
-describe 'normalizePropertyConfig', ->
-  resolveType = null
-  mockType = {}
-
-  beforeEach ->
-    resolveType = sinon.stub Scheming, 'resolveType'
-    resolveType.returns mockType
-
-  afterEach ->
-    resolveType.restore()
-
-  it 'should, if it receives an object with a type key, pass the type key to resolveType', ->
-    Scheming.normalizePropertyConfig {type : 'integer'}, 'age'
-
-    expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith 'integer'
-
-  it 'should, if it receives an object without a type key, pass the entire object to resolveType', ->
-    object = {name : 'String', age : 'Number'}
-    Scheming.normalizePropertyConfig object, 'owner'
-
-    expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith object
-
-  it 'should pass TYPE references to resolveType', ->
-    Scheming.normalizePropertyConfig Scheming.TYPES.String, 'name'
-
-    expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith Scheming.TYPES.String
-
-  it 'should pass type strings to resolveType', ->
-    Scheming.normalizePropertyConfig 'number', 'name'
-
-    expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith 'number'
-
-  it 'should pass type constructors to resolveType', ->
-    Scheming.normalizePropertyConfig Date, 'name'
-
-    expect(resolveType).to.have.been.called
-    expect(resolveType).to.have.been.calledWith Date
-
-  it 'should return a normalized definition with all property config options explicitly defined', ->
-    definition = Scheming.normalizePropertyConfig {type: String}, 'name'
-
-    expect(definition).to.have.ownProperty 'type'
-    expect(definition).to.have.ownProperty 'default'
-    expect(definition).to.have.ownProperty 'getter'
-    expect(definition).to.have.ownProperty 'setter'
-    expect(definition).to.have.ownProperty 'validate'
-    expect(definition).to.have.ownProperty 'required'
-
-  it 'should allow extension of the property config with arbitrary keys', ->
-    definition = Scheming.normalizePropertyConfig {
-      type: String
-      columnName : 'NameId'
-    }, 'name'
-
-    expect(definition).to.have.ownProperty 'columnName'
-    expect(definition.columnName).to.equal 'NameId'
-
-  it 'should throw an error if the type cannot be resolved', ->
-    invokeWithNoType = ->
-      Scheming.normalizePropertyConfig(undefined, 'name')
-
-    expect(invokeWithNoType).to.throw 'Schema type must be defined'
-
-  it 'should throw an error getter is defined and not a function', ->
-    invokeWithStringGetter = ->
-      Scheming.normalizePropertyConfig({type : 'string', getter : 'asdf'}, 'name')
-
-    expect(invokeWithStringGetter).to.throw 'Schema getter must be a function'
-
-  it 'should throw an error setter is defined and not a function', ->
-    invokeWithStringSetter = ->
-      Scheming.normalizePropertyConfig({type : 'string', setter : 'asdf'}, 'name')
-
-    expect(invokeWithStringSetter).to.throw 'Schema setter must be a function'
-
-  it 'should throw an error if a single validator is not a function', ->
-    invokeWithStringValidate = ->
-      Scheming.normalizePropertyConfig({type : 'string', validate : 'asdf'}, 'name')
-
-    expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'
-
-  it 'should throw an error if any validator is not a function', ->
-    invokeWithStringValidate = ->
-      Scheming.normalizePropertyConfig({type : 'string', validate : [(->), 'asdf', (->)]}, 'name')
-
-    expect(invokeWithStringValidate).to.throw 'Schema validate must be a function'

@@ -10,28 +10,29 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'chai', 'sinon', 'sinon-chai'],
+    frameworks: ['mocha', 'sinon-chai'],
+
+    plugins : [
+      'karma-mocha',
+      'karma-sinon-chai',
+      'karma-phantomjs-launcher',
+      'karma-coffee-preprocessor'
+    ],
 
 
     // list of files / patterns to load in the browser
     files: [
       'bower_components/lodash/dist/lodash.js',
-      'src/**/*.coffee',
-
-      'test/**/*.coffee'
+      'dest/browser/scheming.js',
+      'test/SchemaTest.coffee',
+      'test/ValidationTest.coffee',
+      'test/ReacitveTest.coffee'
     ],
-
-
-    // list of files to exclude
-    exclude: [
-      'test/NodeConfig.coffee'
-    ],
-
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '**/*.coffee': ['coffee']
+      'test/**/*.coffee': ['coffee']
     },
 
 

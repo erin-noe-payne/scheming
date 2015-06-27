@@ -4,105 +4,7 @@ describe 'Scheming', ->
   afterEach ->
     Scheming.reset()
 
-  describe 'create', ->
-    it 'should return a constructor function', ->
-      Schema = Scheming.create()
-
-      expect(Schema).to.be.a.function
-
-    it 'should invoke normalizePropertyConfig on each key / value pair in the schema config', ->
-      normalizePropertyConfig = sinon.spy Scheming, 'normalizePropertyConfig'
-
-      schema =
-        name     : 'string'
-        age      :
-          type     : Number
-          required : true
-        birthday : Date
-
-      Scheming.create schema
-
-      for k, v of schema
-        expect(normalizePropertyConfig).to.have.been.calledWith v, k
-
-      normalizePropertyConfig.restore()
-
-  describe 'getSchemaOf', ->
-    it 'should return the '
-
   describe 'Schema', ->
-    describe 'defineProperty', ->
-      it 'should invoke Scheming.normalizePropertyConfig', ->
-        sinon.spy Scheming, 'normalizePropertyConfig'
-
-        Schema = Scheming.create()
-        config = { type : 'string', getter : -> true }
-        Schema.defineProperty 'name', config
-
-        expect(Scheming.normalizePropertyConfig).to.have.been.called
-        expect(Scheming.normalizePropertyConfig).to.have.been.calledWith config, 'name'
-
-        Scheming.normalizePropertyConfig.restore()
-
-      it 'should extend the Schema with the new property', ->
-        Schema = Scheming.create()
-        Schema.defineProperty 'age',
-          type : 'integer'
-          setter : (val) -> return val+1
-          getter : (val) -> return val * 2
-
-        a = new Schema()
-        a.age = 7
-        expect(a.age).to.equal 16
-
-    describe 'defineProperties', ->
-      it 'should invoke defineProperty for each key value pair', ->
-        Schema = Scheming.create()
-        sinon.stub Schema, 'defineProperty'
-
-        config = { type : 'string', getter : -> true }
-        Schema.defineProperties {a : 'integer', b : config}
-
-        expect(Schema.defineProperty).to.have.been.calledTwice
-        expect(Schema.defineProperty).to.have.been.calledWith 'a', 'integer'
-        expect(Schema.defineProperty).to.have.been.calledWith 'b', config
-
-        Schema.defineProperty.restore()
-
-    describe 'getProperties', ->
-      beforeEach ->
-        sinon.stub Scheming, 'normalizePropertyConfig'
-
-      afterEach ->
-        Scheming.normalizePropertyConfig.restore()
-
-      it 'getProperty should return a clone of the normalized schema for the given path', ->
-        Schema = Scheming.create()
-        config = { type : 'string', getter : -> true }
-        Scheming.normalizePropertyConfig.returns config
-
-        Schema.defineProperty 'name', {}
-
-        expect(Schema.getProperty('name')).to.eql config
-        expect(Schema.getProperty('name')).to.not.equal config
-
-      it 'getProperties should return a clone of the normalized schema', ->
-        Schema = Scheming.create()
-        config = { type : 'string', getter : -> true }
-        config1 = {a:1}
-        Scheming.normalizePropertyConfig.returns config1
-        Schema.defineProperty 'name', {}
-        config2 = {b:2}
-        Scheming.normalizePropertyConfig.returns config2
-        Schema.defineProperty 'age', {}
-
-        expect(Schema.getProperties()).to.eql {
-          name : {a:1}
-          age  : {b:2}
-        }
-        expect(Schema.getProperties().name).to.not.equal config1
-        expect(Schema.getProperties().age).to.not.equal config2
-
     describe 'property', ->
       describe 'assignment', ->
         describe 'of primitive types', ->
@@ -264,6 +166,31 @@ describe 'Scheming', ->
             expect(Person).to.have.been.called
             expect(Person).to.have.been.calledWith civic
 
+        describe 'of arrays', ->
+          it 'should parse child elements of arrays', ->
+            Schema = Scheming.create
+              ages : [Scheming.TYPES.Integer]
+
+            a = new Schema()
+
+            a.ages = [1, 3.0, '2.5', null]
+
+            expect(a.ages).to.eql [1, 3, 2, NaN]
+
+          it 'should parse child elements on mutation', ->
+            Schema = Scheming.create
+              ages : [Scheming.TYPES.Integer]
+
+            a = new Schema(
+              ages : []
+            )
+
+            a.ages.push(3.0)
+            a.ages.unshift(1)
+            a.ages.splice(2, 0, '2.5', null)
+
+            expect(a.ages).to.eql [1, 3, 2, NaN]
+
       describe 'retrieval', ->
         describe 'of primitive types', ->
           it 'should return the assigned value', ->
@@ -366,16 +293,6 @@ describe 'Scheming', ->
 
             expect(person.car).to.equal civic
 
-        describe 'of Arrays', ->
-          it 'should parse child elements of arrays', ->
-            Schema = Scheming.create
-              ages : [Scheming.TYPES.Integer]
-
-            a = new Schema()
-
-            a.ages = [1, 3.0, '2.5', null]
-
-            expect(a.ages).to.eql [1, 3, 2, NaN]
 
     describe 'defaults', ->
       now = null

@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="en"><head><title>Types</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="Types"><meta name="groc-project-path" content="src/Types.coffee"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">src/Types.coffee</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper">_ = <span class="hljs-built_in">require</span> <span class="hljs-string">'lodash'</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Types</span></span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="types">TYPES</h3>
+<p>  Scheming exports the default types that it uses for parsing schemas. You can extend with custom types, or
+  override the identifier / parser functions of the default types. A custom type should provide:</p>
+<ul>
+<li>ctor (optional) - Used in schema definitions to declare a type. <code>Scheming.create name : String</code></li>
+<li>string - Used in schema definitions to declare a type. <code>Scheming.create name : &#39;string&#39;</code></li>
+<li>identifier - Function, returns true or false. Determines whether a value needs to be parsed.</li>
+<li>parser - Function, parses a value into the type.</li>
+</ul></div></div><div class="code"><div class="wrapper">  TYPES :
+    String  :
+      ctor       : String
+      string     : <span class="hljs-string">'string'</span>
+      identifier : _.isString
+      parser     : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
+        <span class="hljs-string">''</span> + val
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b
+    Number  :
+      ctor       : Number
+      string     : <span class="hljs-string">'number'</span>
+      identifier : _.isNumber
+      parser     : parseFloat
+      comparator : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b
+    Integer :
+      string     : <span class="hljs-string">'integer'</span>
+      identifier : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
+        _.isNumber(val) &amp;&amp; val % <span class="hljs-number">1</span> == <span class="hljs-number">0</span>
+      parser     : parseInt
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b
+    Date    :
+      ctor       : Date
+      string     : <span class="hljs-string">'date'</span>
+      identifier : _.isDate
+      parser     : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
+        <span class="hljs-keyword">new</span> Date val
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a?.valueOf() == b?.valueOf()
+    Boolean :
+      ctor       : Boolean
+      string     : <span class="hljs-string">'boolean'</span>
+      identifier : _.isBoolean
+      parser     : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
+        !!val
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b
+    Mixed   :
+      ctor       : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
+        val
+      string     : <span class="hljs-string">'*'</span>
+      identifier :<span class="hljs-function"> -&gt;</span>
+        <span class="hljs-literal">true</span>
+      parser     : _.identity
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="nested-types">NESTED_TYPES</h3>
+<p>  Special type definitions for nested types. Used to identify and parse nested Arrays and Schemas.
+  Should not be extended or overridden.</p></div></div><div class="code"><div class="wrapper">  NESTED_TYPES :
+    Array  :
+      ctor        : Array
+      string      : <span class="hljs-string">'array'</span>
+      identifier  : _.isArray
+      parser      : _.toArray
+      childType   : <span class="hljs-literal">null</span>
+      childParser : <span class="hljs-literal">null</span>
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> _.isEqual a, b
+    Schema :
+      ctor       : Object
+      string     : <span class="hljs-string">'schema'</span>
+      identifier : <span class="hljs-literal">null</span>
+      parser     : <span class="hljs-literal">null</span>
+      childType  : <span class="hljs-literal">null</span>
+      equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a == b</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Used internally to resolve a type declaration to its primitive type.
+Matches a primitive type if it is...</p>
+<ul>
+<li>a reference to the object straight from the <code>Schema.TYPES</code> object</li>
+<li>a reference to the <code>ctor</code></li>
+<li>a match with the type <code>string</code> (case insensitive)</li>
+</ul></div></div><div class="code"><div class="wrapper">  getPrimitiveTypeOf : <span class="hljs-function"><span class="hljs-params">(type)</span> =&gt;</span>
+    <span class="hljs-keyword">for</span> k, TYPE <span class="hljs-keyword">of</span> <span class="hljs-property">@TYPES</span>
+      <span class="hljs-keyword">if</span> type == TYPE <span class="hljs-keyword">or</span>
+          (TYPE.ctor &amp;&amp; type == TYPE.ctor) <span class="hljs-keyword">or</span>
+          type?.toLowerCase?() == TYPE.string
+
+        <span class="hljs-keyword">return</span> TYPE
+
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Function that builds identifier and parser for nested schema types. Needs to be factored out
+because nested schemas may be resolved lazily at a later time</p></div></div><div class="code"><div class="wrapper">  resolveSchemaType : <span class="hljs-function"><span class="hljs-params">(type, childType)</span> =&gt;</span>
+    type.childType = childType
+    type.<span class="hljs-function"><span class="hljs-title">identifier</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+      <span class="hljs-keyword">return</span> val <span class="hljs-keyword">instanceof</span> childType
+    type.<span class="hljs-function"><span class="hljs-title">parser</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> childType(val)</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="resolvetype">resolveType</h3>
+<p>Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.</p></div></div><div class="code"><div class="wrapper">  resolveType : <span class="hljs-function"><span class="hljs-params">(typeDef)</span> =&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>Attempt to resolve the type declaration to a primitive type</li>
+</ul></div></div><div class="code"><div class="wrapper">    type = <span class="hljs-property">@getPrimitiveTypeOf</span> typeDef
+
+    <span class="hljs-keyword">if</span> !type?</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>If the type definition is an array <code>[]</code></li>
+</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">if</span> _.isArray typeDef</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>Set the type to a clone of the array NESTED_TYPE</li>
+</ul></div></div><div class="code"><div class="wrapper">        type = _.cloneDeep <span class="hljs-property">@NESTED_TYPES</span>.Array</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>Recurse to resolve childType of array members</li>
+</ul></div></div><div class="code"><div class="wrapper">        <span class="hljs-keyword">if</span> typeDef.length
+          childType = <span class="hljs-property">@resolveType</span>(typeDef[<span class="hljs-number">0</span>])</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>Throw an error if type is not explicitly declared</li>
+</ul></div></div><div class="code"><div class="wrapper">        <span class="hljs-keyword">if</span> !childType <span class="hljs-keyword">then</span> <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Error resolving type of array value <span class="hljs-subst">#{typeDef}</span>"</span>
+
+        type.childType = childType</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>Write parser for child members of the array</li>
+</ul></div></div><div class="code"><div class="wrapper">        type.<span class="hljs-function"><span class="hljs-title">childParser</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+          <span class="hljs-keyword">for</span> index, member <span class="hljs-keyword">of</span> val
+            <span class="hljs-keyword">if</span> !childType.identifier(member)
+              val[index] = childType.parser(member)
+
+          <span class="hljs-keyword">return</span> val</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>If the type definition is an object <code>{}</code><ul>
+<li>Create a new Schema from the object</li>
+<li>Treat the field as a nested Schema</li>
+<li>Set identifier and parser functions immediately</li>
+</ul>
+</li>
+</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> _.isPlainObject typeDef
+        type = _.cloneDeep <span class="hljs-property">@NESTED_TYPES</span>.Schema
+        childType = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./ModelFactory'</span>).create typeDef
+        <span class="hljs-property">@resolveSchemaType</span> type, childType</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>If the type definition is a reference to a Schema constructor<ul>
+<li>Treat the field as a nested Schema</li>
+<li>Set identifier and parser functions immediately</li>
+</ul>
+</li>
+</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> _.isFunction(typeDef) &amp;&amp; typeDef.__schemaId
+        type = _.cloneDeep <span class="hljs-property">@NESTED_TYPES</span>.Schema
+        childType = typeDef
+        <span class="hljs-property">@resolveSchemaType</span> type, childType</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li>If the type definition is a string that begins with Schema:, such as <code>&#39;Schema:Car&#39;</code><ul>
+<li>It is assumed that the field is a reference to a nested Schema that will be registered with the name Car,
+but may not be registered yet</li>
+<li>The Schema is not resolved immediately</li>
+<li>The parser and identifier functions are written as wrappers, so that the first time they are invoked the Schema
+will be looked up at that time via <code>Scheming.get</code>, and real identifier and parser are set at that time.</li>
+<li>If the registered Schema cannot be resolved, throw an error.</li>
+</ul>
+</li>
+</ul></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> _.isString(typeDef) &amp;&amp; typeDef[..<span class="hljs-number">.7</span>] == <span class="hljs-string">'Schema:'</span>
+        type = _.cloneDeep <span class="hljs-property">@NESTED_TYPES</span>.Schema
+        childType = typeDef[<span class="hljs-number">7.</span>.]
+        <span class="hljs-keyword">for</span> fn <span class="hljs-keyword">in</span> [<span class="hljs-string">'identifier'</span>, <span class="hljs-string">'parser'</span>]
+          <span class="hljs-keyword">do</span> <span class="hljs-function"><span class="hljs-params">(fn)</span> =&gt;</span>
+            type[fn] = <span class="hljs-function"><span class="hljs-params">(val)</span> =&gt;</span>
+              childType = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./Registry'</span>).get childType
+              <span class="hljs-keyword">if</span> !childType
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Error resolving <span class="hljs-subst">#{typeDef}</span> on lazy initialization"</span>
+              <span class="hljs-property">@resolveSchemaType</span> type, childType
+
+              <span class="hljs-keyword">return</span> type[fn] val
+
+
+    <span class="hljs-keyword">return</span> type || <span class="hljs-literal">null</span>
+
+<span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span> = <span class="hljs-keyword">new</span> Types()</div></div></div></div></body></html>

@@ -373,451 +373,109 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "foldPrefix": "^",
           "name": "CoffeeScript"
         },
-        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Scheming.coffee",
-        "projectPath": "src/Scheming.coffee",
-        "targetPath": "Scheming",
-        "pageTitle": "Scheming",
-        "firstHeader": {
-          "type": "heading",
-          "data": {
-            "level": 1,
-            "title": "Annotated Source",
-            "slug": "annotated-source",
-            "isFileHeader": true
-          },
-          "depth": 1,
-          "children": [
-            {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Scheming",
-                "slug": "scheming"
-              },
-              "depth": 2,
-              "children": [
-                {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "DEFAULT_OPTIONS",
-                    "slug": "default-options"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "TYPES",
-                    "slug": "types"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "NESTED_TYPES",
-                    "slug": "nested-types"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "setThrottle",
-                    "slug": "setthrottle"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "registerQueueCallback",
-                    "slug": "registerqueuecallback"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "unregisterQueueCallback",
-                    "slug": "unregisterqueuecallback"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "registerResolveCallback",
-                    "slug": "registerresolvecallback"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "unregisterResolveCallback",
-                    "slug": "unregisterresolvecallback"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "resolveType",
-                    "slug": "resolvetype"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "normalizePropertyConfig",
-                    "slug": "normalizepropertyconfig"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "get",
-                    "slug": "get"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "reset",
-                    "slug": "reset"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "create",
-                    "slug": "create"
-                  },
-                  "depth": 3
-                }
-              ]
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Schema",
-                "slug": "schema"
-              },
-              "depth": 2,
-              "children": [
-                {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "defineProperty",
-                    "slug": "defineproperty"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "defineProperties",
-                    "slug": "defineproperties"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "getProperties",
-                    "slug": "getproperties"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "getProperty",
-                    "slug": "getproperty"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "eachProperty",
-                    "slug": "eachproperty"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "validate",
-                    "slug": "validate"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "constructor",
-                    "slug": "constructor"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "Change Manager",
-                    "slug": "change-manager"
-                  },
-                  "depth": 3
-                }
-              ]
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Instance",
-                "slug": "instance"
-              },
-              "depth": 2,
-              "children": [
-                {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "Property Setter",
-                    "slug": "property-setter"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "Property Getter",
-                    "slug": "property-getter"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "watch",
-                    "slug": "watch"
-                  },
-                  "depth": 3
-                }, {
-                  "type": "heading",
-                  "data": {
-                    "level": 3,
-                    "title": "constructor",
-                    "slug": "constructor"
-                  },
-                  "depth": 3
-                }
-              ]
-            }
-          ]
-        },
-        "title": "Annotated Source"
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/ChangeManager.coffee",
+        "projectPath": "src/ChangeManager.coffee",
+        "targetPath": "ChangeManager",
+        "pageTitle": "ChangeManager",
+        "title": "ChangeManager"
       },
       "depth": 1,
       "outline": [
         {
           "type": "heading",
           "data": {
-            "level": 2,
-            "title": "Scheming",
-            "slug": "scheming"
+            "level": 3,
+            "title": "Change Manager",
+            "slug": "change-manager"
           },
-          "depth": 2,
-          "children": [
-            {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "DEFAULT_OPTIONS",
-                "slug": "default-options"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "TYPES",
-                "slug": "types"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "NESTED_TYPES",
-                "slug": "nested-types"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "setThrottle",
-                "slug": "setthrottle"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "registerQueueCallback",
-                "slug": "registerqueuecallback"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "unregisterQueueCallback",
-                "slug": "unregisterqueuecallback"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "registerResolveCallback",
-                "slug": "registerresolvecallback"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "unregisterResolveCallback",
-                "slug": "unregisterresolvecallback"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "resolveType",
-                "slug": "resolvetype"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "normalizePropertyConfig",
-                "slug": "normalizepropertyconfig"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "get",
-                "slug": "get"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "reset",
-                "slug": "reset"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "create",
-                "slug": "create"
-              },
-              "depth": 3
-            }
-          ]
+          "depth": 3
         }, {
           "type": "heading",
           "data": {
-            "level": 2,
-            "title": "Schema",
-            "slug": "schema"
+            "level": 3,
+            "title": "setThrottle",
+            "slug": "setthrottle"
           },
-          "depth": 2,
-          "children": [
-            {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "defineProperty",
-                "slug": "defineproperty"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "defineProperties",
-                "slug": "defineproperties"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "getProperties",
-                "slug": "getproperties"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "getProperty",
-                "slug": "getproperty"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "eachProperty",
-                "slug": "eachproperty"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "validate",
-                "slug": "validate"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "constructor",
-                "slug": "constructor"
-              },
-              "depth": 3
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 3,
-                "title": "Change Manager",
-                "slug": "change-manager"
-              },
-              "depth": 3
-            }
-          ]
+          "depth": 3
         }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "registerQueueCallback",
+            "slug": "registerqueuecallback"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "unregisterQueueCallback",
+            "slug": "unregisterqueuecallback"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "registerResolveCallback",
+            "slug": "registerresolvecallback"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "unregisterResolveCallback",
+            "slug": "unregisterresolvecallback"
+          },
+          "depth": 3
+        }
+      ]
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/ExportBrowser.coffee",
+        "projectPath": "src/ExportBrowser.coffee",
+        "targetPath": "ExportBrowser",
+        "pageTitle": "ExportBrowser",
+        "title": "ExportBrowser"
+      },
+      "depth": 1,
+      "outline": []
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/InstanceFactory.coffee",
+        "projectPath": "src/InstanceFactory.coffee",
+        "targetPath": "InstanceFactory",
+        "pageTitle": "InstanceFactory",
+        "title": "InstanceFactory"
+      },
+      "depth": 1,
+      "outline": [
+        {
           "type": "heading",
           "data": {
             "level": 2,
@@ -860,6 +518,220 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "depth": 3
             }
           ]
+        }
+      ]
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/ModelFactory.coffee",
+        "projectPath": "src/ModelFactory.coffee",
+        "targetPath": "ModelFactory",
+        "pageTitle": "ModelFactory",
+        "title": "ModelFactory"
+      },
+      "depth": 1,
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "DEFAULT_OPTIONS",
+            "slug": "default-options"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "normalizePropertyConfig",
+            "slug": "normalizepropertyconfig"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "create",
+            "slug": "create"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "defineProperty",
+            "slug": "defineproperty"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "defineProperties",
+            "slug": "defineproperties"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "getProperties",
+            "slug": "getproperties"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "getProperty",
+            "slug": "getproperty"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "eachProperty",
+            "slug": "eachproperty"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "validate",
+            "slug": "validate"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "constructor",
+            "slug": "constructor"
+          },
+          "depth": 3
+        }
+      ]
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Registry.coffee",
+        "projectPath": "src/Registry.coffee",
+        "targetPath": "Registry",
+        "pageTitle": "Registry",
+        "title": "Registry"
+      },
+      "depth": 1,
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "get",
+            "slug": "get"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "reset",
+            "slug": "reset"
+          },
+          "depth": 3
+        }
+      ]
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Scheming.coffee",
+        "projectPath": "src/Scheming.coffee",
+        "targetPath": "Scheming",
+        "pageTitle": "Scheming",
+        "title": "Scheming"
+      },
+      "depth": 1,
+      "outline": []
+    }, {
+      "type": "file",
+      "data": {
+        "language": {
+          "nameMatchers": [".coffee", "Cakefile"],
+          "pygmentsLexer": "coffee-script",
+          "highlightJS": "coffeescript",
+          "multiLineComment": ["###*", " *", " ###", "###", "#", "###", "###*", "#", "###"],
+          "strictMultiLineEnd": false,
+          "singleLineComment": ["#"],
+          "ignorePrefix": "}",
+          "foldPrefix": "^",
+          "name": "CoffeeScript"
+        },
+        "sourcePath": "/Users/erin.noe-payne/local/scheming/src/Types.coffee",
+        "projectPath": "src/Types.coffee",
+        "targetPath": "Types",
+        "pageTitle": "Types",
+        "title": "Types"
+      },
+      "depth": 1,
+      "outline": [
+        {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "TYPES",
+            "slug": "types"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "NESTED_TYPES",
+            "slug": "nested-types"
+          },
+          "depth": 3
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 3,
+            "title": "resolveType",
+            "slug": "resolvetype"
+          },
+          "depth": 3
         }
       ]
     }
