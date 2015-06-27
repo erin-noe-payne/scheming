@@ -524,6 +524,10 @@ lisa.age = 7
 
 # Changelog
 
+## v2.1.0
+ - Fixed an issue with array mutators where assigning an array to a skeeping model and then mutating that array would cause unexpected behavior
+ - Significantly update code structure, breaking source up into multiple files
+
 ## v2.0.0
  - Reverse order of setter and parser functions. It makes more sense for parsers to be invoked AFTER setter function to guarantee typing, and to allow for custom parsing in setters.
 
