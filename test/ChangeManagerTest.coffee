@@ -111,7 +111,7 @@ describe 'ChangeManager', ->
       global.setImmediate.restore()
       global.clearImmediate.restore()
 
-      describe 'queueing and resolve callbacks', ->
+  describe 'queueing and resolve callbacks', ->
     queueCallback = null
     resolveCallback = null
 
@@ -143,6 +143,7 @@ describe 'ChangeManager', ->
       ChangeManager.queueChanges {}, ->
         ChangeManager.queueChanges {}, ->
 
+      ChangeManager.flush()
       expect(queueCallback).to.have.been.calledOnce
 
     it 'should call the resolve callback when data changes', (done) ->

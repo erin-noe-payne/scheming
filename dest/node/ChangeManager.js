@@ -189,7 +189,6 @@
         this.cleanupCycle();
         throw new Error("Aborting change propagation after " + this.ITERATION_LIMIT + " cycles.\nThis is probably indicative of a circular watch. Check the following watches for clues:\n" + (JSON.stringify(changes)));
       }
-      this.clearTimeout();
       internalChanges = _.unique(this.internalChangeQueue);
       this.internalChangeQueue = [];
       for (i = 0, len = internalChanges.length; i < len; i++) {

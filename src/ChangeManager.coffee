@@ -154,8 +154,6 @@ class ChangeManager
         This is probably indicative of a circular watch. Check the following watches for clues:
         #{JSON.stringify(changes)}"""
 
-    @clearTimeout()
-
     # A single id may have been pushed to the change queue many times, to take a unique list of ids.
     internalChanges = _.unique @internalChangeQueue
     # Immediately reset the state of the change queue
