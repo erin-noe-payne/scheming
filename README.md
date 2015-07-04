@@ -79,6 +79,27 @@ Scheming.create {name : 'string'}
 Scheming.create {name : String}
 ```
 
+You may use `Scheming.TYPES.Mixed '*'` when your model contains an object that will have arbitrary properties attached to it. For example, if you wanted to create a `Foo` model that contains two properties:
+```
+name | String | The name of this foo instance, which may be null
+bar  | Object | An initially empty object that will later have additional properties arbitrarily assigned to it
+```
+you could model it as:
+```
+Foo = Scheming.create 'Foo',
+  name :
+    type    : String
+    default : null
+  bar  :
+    type    : "*"
+    default : {}
+```
+**IMPORTANT**: If you `.watch()` an instance of the model above:
+```
+x.bar = { likesCats : true } # This fires the watch, because the reference to bar changed.
+x.bar.likesCats = false      # This does not fire the watch. Use nested models if you want "deep" watches.
+```
+
 #### Custom types
 
 You can extend the Scheming TYPES object to add support for custom types. For example:
