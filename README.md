@@ -524,6 +524,12 @@ lisa.age = 7
 
 # Changelog
 
+## v2.1.2
+ - Add defensive semicolons to the built browser file to avoid conflicts in concatenation.
+
+## v2.1.1
+ - Fixed an issue where queueCallback was being called more than once within a resolve cycle if any changes were propagated.
+
 ## v2.1.0
  - Fixed an issue with array mutators where assigning an array to a skeeping model and then mutating that array would cause unexpected behavior
  - Significantly update code structure, breaking source up into multiple files

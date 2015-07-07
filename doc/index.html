@@ -391,6 +391,14 @@ lisa.name = &#39;lisa&#39;</code></pre>
 lisa.name = &#39;lisa&#39;
 lisa.age = 7</code></pre>
 <h1 id="changelog">Changelog</h1>
+<h2 id="v212">v2.1.2</h2>
+<ul>
+<li>Add defensive semicolons to the built browser file to avoid conflicts in concatenation.</li>
+</ul>
+<h2 id="v211">v2.1.1</h2>
+<ul>
+<li>Fixed an issue where queueCallback was being called more than once within a resolve cycle if any changes were propagated.</li>
+</ul>
 <h2 id="v210">v2.1.0</h2>
 <ul>
 <li>Fixed an issue with array mutators where assigning an array to a skeeping model and then mutating that array would cause unexpected behavior</li>
