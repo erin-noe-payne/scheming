@@ -64,6 +64,20 @@ console.log Person.validate jane
 <pre><code>Scheming.create {name : Scheming.TYPES.String}
 Scheming.create {name : &#39;string&#39;}
 Scheming.create {name : String}</code></pre>
+<p>You may use <code>Scheming.TYPES.Mixed &#39;*&#39;</code> when your model contains an object that will have arbitrary properties attached to it. For example, if you wanted to create a <code>Foo</code> model that contains two properties:</p>
+<pre><code>name | String | The name of this foo instance, which may be null
+bar  | Object | An initially empty object that will later have additional properties arbitrarily assigned to it</code></pre>
+<p>you could model it as:</p>
+<pre><code>Foo = Scheming.create &#39;Foo&#39;,
+  name :
+    type    : String
+    default : null
+  bar  :
+    type    : &quot;*&quot;
+    default : {}</code></pre>
+<p><strong>IMPORTANT</strong>: If you <code>.watch()</code> an instance of the model above:</p>
+<pre><code>x.bar = { likesCats : true } # This fires the watch, because the reference to bar changed.
+x.bar.likesCats = false      # This does not fire the watch. Use nested models if you want &quot;deep&quot; watches.</code></pre>
 <h4 id="custom-types">Custom types</h4>
 <p>You can extend the Scheming TYPES object to add support for custom types. For example:</p>
 <pre><code>Scheming.TYPES.Symbol =
