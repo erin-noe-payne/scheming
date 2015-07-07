@@ -4,7 +4,6 @@ fs          = require 'fs'
 path        = require 'path'
 yargs       = require 'yargs'
 plugins     = require('gulp-load-plugins')()
-istanbul   = require 'gulp-coffee-istanbul'
 
 gulp.task 'default', ['build', 'watch']
 
@@ -27,6 +26,7 @@ gulp.task 'buildClient', ['clean'], ->
         debug : true
         extensions: ['.coffee']
       }))
+    .pipe(plugins.insert.wrap(';', ';')) # protect for minification
     .pipe(plugins.rename('scheming.js'))
     .pipe(gulp.dest 'dest/browser')
 
@@ -42,12 +42,12 @@ gulp.task 'test', ['testRun'], ->
 
 gulp.task 'coverage', ->
   gulp.src('src/**/*.coffee')
-    .pipe(istanbul({includeUntested: true}))
-    .pipe(istanbul.hookRequire())
+    .pipe(plugins.coffeeIstanbul({includeUntested: true}))
+    .pipe(plugins.coffeeIstanbul.hookRequire())
     .on 'finish', ->
       gulp.src('**/*.coffee', {cwd : 'test', cwdbase: true})
       .pipe(plugins.mocha({reporter : 'spec'}))
-      .pipe(istanbul.writeReports())
+      .pipe(plugins.coffeeIstanbul.writeReports())
 
 gulp.task 'bump', ->
   pkg = require path.resolve 'package.json'
