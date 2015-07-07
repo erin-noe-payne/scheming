@@ -545,7 +545,7 @@ lisa.age = 7
 
 # Changelog
 
-## v2.1.2
+## v2.1.3
  - Add defensive semicolons to the built browser file to avoid conflicts in concatenation.
 
 ## v2.1.1
