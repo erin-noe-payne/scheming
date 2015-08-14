@@ -545,6 +545,9 @@ lisa.age = 7
 
 # Changelog
 
+## v2.1.4
+ - Set bower lodash dependency to `2.x || 3.x` to reduce bower version conflicts on the client. Because they suck.
+
 ## v2.1.3
  - Add defensive semicolons to the built browser file to avoid conflicts in concatenation.
 
@@ -583,11 +586,3 @@ lisa.age = 7
 ## v1.0.0
 
  - Initial release
-
-
-
-
-
-
-
- 
