@@ -79,26 +79,7 @@ Scheming.create {name : 'string'}
 Scheming.create {name : String}
 ```
 
-You may use `Scheming.TYPES.Mixed '*'` when your model contains an object that will have arbitrary properties attached to it. For example, if you wanted to create a `Foo` model that contains two properties:
-```
-name | String | The name of this foo instance, which may be null
-bar  | Object | An initially empty object that will later have additional properties arbitrarily assigned to it
-```
-you could model it as:
-```
-Foo = Scheming.create 'Foo',
-  name :
-    type    : String
-    default : null
-  bar  :
-    type    : "*"
-    default : {}
-```
-**IMPORTANT**: If you `.watch()` an instance of the model above:
-```
-x.bar = { likesCats : true } # This fires the watch, because the reference to bar changed.
-x.bar.likesCats = false      # This does not fire the watch. Use nested models if you want "deep" watches.
-```
+The Mixed type is intended for arbitrary untyped data, including nested objects, arrays, etc. Note that when [watching](#instancewatchproperties-listener) properties of the Mixed type, a watch will fire on reference change (re-assignment), but will not fire on mutations of the value. If you need watches to propagate, then you need to use [nested schemas](#schemingnested_types) so that Scheming knows about nested properties and can manage changes.
 
 #### Custom types
 
@@ -145,7 +126,7 @@ Simple arrays:
 BlogPost = Scheming.create
   comments : [String] # an array of strings
   miscellaneous : ['*'] # an untyped array
-  
+
 post = new BlogPost()
 post.comments = ['Hello', 'World']
 post.miscellaneous = ['Stuff', 2, null, {}]x
@@ -154,7 +135,7 @@ post.miscellaneous = ['Stuff', 2, null, {}]x
 Arrays with validation, defaults, etc. Here is a blog post which requires 2 or more comments to be valid. Note that the configuration is being applied to the array itself, not to the members of the array.
 ```
 BlogPost = Scheming.create
-  comments : 
+  comments :
     type : [String]
     default : []
     required : true
@@ -171,22 +152,22 @@ Simple nested schemas:
 Car = Schema.create
   make : String
   model : String
-  
+
 Person = Schema.create
   name : String
   car : Car
-  
+
 mark = new Person {name : 'mark'}
 
 # Explicit construction and assignment
 # At the time of assignment, civic is already an instance of Car
 # so the Car constructor will not be invoked a second time
 civic = new Car {make : 'honda', model : 'civic'}
-mark.car = civic 
+mark.car = civic
 
 # Implicit construction
-# At the time of assignment, the value is a plain object. Therefore 
-# the object is passed to the Car  constructor (or in strict mode, 
+# At the time of assignment, the value is a plain object. Therefore
+# the object is passed to the Car  constructor (or in strict mode,
 # an error is thrown)
 mark.car = {make : 'toyota', model : 'corolla'}
 mark.car instanceof Car # true
@@ -198,11 +179,11 @@ Simple circular type references:
 ```
 Person = Schema.create()
 Car = Schema.create()
-  
+
 Person.defineProperties
   name : String
   car : Car
-  
+
 Car.defineProperties
   make : String
   model : String
@@ -216,22 +197,22 @@ If you have registered a named schema, you can create a type reference to that s
 Lazy initialization:
 ```
 # I am registering the Schema with the name 'Person'
-Person = Schema.create 'Person', 
+Person = Schema.create 'Person',
   name : String
   car : 'Schema:Car'
-  
+
 # This would throw an error, because 'Schema:Car' does not resolve to a registered Schema
 bill = new Person
   name : 'Bill'
   car : {make : 'honda', model : 'civic'}
-    
+
 # Now I am creating and registering the 'Car' Schema
-Car = Schema.create 'Car', 
+Car = Schema.create 'Car',
   make : String
   model : String
   # This reference is using the registered name of the Schema 'Person'
   owner : 'Schema:Person'
-  
+
 # Success!
 bill = new Person
   name : 'Bill'
@@ -241,7 +222,7 @@ bill = new Person
 #### Implicit Schemas
 
 What we have seen so far is the ability to explicitly create Schemas and reference them as types. While this is extremely powerful, sometimes you just want to declare nested objects on your Schema. When you do this, new anonymous Schemas are implicitly created and assigned as the type.
- 
+
  In the example below, we create a blog post that has some flat properties, and creates two implicit schemas. The first is the author property, the second is the comments property. Each of these cause an anonymous schema to be created, and any assignment to that value will run the assigned object through the corresponding Schema constructor
 
 ```
@@ -249,7 +230,7 @@ Blog = Scheming.create
   title : String
   content : String
   posted : Date
-  author : 
+  author :
     name : String
     age : Number
   comments : [{
@@ -261,10 +242,10 @@ Blog = Scheming.create
 Note one subtlety: the syntax for [Complex Configuration](#complex-configuration) and implicit schemas is basically the same. In both cases you are using property names and nested objects. Scheming determines whether to treat a nested object as property configuration or a nested schema based on the presence of the `type` key. This effectively makes `type` a reserved word for implicit Schemas.
 
 ```
-# Oops! In the example below, author is not a nested schema. 
+# Oops! In the example below, author is not a nested schema.
 # It is a property with a primitive type of string.
 Blog = Scheming.create
-  author : 
+  author :
     name : String
     age : Number
     type : String
@@ -351,7 +332,7 @@ The constructor function returned by [Scheming.create](#schemingcreate). Constru
 Person = Scheming.create
   name : String
   age : Number
-  
+
 lisa = new Person
   name : 'lisa'
   age : 8
@@ -415,7 +396,7 @@ If validation succeeds (including if no validators are defined), `validate()` re
 
 ```
 Person = Scheming.create {name : String}
-      
+
 bill = new Person {name : 'bill}
 
 errors = Person.validate bill # null
@@ -428,8 +409,8 @@ A validator function should return true if it passes. Any other return value wil
 If multiple validators are defined, all will be run against the value. The errors object will return error messages for all validators that failed.
 
 ```
-Person = Scheming.create 
-  name : 
+Person = Scheming.create
+  name :
     type : String
     validate : [
       -> return "Error number one"
@@ -437,7 +418,7 @@ Person = Scheming.create
       -> return true
       -> return false
     ]
-    
+
 bill = new Person()
 
 errors = Person.validate bill
@@ -453,8 +434,8 @@ errors = Person.validate bill
 The `required` configuration is a special validator that checks if the value is defined. If required validation fails, other validators will not be run. This means that validators are guaranteed to receive a value, and do not need to do null checking.
 
 ```
-Person = Scheming.create 
-  name : 
+Person = Scheming.create
+  name :
     type : String
     required : true
     validate : [
@@ -463,7 +444,7 @@ Person = Scheming.create
       -> return true
       -> return false
     ]
-    
+
 bill = new Person()
 
 errors = Person.validate bill
@@ -473,13 +454,11 @@ errors = Person.validate bill
 
 ## Instance
 
-The object instance returned by newing up a [Schema](#schema) constructor. 
+The object instance returned by newing up a [Schema](#schema) constructor.
 
 ### Instance.watch([properties], listener)
 
-Watches a schmea instance for changes. The registered listener function will fire asynchronously each time one or more of the specified properties change.
-
-**IMPORTANT** Watchers and change detection depend on the `set` functionality of `Object.defineProperty`. This means that changes made by mutating a value (such as array splicing) will not be detected, and may result in memory leaks or unexpected behavior. As a best practice, only manipulate schema instance data via assignment with the `=` operator, and do not use mutators.
+Watches a schema instance for changes. The registered listener function will fire asynchronously each time one or more of the specified properties change.
 
 - properties [optional] **String** || **[String]** Specifies the properties to watch on the instance. Accepts a string representing a single property or an array of strings representing one or more properties. If no properties are specified, the entire object will be watched for a change on any property. Will throw an error if any property being watched is not declared as part of the Schema.
 - listener **Function** *function(newVal, oldVal)* The listener function that will be called each time the watched properties change.
@@ -488,8 +467,9 @@ Watches a schmea instance for changes. The registered listener function will fir
   - Listener functions are invoked with the current and previous values of the watched properties. If a watch is set against a single property, newVal and oldVal will be the new and previous values. If the watch is set against multiple properties, newVal and oldVal will be objects whose key / value pairs represent the watcher property names and their respective values.
   - In the case of a watch against the entire object, newVal and oldVal will represent the current and previous state of all properties of the object. However. Note that newVal is NOT a reference to the instance object, it is a plain object whose key / value pairs represent the current state of the instance.
   - Watches are "deep". This means changes to nested schemas are propagated up to the parent elements.
-- returns **Function** You are responsible for the cleanup of a watch.
+- returns **Function** The unwatch function. Setting a watch always returns a function that, when invoked, will clear the watch listeners and allow for garbage collection. When setting a watch it is always your responsibility to clean up when you are done with it to avoid memory leaks & unexpected behavior.
 
+**IMPORTANT** Watchers and change detection depend on the `set` functionality of `Object.defineProperty`. This means that changes made by mutating a value will not necessarily be detected. The scheming library does overwrite the most common array mutators (splice, pop, push, etc.) for a seamless experience. But other less common mutations like Date setters will not be picked up. When in doubt, only manipulate schema instance data via assignment with the `=` operator, and do not use mutators.
 
 #### Examples
 
@@ -556,6 +536,10 @@ lisa.name = 'a' # watch no longer fires
 ```
 
 # Changelog
+
+## v2.1.5
+ - Update docs with unwatch, better explanation of Mixed types.
+ - Update browser build so that lodash is not included. Lodash is already listed as a bower dependency, and this drops the size of the deliverable significantly. **NOTE** In most cases this should be a non-breaking change. However, if you are using scheming without using bower-main-files or similar, you may need to add a `<script>` tag to your html to include lodash on your page.
 
 ## v2.1.4
  - Set bower lodash dependency to `2.x || 3.x` to reduce bower version conflicts on the client. Because they suck.

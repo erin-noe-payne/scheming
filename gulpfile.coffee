@@ -11,7 +11,6 @@ gulp.task 'clean', ->
   gulp.src('dest', {read:false})
   .pipe(plugins.clean())
 
-
 gulp.task 'build', ['clean', 'buildServer', 'buildClient']
 
 gulp.task 'buildServer', ['clean'], ->
@@ -22,9 +21,10 @@ gulp.task 'buildServer', ['clean'], ->
 gulp.task 'buildClient', ['clean'], ->
   gulp.src('src/ExportBrowser.coffee', { read: false })
     .pipe(plugins.browserify({
-        transform: ['coffeeify'],
+        transform: ['coffeeify', 'browserify-global-shim']
         debug : true
         extensions: ['.coffee']
+        ignore : ['lodash']
       }))
     .pipe(plugins.insert.wrap(';', ';')) # protect for minification
     .pipe(plugins.rename('scheming.js'))

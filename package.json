@@ -1,6 +1,6 @@
 {
   "name": "scheming",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "main": "./dest/node/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
@@ -10,6 +10,7 @@
     "lodash": "^3.9.3"
   },
   "devDependencies": {
+    "browserify-global-shim": "^1.0.0",
     "chai": "~1.9.2",
     "coffee-script": "~1.7.1",
     "coffeeify": "^1.1.0",
@@ -37,5 +38,8 @@
     "sinon": "~1.11.1",
     "sinon-chai": "~2.6.0",
     "yargs": "~1.3.3"
+  },
+  "browserify-global-shim": {
+    "lodash": "_"
   }
 }
