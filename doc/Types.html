@@ -47,7 +47,7 @@
       ctor       : <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
         val
       string     : <span class="hljs-string">'*'</span>
-      identifier :<span class="hljs-function"> -&gt;</span>
+      identifier : <span class="hljs-function">-&gt;</span>
         <span class="hljs-literal">true</span>
       parser     : _.identity
       equals     : <span class="hljs-function"><span class="hljs-params">(a, b)</span> -&gt;</span> a==b</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="nested-types">NESTED_TYPES</h3>
@@ -84,9 +84,9 @@ Matches a primitive type if it is...</p>
     <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Function that builds identifier and parser for nested schema types. Needs to be factored out
 because nested schemas may be resolved lazily at a later time</p></div></div><div class="code"><div class="wrapper">  resolveSchemaType : <span class="hljs-function"><span class="hljs-params">(type, childType)</span> =&gt;</span>
     type.childType = childType
-    type.<span class="hljs-function"><span class="hljs-title">identifier</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+    type.identifier = <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
       <span class="hljs-keyword">return</span> val <span class="hljs-keyword">instanceof</span> childType
-    type.<span class="hljs-function"><span class="hljs-title">parser</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+    type.parser = <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
       <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> childType(val)</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="resolvetype">resolveType</h3>
 <p>Resolves a type declaration to a primitive or nested type. Used internally when normalizing a schema.</p></div></div><div class="code"><div class="wrapper">  resolveType : <span class="hljs-function"><span class="hljs-params">(typeDef)</span> =&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Attempt to resolve the type declaration to a primitive type</li>
@@ -105,7 +105,7 @@ because nested schemas may be resolved lazily at a later time</p></div></div><di
 
         type.childType = childType</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>Write parser for child members of the array</li>
-</ul></div></div><div class="code"><div class="wrapper">        type.<span class="hljs-function"><span class="hljs-title">childParser</span> = <span class="hljs-params">(val)</span> -&gt;</span>
+</ul></div></div><div class="code"><div class="wrapper">        type.childParser = <span class="hljs-function"><span class="hljs-params">(val)</span> -&gt;</span>
           <span class="hljs-keyword">for</span> index, member <span class="hljs-keyword">of</span> val
             <span class="hljs-keyword">if</span> !childType.identifier(member)
               val[index] = childType.parser(member)
@@ -143,7 +143,7 @@ will be looked up at that time via <code>Scheming.get</code>, and real identifie
         type = _.cloneDeep <span class="hljs-property">@NESTED_TYPES</span>.Schema
         childType = typeDef[<span class="hljs-number">7.</span>.]
         <span class="hljs-keyword">for</span> fn <span class="hljs-keyword">in</span> [<span class="hljs-string">'identifier'</span>, <span class="hljs-string">'parser'</span>]
-          <span class="hljs-keyword">do</span> <span class="hljs-function"><span class="hljs-params">(fn)</span> =&gt;</span>
+          <span class="hljs-keyword">do</span> (fn) =&gt;
             type[fn] = <span class="hljs-function"><span class="hljs-params">(val)</span> =&gt;</span>
               childType = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./Registry'</span>).get childType
               <span class="hljs-keyword">if</span> !childType
@@ -155,4 +155,4 @@ will be looked up at that time via <code>Scheming.get</code>, and real identifie
 
     <span class="hljs-keyword">return</span> type || <span class="hljs-literal">null</span>
 
-<span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span> = <span class="hljs-keyword">new</span> Types()</div></div></div></div></body></html>
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-keyword">new</span> Types()</div></div></div></div></body></html>

@@ -9,15 +9,15 @@ Registry = <span class="hljs-built_in">require</span> <span class="hljs-string">
     seal   : <span class="hljs-literal">false</span>
     strict : <span class="hljs-literal">false</span>
 
-  constructor :<span class="hljs-function"> -&gt;</span>
+  constructor : <span class="hljs-function">-&gt;</span>
     <span class="hljs-property">@nameCounter</span>=<span class="hljs-number">0</span>
 
-  generateName :<span class="hljs-function"> =&gt;</span>
+  generateName : <span class="hljs-function">=&gt;</span>
     <span class="hljs-keyword">return</span> <span class="hljs-string">"SchemingModel<span class="hljs-subst">#{<span class="hljs-property">@nameCounter</span>++}</span>"</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="normalizepropertyconfig">normalizePropertyConfig</h3>
 <p>  Normalizes a field declaration on a schema to capture type, default value, setter, getter, and validation.
   Used internally when a schema is created to build a normalized schema definition.</p></div></div><div class="code"><div class="wrapper">  normalizePropertyConfig : <span class="hljs-function"><span class="hljs-params">(propConfig, propName = <span class="hljs-string">'field'</span>)</span> =&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>initialize normalized property definition that we will return</p></div></div><div class="code"><div class="wrapper">    definition =
       type       : <span class="hljs-literal">null</span>
-      <span class="hljs-reserved">default</span>    : <span class="hljs-literal">null</span>
+      default    : <span class="hljs-literal">null</span>
       getter     : <span class="hljs-literal">null</span>
       setter     : <span class="hljs-literal">null</span>
       validate   : <span class="hljs-literal">null</span>
@@ -49,7 +49,7 @@ must explicitly declared as Schema.TYPES.Mixed</li>
 </ul></div></div><div class="code"><div class="wrapper">    definition.type = Types.resolveType type</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
 <li>If type could not be resolved, throw an error</li>
 </ul></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> !definition.type?
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Error resolving <span class="hljs-subst">#{propName}</span>. Unrecognized type <span class="hljs-subst">#{type}</span>"</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p><code>default</code> is a reserved word, so we can&#39;t do the nice clean denatured assignment</p></div></div><div class="code"><div class="wrapper">    definition.<span class="hljs-reserved">default</span> = propConfig.<span class="hljs-reserved">default</span>
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Error resolving <span class="hljs-subst">#{propName}</span>. Unrecognized type <span class="hljs-subst">#{type}</span>"</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p><code>default</code> is a reserved word, so we can&#39;t do the nice clean denatured assignment</p></div></div><div class="code"><div class="wrapper">    definition.default = propConfig.default
     definition.getter = getter
     definition.setter = setter
     definition.validate = validate
@@ -81,7 +81,7 @@ created anonymously, and we need to give it a uuid for registration.</p></div></
           <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"First argument: properties must be an object."</span>
         <span class="hljs-keyword">for</span> k, v <span class="hljs-keyword">of</span> config
           <span class="hljs-property">@defineProperty</span> k, v</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="getproperties">getProperties</h3>
-<p>returns a clone of the normalized Schema</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-property">@getProperties</span> :<span class="hljs-function"> -&gt;</span>
+<p>returns a clone of the normalized Schema</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-property">@getProperties</span> : <span class="hljs-function">-&gt;</span>
         <span class="hljs-keyword">return</span> _.cloneDeep normalizedSchema</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="getproperty">getProperty</h3>
 <p>returns a clone of the normalized Schema property</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-property">@getProperty</span> : <span class="hljs-function"><span class="hljs-params">(propName)</span> -&gt;</span>
         <span class="hljs-keyword">return</span> _.cloneDeep normalizedSchema[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="eachproperty">eachProperty</h3>
@@ -91,7 +91,7 @@ created anonymously, and we need to give it a uuid for registration.</p></div></
         <span class="hljs-keyword">for</span> propName, propConfig <span class="hljs-keyword">of</span> normalizedSchema
           cb propName, _.cloneDeep propConfig</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="validate">validate</h3>
 <p>Run validation on an instance of the schema</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-property">@validate</span> : <span class="hljs-function"><span class="hljs-params">(instance)</span> -&gt;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Create errors hash that will be returned on any validation failure.</p></div></div><div class="code"><div class="wrapper">        errors = {}</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Flag validating state to prevent infinite loop in the case of circular references</p></div></div><div class="code"><div class="wrapper">        <span class="hljs-keyword">if</span> instance._validating <span class="hljs-keyword">then</span> <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
-        instance._validating = <span class="hljs-literal">true</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Factored code to push error messages onto the errors hash</p></div></div><div class="code"><div class="wrapper">        <span class="hljs-function"><span class="hljs-title">pushError</span> = <span class="hljs-params">(key, error)</span> -&gt;</span>
+        instance._validating = <span class="hljs-literal">true</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Factored code to push error messages onto the errors hash</p></div></div><div class="code"><div class="wrapper"><span class="hljs-function">        <span class="hljs-title">pushError</span> = <span class="hljs-params">(key, error)</span> -&gt;</span>
           <span class="hljs-keyword">if</span> _.isArray error
             <span class="hljs-keyword">return</span> pushError(key, err) <span class="hljs-keyword">for</span> err <span class="hljs-keyword">in</span> error
           <span class="hljs-keyword">if</span> !_.isString error
@@ -140,4 +140,4 @@ created anonymously, and we need to give it a uuid for registration.</p></div></
 
     <span class="hljs-keyword">return</span> Model
 
-<span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span> = <span class="hljs-keyword">new</span> ModelFactory()</div></div></div></div></body></html>
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-keyword">new</span> ModelFactory()</div></div></div></div></body></html>

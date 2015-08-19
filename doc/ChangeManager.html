@@ -5,7 +5,7 @@
     IMMEDIATE : <span class="hljs-string">'immediate'</span>
     ANIMATION_FRAME : <span class="hljs-string">'animationFrame'</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Configuration for limiting number of iterations</p></div></div><div class="code"><div class="wrapper">  ITERATION_LIMIT : <span class="hljs-number">100</span>
 
-  constructor :<span class="hljs-function"> -&gt;</span>
+  constructor : <span class="hljs-function">-&gt;</span>
     <span class="hljs-property">@changes</span> = {}
     <span class="hljs-property">@internalChangeQueue</span> = []
     <span class="hljs-property">@timeout</span> = <span class="hljs-literal">null</span>
@@ -22,17 +22,17 @@
 
     <span class="hljs-keyword">switch</span> throttle
       <span class="hljs-keyword">when</span> <span class="hljs-property">@THROTTLE</span>.TIMEOUT
-        <span class="hljs-property">@setTimeout</span> =<span class="hljs-function"> =&gt;</span>
+        <span class="hljs-property">@setTimeout</span> = <span class="hljs-function">=&gt;</span>
           <span class="hljs-property">@timeout</span> ?= setTimeout <span class="hljs-property">@resolve</span>, <span class="hljs-number">0</span>
-        <span class="hljs-property">@clearTimeout</span> =<span class="hljs-function"> =&gt;</span>
+        <span class="hljs-property">@clearTimeout</span> = <span class="hljs-function">=&gt;</span>
           clearTimeout <span class="hljs-property">@timeout</span>
           <span class="hljs-property">@timeout</span> = <span class="hljs-literal">null</span>
 
       <span class="hljs-keyword">when</span> <span class="hljs-property">@THROTTLE</span>.IMMEDIATE
         <span class="hljs-keyword">if</span> setImmediate? &amp;&amp; clearImmediate?
-          <span class="hljs-property">@setTimeout</span> =<span class="hljs-function"> =&gt;</span>
+          <span class="hljs-property">@setTimeout</span> = <span class="hljs-function">=&gt;</span>
             <span class="hljs-property">@timeout</span> ?= setImmediate <span class="hljs-property">@resolve</span>
-          <span class="hljs-property">@clearTimeout</span> =<span class="hljs-function"> =&gt;</span>
+          <span class="hljs-property">@clearTimeout</span> = <span class="hljs-function">=&gt;</span>
             clearImmediate <span class="hljs-property">@timeout</span>
             <span class="hljs-property">@timeout</span> = <span class="hljs-literal">null</span>
         <span class="hljs-keyword">else</span>
@@ -41,35 +41,35 @@
 
       <span class="hljs-keyword">when</span> <span class="hljs-property">@THROTTLE</span>.ANIMATION_FRAME
         <span class="hljs-keyword">if</span> requestAnimationFrame? &amp;&amp; cancelAnimationFrame?
-          <span class="hljs-property">@setTimeout</span> =<span class="hljs-function"> =&gt;</span>
+          <span class="hljs-property">@setTimeout</span> = <span class="hljs-function">=&gt;</span>
             <span class="hljs-property">@timeout</span> ?= requestAnimationFrame <span class="hljs-property">@resolve</span>
-          <span class="hljs-property">@clearTimeout</span> =<span class="hljs-function"> =&gt;</span>
+          <span class="hljs-property">@clearTimeout</span> = <span class="hljs-function">=&gt;</span>
             cancelAnimationFrame <span class="hljs-property">@timeout</span>
             <span class="hljs-property">@timeout</span> = <span class="hljs-literal">null</span>
         <span class="hljs-keyword">else</span>
           <span class="hljs-built_in">console</span>.warn <span class="hljs-string">"Cannot use strategy ANIMATION_FRAME: `requestAnimationFrame` or `cancelAnimationFrame` are not available in the current environment."</span>
           <span class="hljs-property">@setThrottle</span> <span class="hljs-property">@THROTTLE</span>.TIMEOUT</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Push the resolution step onto the event queue, once the thread has been released from
-a synchronous block of changes</p></div></div><div class="code"><div class="wrapper">  setTimeout :<span class="hljs-function"> -&gt;</span>
-    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"A throttle strategy must be set."</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>clear timeout to guarantee resolve is not called more than once.</p></div></div><div class="code"><div class="wrapper">  clearTimeout<span class="hljs-function"> -&gt;</span>
+a synchronous block of changes</p></div></div><div class="code"><div class="wrapper">  setTimeout : <span class="hljs-function">-&gt;</span>
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"A throttle strategy must be set."</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>clear timeout to guarantee resolve is not called more than once.</p></div></div><div class="code"><div class="wrapper">  clearTimeout -&gt;
     <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"A throttle strategy must be set."</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="registerqueuecallback">registerQueueCallback</h3>
 <p>registers a callback when the first Scheming change is queued with the change manager. This is useful for tests</p></div></div><div class="code"><div class="wrapper">  registerQueueCallback : <span class="hljs-function"><span class="hljs-params">(callback)</span> =&gt;</span>
     <span class="hljs-keyword">if</span> !_.isFunction callback
       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Callback must be a function"</span>
     <span class="hljs-property">@_queueCallback</span> = callback</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="unregisterqueuecallback">unregisterQueueCallback</h3>
-<p>unregisters a callback when the first Scheming change is queued with the change manager.</p></div></div><div class="code"><div class="wrapper">  unregisterQueueCallback :<span class="hljs-function"> =&gt;</span>
+<p>unregisters a callback when the first Scheming change is queued with the change manager.</p></div></div><div class="code"><div class="wrapper">  unregisterQueueCallback : <span class="hljs-function">=&gt;</span>
     <span class="hljs-property">@_queueCallback</span> = <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="registerresolvecallback">registerResolveCallback</h3>
 <p>registers a callback when the change manager is finished resolving changes</p></div></div><div class="code"><div class="wrapper">  registerResolveCallback : <span class="hljs-function"><span class="hljs-params">(callback)</span> =&gt;</span>
     <span class="hljs-keyword">if</span> !_.isFunction callback
       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"Callback must be a function"</span>
     <span class="hljs-property">@_resolveCallback</span> = callback</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="unregisterresolvecallback">unregisterResolveCallback</h3>
-<p>unregisters a callback when the change manager is finished resolving changes</p></div></div><div class="code"><div class="wrapper">  unregisterResolveCallback :<span class="hljs-function"> =&gt;</span>
-    <span class="hljs-property">@_resolveCallback</span> = <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>reset the the change manager to a pristine state</p></div></div><div class="code"><div class="wrapper">  cleanupCycle :<span class="hljs-function"> =&gt;</span>
+<p>unregisters a callback when the change manager is finished resolving changes</p></div></div><div class="code"><div class="wrapper">  unregisterResolveCallback : <span class="hljs-function">=&gt;</span>
+    <span class="hljs-property">@_resolveCallback</span> = <span class="hljs-literal">null</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>reset the the change manager to a pristine state</p></div></div><div class="code"><div class="wrapper">  cleanupCycle : <span class="hljs-function">=&gt;</span>
     <span class="hljs-property">@changes</span> = {}
     <span class="hljs-property">@internalChangeQueue</span> = []
     <span class="hljs-property">@_activeClearTimeout</span>?()
     <span class="hljs-property">@recursionCount</span> = <span class="hljs-number">0</span>
 
-  reset :<span class="hljs-function"> =&gt;</span>
+  reset : <span class="hljs-function">=&gt;</span>
     <span class="hljs-property">@changes</span> = {}
     <span class="hljs-property">@internalChangeQueue</span> = []
     <span class="hljs-property">@_activeClearTimeout</span>?()
@@ -91,8 +91,8 @@ a synchronous block of changes</p></div></div><div class="code"><div class="wrap
       <span class="hljs-property">@setTimeout</span>()
       <span class="hljs-property">@_activeClearTimeout</span> = <span class="hljs-property">@clearTimeout</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>gets the previous state of a queued change</p></div></div><div class="code"><div class="wrapper">  getQueuedChanges : <span class="hljs-function"><span class="hljs-params">({id, propName})</span> =&gt;</span>
     <span class="hljs-keyword">return</span> <span class="hljs-property">@changes</span>[id]?.changedProps[propName]</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Synchronously cause the change manager resolve. May be used for testing to avoid asynchronous tests,
-or may be used to force change resolution within client code.</p></div></div><div class="code"><div class="wrapper">  flush :<span class="hljs-function"> =&gt;</span>
-    <span class="hljs-property">@resolve</span>()</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>resolves queued changes, firing watchers on instances that have changed</p></div></div><div class="code"><div class="wrapper">  resolve :<span class="hljs-function"> =&gt;</span>
+or may be used to force change resolution within client code.</p></div></div><div class="code"><div class="wrapper">  flush : <span class="hljs-function">=&gt;</span>
+    <span class="hljs-property">@resolve</span>()</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>resolves queued changes, firing watchers on instances that have changed</p></div></div><div class="code"><div class="wrapper">  resolve : <span class="hljs-function">=&gt;</span>
     <span class="hljs-property">@recursionCount</span>++</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>track iteration count and throw an error after some limit to prevent infinite loops</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span> <span class="hljs-property">@ITERATION_LIMIT</span> &gt; <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-property">@recursionCount</span> &gt; <span class="hljs-property">@ITERATION_LIMIT</span>
       changes = <span class="hljs-property">@changes</span>
       <span class="hljs-property">@cleanupCycle</span>()</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>TODO: try to make a more meaningful error message from the instances (schema type, properties, etc)</p></div></div><div class="code"><div class="wrapper">      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error <span class="hljs-string">"""Aborting change propagation after <span class="hljs-subst">#{<span class="hljs-property">@ITERATION_LIMIT</span>}</span> cycles.
@@ -109,4 +109,4 @@ fire all external watchers on each instance.</p></div></div><div class="code"><d
       <span class="hljs-keyword">return</span> <span class="hljs-property">@resolve</span>()</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If we get here, all changes have been fully propagated. Reset change manager state to pristine just for explicitness</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-property">@_resolveCallback</span>?()
     <span class="hljs-property">@cleanupCycle</span>()
 
-<span class="hljs-built_in">module</span>.<span class="hljs-built_in">exports</span> = <span class="hljs-keyword">new</span> ChangeManager()</div></div></div></div></body></html>
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-keyword">new</span> ChangeManager()</div></div></div></div></body></html>
