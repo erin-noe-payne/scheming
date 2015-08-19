@@ -477,7 +477,7 @@ The object instance returned by newing up a [Schema](#schema) constructor.
 
 ### Instance.watch([properties], listener)
 
-Watches a schmea instance for changes. The registered listenenr function will fire asynchronously each time one or more of the specified properties change.
+Watches a schmea instance for changes. The registered listener function will fire asynchronously each time one or more of the specified properties change.
 
 **IMPORTANT** Watchers and change detection depend on the `set` functionality of `Object.defineProperty`. This means that changes made by mutating a value (such as array splicing) will not be detected, and may result in memory leaks or unexpected behavior. As a best practice, only manipulate schema instance data via assignment with the `=` operator, and do not use mutators.
 
@@ -488,6 +488,7 @@ Watches a schmea instance for changes. The registered listenenr function will fi
   - Listener functions are invoked with the current and previous values of the watched properties. If a watch is set against a single property, newVal and oldVal will be the new and previous values. If the watch is set against multiple properties, newVal and oldVal will be objects whose key / value pairs represent the watcher property names and their respective values.
   - In the case of a watch against the entire object, newVal and oldVal will represent the current and previous state of all properties of the object. However. Note that newVal is NOT a reference to the instance object, it is a plain object whose key / value pairs represent the current state of the instance.
   - Watches are "deep". This means changes to nested schemas are propagated up to the parent elements.
+- returns **Function** You are responsible for the cleanup of a watch.
 
 
 #### Examples
@@ -541,6 +542,17 @@ lisa.watch ['name', 'age'], (newVal, oldVal) ->
 
 lisa.name = 'lisa'
 lisa.age = 7
+```
+
+**Cleaning up a watch**
+```
+unwatch = lisa.watch 'name', (newVal, oldVal) ->
+  newVal == 'lisa'
+
+lisa.name = 'lisa'
+# some time later...
+unwatch()
+lisa.name = 'a' # watch no longer fires
 ```
 
 # Changelog
