@@ -37,13 +37,13 @@ jane = new User
   birthday : '9/14/86'
   password : 'p@$$w0rd!'
 
-console.log Person.validate jane
+console.log User.validate jane
 # {name : 'Field is required.', email: 'An email address must have an @ symbol!'}
 
 jane.name = 'jane'
 jane.email = 'jane@gmail.com'
 
-console.log Person.validate jane
+console.log User.validate jane
 # null
 
 ```
