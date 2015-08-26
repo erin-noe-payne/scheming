@@ -178,7 +178,7 @@ class ModelFactory
           val = instance[key]
 
           # - If the field is required and not defined, push the error and be done
-          if required && !val?
+          if required && (!val? || (_.isString(val) && val.trim().length == 0))
             requiredMessage = if _.isString(required) then required else "Field is required."
             pushError key, requiredMessage
           # - Only run validation on fields that are defined

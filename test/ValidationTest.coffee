@@ -29,6 +29,24 @@ describe 'Validation', ->
 
     expect(Person.validate(lisa)).to.be.null
 
+  it 'should return errors if a field is required and has an empty string', ->
+    Person = Scheming.create
+      name : {type: String, required : true}
+      age : Number
+
+    lisa = new Person name : ''
+
+    expect(Person.validate(lisa)).not.to.be.null
+
+  it 'should return errors if a field is required and has an whitespace only string', ->
+    Person = Scheming.create
+      name : {type: String, required : true}
+      age : Number
+
+    lisa = new Person name : ' '
+
+    expect(Person.validate(lisa)).not.to.be.null
+
   it 'should return null if a field has one validation rules that it passes', ->
     Person = Scheming.create
       name : {type: String, validate :  -> true}

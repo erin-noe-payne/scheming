@@ -186,7 +186,7 @@
             value = normalizedSchema[key];
             validate = value.validate, required = value.required;
             val = instance[key];
-            if (required && (val == null)) {
+            if (required && ((val == null) || (_.isString(val) && val.trim().length === 0))) {
               requiredMessage = _.isString(required) ? required : "Field is required.";
               pushError(key, requiredMessage);
             }
