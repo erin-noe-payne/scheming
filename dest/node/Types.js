@@ -2,7 +2,7 @@
   var Types, _,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  _ = require('lodash');
+  _ = require('./utilities');
 
   Types = (function() {
     function Types() {

@@ -3,6 +3,5 @@
   "version": "2.1.5",
   "main": "dest/browser/scheming.js",
   "dependencies": {
-    "lodash": "2.x || 3.x"
   }
 }

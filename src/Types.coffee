@@ -1,4 +1,4 @@
-_ = require 'lodash'
+_ = require './utilities'
 
 class Types
   # ### TYPES
