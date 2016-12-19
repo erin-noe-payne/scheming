@@ -1,5 +1,5 @@
 (function() {
-  var clone, cloneDeep, contains, containsArray, containsObject, defaults, extend, has, identity, intersection, isArray, isBoolean, isDate, isEqual, isEqualArray, isFunction, isNumber, isObjectLike, isPlainObject, isString, isVoid, remove, size, toArray, unique,
+  var clone, cloneDeep, contains, containsArray, containsObject, defaults, extend, has, identity, includes, intersection, isArray, isBoolean, isDate, isEqual, isEqualArray, isFunction, isNumber, isObjectLike, isPlainObject, isString, isVoid, remove, size, toArray, uniq, unique,
     slice = [].slice;
 
   identity = function(x) {
@@ -34,14 +34,14 @@
     return x === true || x === false;
   };
 
-  isArray = function(x) {
-    return Array.isArray(x);
-  };
+  isArray = !Array.isArray ? function(x) {
+    return Object.prototype.toString.call(x) === '[object Array]';
+  } : Array.isArray;
 
   extend = function() {
     var into, values;
     into = arguments[0], values = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-    return values.reduce((function(acc, value) {
+    return toArray(values || []).reduce((function(acc, value) {
       Object.keys(value).forEach(function(key) {
         if (isVoid(key)) {
           return delete acc[key];
@@ -59,7 +59,9 @@
     }))));
   };
 
-  isPlainObject = _.isPlainObject;
+  isPlainObject = function(x) {
+    return isObjectLike(x) && !isFunction(x) && !isString(x) && !isArray(x);
+  };
 
   clone = function(value) {
     if (isVoid(value)) {
@@ -127,23 +129,23 @@
 
   containsObject = function(into, value) {
     if (isFunction(value)) {
-      return Object.keys(into).map(function(x) {
-        return [x, into[x]];
-      }).some(function(kvp) {
-        return value(kvp[1], kvp[0]);
+      return Object.keys(into).some(function(key) {
+        return value(into[key], key);
       });
     } else {
-      return containsObject(into, (function(x) {
-        return x === value;
-      }));
+      return Object.keys(into).some(function(key) {
+        return value === into[key];
+      });
     }
   };
 
   contains = function(containsInto, containsValue) {
-    if (isObjectLike(containsInto)) {
+    if (isArray(containsInto)) {
+      return containsArray(containsInto, containsValue);
+    } else if (isObjectLike(containsInto)) {
       return containsObject(containsInto, containsValue);
     } else {
-      return containsArray(containsInto, containsValue);
+      return false;
     }
   };
 
@@ -166,25 +168,32 @@
   intersection = function() {
     var head, rest;
     head = arguments[0], rest = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-    return unique(
-      head.filter(function(v) {
-        return rest.every(function(restContainers) {
-          return contains(restContainers, v);
-        });
-      })
-    );
+    return unique(head.filter(function(v) {
+      return rest.every(function(restContainers) {
+        return contains(restContainers, v);
+      });
+    }));
   };
 
-  defaults = function(orig, defaultValues) {
-    return extend({}, defaultValues, orig);
+  defaults = function() {
+    var defaultValues, orig;
+    orig = arguments[0], defaultValues = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+    return defaultValues.reduce((function(acc, value) {
+      Object.keys(value).forEach(function(key) {
+        if (!acc.hasOwnProperty(key)) {
+          return acc[key] = value[key];
+        }
+      });
+      return acc;
+    }), orig);
   };
 
   isEqual = function(left, right) {
     if (isArray(left)) {
       return isEqualArray(left, right);
     } else if (isPlainObject(left)) {
-      return isPlainObject(right) && Object.keys(left).length === Object.keys(right) && Object.keys(left).every(function(key) {
-        return left[key] === right[key];
+      return isPlainObject(right) && Object.keys(left).length === Object.keys(right).length && Object.keys(left).every(function(key) {
+        return isEqual(left[key], right[key]);
       });
     } else {
       return left === right;
@@ -195,29 +204,33 @@
     return ns.splice(ns.indexOf(n), 1);
   };
 
+  includes = contains;
+
+  uniq = unique;
+
   module.exports = {
     clone: clone,
     cloneDeep: cloneDeep,
-    isObjectLike: isObjectLike,
-    identity: identity,
-    isString: isString,
-    isNumber: isNumber,
-    isDate: isDate,
-    isBoolean: isBoolean,
-    isArray: isArray,
-    isEqualArray: isEqualArray,
-    isPlainObject: isPlainObject,
-    isFunction: isFunction,
-    toArray: toArray,
     contains: contains,
-    has: has,
-    size: size,
-    unique: unique,
-    intersection: intersection,
     defaults: defaults,
     extend: extend,
+    has: has,
+    identity: identity,
+    includes: includes,
+    intersection: intersection,
+    isArray: isArray,
+    isBoolean: isBoolean,
+    isDate: isDate,
     isEqual: isEqual,
-    remove: remove
+    isFunction: isFunction,
+    isNumber: isNumber,
+    isPlainObject: isPlainObject,
+    isString: isString,
+    remove: remove,
+    size: size,
+    toArray: toArray,
+    unique: unique,
+    uniq: uniq
   };
 
 }).call(this);
