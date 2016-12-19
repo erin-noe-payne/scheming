@@ -537,6 +537,10 @@ lisa.name = 'a' # watch no longer fires
 
 # Changelog
 
+## v2.1.6
+ - Removed lodash as a dependency. Utility methods used were implemented in this project to decrease upgrade pains when lodash comes out with new versions (especially in browser usage)
+ - Added property/fuzz testing for utility functions. These tests can be moved into their own task later if it become a problem
+
 ## v2.1.5
  - Update docs with unwatch, better explanation of Mixed types.
  - Update browser build so that lodash is not included. Lodash is already listed as a bower dependency, and this drops the size of the deliverable significantly. **NOTE** In most cases this should be a non-breaking change. However, if you are using scheming without using bower-main-files or similar, you may need to add a `<script>` tag to your html to include lodash on your page.
@@ -560,7 +564,7 @@ lisa.name = 'a' # watch no longer fires
 ## v1.4.0
 
  - TravisCI!
- - Adds `registerQueueCallback`, `registerResolveCallback`, `unregisterQueueCallback`, and `unregisterResolveCallback` functions, exposing hooks into Scheming's change management events.  
+ - Adds `registerQueueCallback`, `registerResolveCallback`, `unregisterQueueCallback`, and `unregisterResolveCallback` functions, exposing hooks into Scheming's change management events.
  - Fixed issues with watching of arrays and propagating of changes in arrays of nested schemas, dodging the need to ever cloneDeep. Performance improvement!
 
 ## v1.3.0
