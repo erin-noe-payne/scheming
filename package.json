@@ -1,12 +1,12 @@
 {
   "name": "scheming",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "main": "./dest/node/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
     "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
-    "build" : "gulp build",
-    "preversion" : "npm run build"
+    "build": "gulp build",
+    "preversion": "npm run build"
   },
   "devDependencies": {
     "chai": "^3.5.0",
