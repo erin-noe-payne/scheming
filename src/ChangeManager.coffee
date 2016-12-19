@@ -1,4 +1,4 @@
-_ = require 'lodash'
+_ = require './utilities'
 
 # ### Change Manager
 # Internal Change Manager class, responsible for queueing and resolving change event propagation for watches

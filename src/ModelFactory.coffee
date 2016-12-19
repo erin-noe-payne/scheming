@@ -1,4 +1,4 @@
-_ = require 'lodash'
+_ = require './utilities'
 Types = require './Types'
 InstanceFactory = require './InstanceFactory'
 Registry = require './Registry'

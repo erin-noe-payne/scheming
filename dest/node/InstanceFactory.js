@@ -3,7 +3,7 @@
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     slice = [].slice;
 
-  _ = require('lodash');
+  _ = require('./utilities');
 
   Types = require('./Types');
 
@@ -63,7 +63,7 @@
                 configurable: true,
                 value: _this.uuid()
               });
-              _.each(_this.ARRAY_MUTATORS, function(method) {
+              (_this.ARRAY_MUTATORS || []).forEach(function(method) {
                 if ((prevVal != null) && prevVal[method]) {
                   delete prevVal[method];
                 }
@@ -117,7 +117,7 @@
         if (_.isFunction(properties)) {
           opts = cb;
           cb = properties;
-          properties = _.keys(normalizedSchema);
+          properties = Object.keys(normalizedSchema);
         }
         if (opts == null) {
           opts = {};
@@ -182,7 +182,7 @@
             }
           }
           unwatchers[propName] = [];
-          return _.each(val, function(schema, i) {
+          return (val || []).forEach(function(schema, i) {
             return unwatchers[propName].push(schema != null ? schema.watch(function(newVal, oldVal) {
               var newArray, oldArray;
               newArray = instance[propName];
@@ -221,7 +221,7 @@
         if (target == null) {
           target = 'external';
         }
-        triggeringProperties = _.keys(queuedChanges);
+        triggeringProperties = Object.keys(queuedChanges);
         getPrevVal = function(propName) {
           if (_.has(queuedChanges, propName)) {
             return queuedChanges[propName];
@@ -251,8 +251,8 @@
             }
             try {
               results.push(watcher.cb(newVals, oldVals));
-            } catch (_error) {
-              e = _error;
+            } catch (error) {
+              e = error;
               results.push(console.error(e.stack || e));
             }
           } else {

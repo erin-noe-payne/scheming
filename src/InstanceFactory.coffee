@@ -1,4 +1,4 @@
-_ = require 'lodash'
+_ = require './utilities'
 Types = require './Types'
 ChangeManager = require './ChangeManager'
 
@@ -70,7 +70,7 @@ class InstanceFactory
             value : @uuid()
           # Overwrite mutator functions on this array capture and queue the mutation. This guarantees
           # that otherwise mutating changes are run through the setters and changes are captured.
-          _.each @ARRAY_MUTATORS, (method) ->
+          (@ARRAY_MUTATORS || []).forEach (method) ->
             if prevVal? && prevVal[method]
               delete prevVal[method]
 
@@ -114,7 +114,7 @@ class InstanceFactory
         opts = cb
         cb = properties
         # if no properties are specified, the watcher is registered to watch all properties of the object
-        properties = _.keys normalizedSchema
+        properties = Object.keys normalizedSchema
 
       # unless specified, a watch is assumed to be external. Clinet code should not set watches as internal!
       # Behavior is undefined.
@@ -150,7 +150,7 @@ class InstanceFactory
 
     # Remove a watch listener from the appropraite watchers array
     removeWatcher = (watcher, target) ->
-      _.remove watchers[target], watcher
+      _.remove watchers[target], watcher#watchers[target].filter (x) => x != watcher
 
     # This function is called on value assignment
     watchForPropagation = (propName, val) ->
@@ -173,7 +173,7 @@ class InstanceFactory
           unwatcher?()
         # reset the unwatchers array
         unwatchers[propName] = []
-        _.each val, (schema, i) ->
+        (val || []).forEach (schema, i) ->
           # set a new watch on each array member to propagate changes to this instance. Flag the watch as internal.
           unwatchers[propName].push schema?.watch (newVal, oldVal)->
             newArray = instance[propName]
@@ -193,7 +193,7 @@ class InstanceFactory
 
     # Given a change set, fires all watchers that are watching one or more of the changed properties
     fireWatchers = (queuedChanges, target='external') ->
-      triggeringProperties = _.keys queuedChanges
+      triggeringProperties = Object.keys queuedChanges
 
       # Retrieves the previous value for a property, pulling from queued changes if present, otherwise retreiving
       # current value - i.e. no change.

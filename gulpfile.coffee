@@ -21,7 +21,7 @@ gulp.task 'buildServer', ['clean'], ->
 gulp.task 'buildClient', ['clean'], ->
   gulp.src('src/ExportBrowser.coffee', { read: false })
     .pipe(plugins.browserify({
-        transform: ['coffeeify', 'browserify-global-shim']
+        transform: ['coffeeify']
         debug : true
         extensions: ['.coffee']
         ignore : ['lodash']

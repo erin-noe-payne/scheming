@@ -2,7 +2,7 @@
   var ChangeManager, _,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  _ = require('lodash');
+  _ = require('./utilities');
 
   ChangeManager = (function() {
     ChangeManager.prototype.THROTTLE = {

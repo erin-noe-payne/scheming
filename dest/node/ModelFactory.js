@@ -3,7 +3,7 @@
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     slice = [].slice;
 
-  _ = require('lodash');
+  _ = require('./utilities');
 
   Types = require('./Types');
 
@@ -93,8 +93,8 @@
       fnStr = "return function " + name + "(){return fn.apply(this, arguments)}";
       try {
         renamed = new Function('fn', fnStr)(fn);
-      } catch (_error) {
-        err = _error;
+      } catch (error1) {
+        err = error1;
         throw new Error(name + " is not a valid function name.");
       }
       _.extend(renamed, fn);
@@ -197,8 +197,8 @@
                 err = true;
                 try {
                   err = validator.call(instance, val);
-                } catch (_error) {
-                  e = _error;
+                } catch (error1) {
+                  e = error1;
                   if (e) {
                     err = e.message;
                   }
