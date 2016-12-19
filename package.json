@@ -4,7 +4,9 @@
   "main": "./dest/node/Scheming.js",
   "repository": "https://github.com/autoric/scheming",
   "scripts": {
-    "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register"
+    "test": "mocha test -w  --growl --reporter spec --compilers coffee:coffee-script/register",
+    "build" : "gulp build",
+    "preversion" : "npm run build"
   },
   "devDependencies": {
     "chai": "^3.5.0",
